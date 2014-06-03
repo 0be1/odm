@@ -54,6 +54,7 @@ import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.converters.DirectoryStringConverter;
 import fr.mtlx.odm.converters.IntegerConverter;
+import fr.mtlx.odm.converters.LabeledURIConverter;
 import fr.mtlx.odm.converters.TimeConverter;
 
 public class SessionFactoryImpl implements SessionFactory
@@ -64,6 +65,7 @@ public class SessionFactoryImpl implements SessionFactory
 			.add( new DirectoryStringConverter() )
 			.add( new BinaryStringConverter() )
 			.add( new TimeConverter() )
+			.add( new LabeledURIConverter() )
 			.build();
 
 	public static final ThreadLocal<Session> session = new ThreadLocal<Session>();
