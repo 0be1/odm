@@ -25,25 +25,21 @@ package fr.mtlx.odm.filters;
  */
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import javax.annotation.Nullable;
-
-import fr.mtlx.odm.Session;
+import fr.mtlx.odm.SessionFactoryImpl;
 
 public class NotFilter implements Filter
 {
 	private final Filter filter;
 
-	NotFilter( final Filter filter )
+	NotFilter( final SessionFactoryImpl sessionFactory , final Filter filter )
 	{
 		this.filter = checkNotNull( filter );
 	}
 
-	
 	@Override
-	public String encode( @Nullable final Class<?> persistentClass, @Nullable  final Session session )
+	public String encode()
 	{
-		String retval = new StringBuilder( "(" ).append( '!' ).append( filter.encode( persistentClass, session ) ).append( ")" )
+		String retval = new StringBuilder( "(" ).append( '!' ).append( filter.encode() ).append( ")" )
 				.toString();
 
 		assert retval != null && retval.startsWith( "(" ) && retval.endsWith( ")" );

@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -24,9 +26,7 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-import fr.mtlx.odm.Session;
-
 public interface Filter
 {
-	String encode( final Class<?> persistentClass, final Session session);
+	String encode();
 }

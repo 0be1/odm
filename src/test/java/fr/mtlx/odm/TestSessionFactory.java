@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
+import javax.management.openmbean.InvalidOpenTypeException;
 import javax.naming.directory.DirContext;
 
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class TestSessionFactory
 	final String[] mappedClasses = new String[]
 	{ "fr.mtlx.odm.model.OrganizationalPerson", };
 
-	private SessionFactory sessionFactory;
+	private SessionFactoryImpl sessionFactory;
 
 	@Before
 	public void init() throws Exception
@@ -55,15 +56,26 @@ public class TestSessionFactory
 
 		when( contextSource.getReadWriteContext() ).thenReturn( mock(DirContext.class) );
 		
-		SessionFactoryImpl sessionFactory = new SessionFactoryImpl( contextSource, null, null, Arrays.asList( mappedClasses ) );
+		SessionFactoryImpl sessionFactory = new SessionFactoryImpl()
+		{
+			@Override
+			public Session openSession()
+			{
+				throw new InvalidOpenTypeException("not implemented");
+			}
+
+			@Override
+			public void addClass( Class<?> persistentClass )
+			{
+			}
+
+			@Override
+			public void addClass( String persistentClassName )
+			{
+			}
+		};
 
 		this.sessionFactory = sessionFactory;
-	}
-
-	@Test
-	public void getDirContext()
-	{
-		assertNotNull( sessionFactory.getDirContext() );
 	}
 
 	@Test
@@ -92,6 +104,6 @@ public class TestSessionFactory
 	@Test
 	public void defaultConverters() throws MappingException
 	{
-		assertNotNull( sessionFactory.getConverter( "1.3.6.1.4.1.1466.115.121.1.15", String.class, String.class ) );
+		assertNotNull( sessionFactory.getConverter( "1.3.6.1.4.1.1466.115.121.1.15" ) );
 	}
 }

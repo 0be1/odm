@@ -24,23 +24,22 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class BinaryStringConverter extends AbstractConverter
+public class BinaryStringConverter extends SyntaxConverter<byte[], String>
 {
-	@Override
-	public String getSyntax()
+	public BinaryStringConverter()
 	{
-		return "1.3.6.1.4.1.1466.115.121.1.5";
+		super( byte[].class, String.class);
 	}
 
 	@Override
-	public Class<?> directoryType()
+	public String from( byte[] object ) throws ConvertionException
 	{
-		return byte[].class;
+		return object.toString();
 	}
 
 	@Override
-	public Class<?> objectType()
+	public byte[] to( String value ) throws ConvertionException
 	{
-		return byte[].class;
+		return value.getBytes();
 	}
 }

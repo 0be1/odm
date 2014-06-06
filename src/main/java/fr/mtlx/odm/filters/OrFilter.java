@@ -24,47 +24,38 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import fr.mtlx.odm.SessionFactoryImpl;
 
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import com.google.common.collect.Lists;
-
-import fr.mtlx.odm.Session;
-
-public class OrFilter implements Filter
+public class OrFilter extends CompositeFilter
 {
-	private final List<Filter> filterlist;
-	
-	
-	public OrFilter( )
+	OrFilter( SessionFactoryImpl sessionFactory, Filter... filters )
 	{
-		this.filterlist = Lists.newArrayList();
-	}
-	
-	public OrFilter( final Filter[] filters )
-	{
-		this.filterlist = Arrays.asList( checkNotNull( filters ) );
+		super( filters );
 	}
 
-	public OrFilter add( Filter filter )
+	@Override
+	public OrFilter add( final Filter filter )
 	{
-		filterlist.add( checkNotNull( filter ) );
+		if (filter instanceof OrFilter )
+		{
+			filters.addAll( ((OrFilter)filter).filters );
+		}
+		else
+		{
+			super.add( filter );
+		}
 		
 		return this;
 	}
 	
 	@Override
-	public String encode( @Nullable final Class<?> persistentClass, @Nullable final Session session )
+	public String encode()
 	{
 		final StringBuilder sb = new StringBuilder( "(" ).append( '|' );
 
-		for ( Filter filter : filterlist )
+		for ( Filter filter : filters )
 		{
-			sb.append( filter.encode( persistentClass, session ) );
+			sb.append( filter.encode() );
 		}
 
 		sb.append( ")" );

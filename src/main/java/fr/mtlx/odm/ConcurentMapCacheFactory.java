@@ -27,10 +27,10 @@ package fr.mtlx.odm;
 import fr.mtlx.odm.cache.BaseCacheManager;
 import fr.mtlx.odm.cache.CacheManager;
 
-public class ConcurentMapCacheFactory implements CacheFactory
+public class ConcurentMapCacheFactory extends CacheFactory
 {
 	@Override
-	public CacheManager getCache( final SessionFactory sessionFactory, final String name )
+	public CacheManager getCache( final SessionFactoryImpl sessionFactory, final String name )
 	{
 		return new BaseCacheManager( sessionFactory );
 	}

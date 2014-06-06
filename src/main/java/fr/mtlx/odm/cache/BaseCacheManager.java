@@ -29,15 +29,15 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 import fr.mtlx.odm.ClassMetadata;
-import fr.mtlx.odm.SessionFactory;
+import fr.mtlx.odm.SessionFactoryImpl;
 
 public class BaseCacheManager implements CacheManager
 {
 	private final Map<Class<?>, EntityCache<?>> caches = Maps.newConcurrentMap();
 
-	public final SessionFactory sessionFactory;
+	public final SessionFactoryImpl sessionFactory;
 
-	public BaseCacheManager( final SessionFactory sessionFactory )
+	public BaseCacheManager( final SessionFactoryImpl sessionFactory )
 	{
 		this.sessionFactory = sessionFactory;
 	}

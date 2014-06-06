@@ -26,7 +26,6 @@ package fr.mtlx.odm;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static fr.mtlx.odm.filters.FilterBuilder.objectClass;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,6 +54,9 @@ import fr.mtlx.odm.SessionImpl.CachingContextMapper;
 import fr.mtlx.odm.SessionImpl.MappingContextMapper;
 import fr.mtlx.odm.filters.AndFilter;
 import fr.mtlx.odm.filters.Filter;
+import fr.mtlx.odm.filters.FilterBuilder;
+import fr.mtlx.odm.filters.FilterBuilderImpl;
+import fr.mtlx.odm.filters.FilterImpl;
 
 public class SearchCriteria<T>
 {
@@ -132,7 +134,7 @@ public class SearchCriteria<T>
 
 					entry = mapper.doMapFromContext( ctx );
 
-					ops.session.getSessionFactory().getCacheManager().getCacheFor( persistentClass ).store( ctx.getDn(), entry );
+					((SessionFactoryImpl)ops.session.getSessionFactory()).getCacheManager().getCacheFor( persistentClass ).store( ctx.getDn(), entry );
 				}
 				
 				results.add( entry );
@@ -165,7 +167,6 @@ public class SearchCriteria<T>
 
 	private final OperationsImpl<T> ops;
 
-	@SuppressWarnings( "rawtypes" )
 	private final Map<String, Collection> projections = Maps.newHashMap();
 
 	SearchCriteria( final Class<T> persistentClass, final OperationsImpl<T> ops, final Name root )
@@ -269,10 +270,10 @@ public class SearchCriteria<T>
 
 		for ( String propertyName : properties )
 		{
-			AttributeMetadata<T> attr = ops.metadata.getAttributeMetadataByPropertyName( propertyName );
+			AttributeMetadata attr = ops.metadata.getAttributeMetadataByPropertyName( propertyName );
 
 			if ( attr == null )
-				throw new MappingException( String.format( "property %s not found in %s", propertyName, ops.metadata.getEntryClass() ) );
+				throw new UnsupportedOperationException( String.format( "property %s not found in %s", propertyName, ops.metadata.getEntryClass() ) );
 
 			attrs.add( attr.getAttirbuteName() );
 		}
@@ -286,23 +287,26 @@ public class SearchCriteria<T>
 
 	private String encodeFilter()
 	{
-		AndFilter filter = new AndFilter();
+		final FilterBuilder<T> fb = new FilterBuilderImpl<T>( persistentClass, ops.session.getSessionFactory() );
+		
+		final AndFilter rootfilter = fb.and();
 
 		for ( String oc : ops.metadata.getObjectClassHierarchy() )
 		{
-			filter.add( objectClass( oc ) );
+			rootfilter.add( fb.objectClass( oc ) );
 		}
 
 		for ( String oc : ops.metadata.getAuxiliaryClasses() )
 		{
-			filter.add( objectClass( oc ) );
+			rootfilter.add( fb.objectClass( oc ) );
 		}
 
 		for ( Filter f : filterStack )
 		{
-			filter.add( f );
+			rootfilter.add( f );
 		}
-		return filter.encode( ops.metadata.getEntryClass(), ops.session );
+		
+		return rootfilter.encode();
 
 	}
 
@@ -334,10 +338,10 @@ public class SearchCriteria<T>
 	{
 		for ( String property : projections.keySet() )
 		{
-			AttributeMetadata<T> t = ops.metadata.getAttributeMetadataByPropertyName( property );
+			final AttributeMetadata t = ops.metadata.getAttributeMetadataByPropertyName( property );
 
 			if ( t == null )
-				throw new MappingException( String.format( "property %s not found in %s", property, ops.metadata.getEntryClass() ) );
+				throw new UnsupportedOperationException( String.format( "property %s not found in %s", property, ops.metadata.getEntryClass() ) );
 
 			Class<?> c = (Class<?>)t.getObjectType(); // XXX Cast ??
 
@@ -348,7 +352,7 @@ public class SearchCriteria<T>
 				if ( value != null )
 				{
 					if ( !c.isInstance( value ) )
-						throw new MappingException( String.format( "property %s found wrong type %s", property, t ) );
+						throw new UnsupportedOperationException( String.format( "property %s found wrong type %s", property, t ) );
 
 					projections.get( property ).add( value );
 				}

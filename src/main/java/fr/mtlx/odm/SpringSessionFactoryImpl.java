@@ -26,8 +26,12 @@ package fr.mtlx.odm;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
+
+import javax.naming.directory.DirContext;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ldap.core.ContextSource;
@@ -35,41 +39,61 @@ import org.springframework.ldap.core.LdapTemplate;
 
 import com.google.common.collect.Sets;
 
-import fr.mtlx.odm.converters.LdapNameConverter;
+import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.converters.DefaultConverters;
 
+@SuppressWarnings( "serial" )
 public class SpringSessionFactoryImpl extends SessionFactoryImpl implements InitializingBean
 {
-	private static final long serialVersionUID = 7615860356986827891L;
+	private final ContextSource contextSource;
 
 	private List<String> mappedClasses;
 
 	private final LdapTemplate ldapTemplate;
 
 	private Set<String> operationalAttributes = Sets.newHashSet();
-	
+
 	public SpringSessionFactoryImpl( final ContextSource contextSource )
 	{
-		super( checkNotNull( contextSource ) );
+		this.contextSource = checkNotNull( contextSource );
 
 		this.ldapTemplate = new LdapTemplate( contextSource );
 	}
 
 	public SpringSessionFactoryImpl( final ContextSource contextSource, final CacheFactory cacheFactory, final String region )
 	{
-		super( checkNotNull( contextSource ), checkNotNull( cacheFactory ), checkNotNull(region, "region is null" ) );
-
-		this.ldapTemplate = new LdapTemplate( contextSource );
+		this( checkNotNull( contextSource ) );
 	}
-	
+
+	public ContextSource getContextSource()
+	{
+		return contextSource;
+	}
+
+	public DirContext getDirContext()
+	{
+		return contextSource.getReadWriteContext();
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception
 	{
-		for ( String className : mappedClasses )
+		for ( Entry<String, Converter> entry : DefaultConverters.defaultSyntaxConverters.entrySet() )
 		{
-			addMappedClass( className );
+			addSyntaxConverter( entry.getKey(), entry.getValue() );
 		}
 
-		addConverter( new LdapNameConverter() );
+		for ( Entry<Type, Converter> entry : DefaultConverters.defaultAttributeConverters.entrySet() )
+		{
+			addAttributeConverter( entry.getKey(), entry.getValue() );
+		}
+
+		for ( String className : mappedClasses )
+		{
+			mapClass( className );
+		}
+
+		init();
 	}
 
 	public LdapTemplate getLdapTemplate()
@@ -91,5 +115,23 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 	public void setMappedClasses( List<String> mappedClasses )
 	{
 		this.mappedClasses = mappedClasses;
+	}
+
+	@Override
+	public Session openSession()
+	{
+		return new SessionImpl( this );
+	}
+
+	@Override
+	public void addClass( Class<?> persistentClass )
+	{
+		mappedClasses.add( persistentClass.getCanonicalName() );
+	}
+
+	@Override
+	public void addClass( String persistentClassName )
+	{
+		mappedClasses.add( persistentClassName );
 	}
 }

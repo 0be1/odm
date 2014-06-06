@@ -25,35 +25,17 @@ package fr.mtlx.odm.filters;
  */
 
 
-public abstract class FilterBuilder
+public interface FilterBuilder<T>
 {
-	public static OrFilter or( Filter... filters )
-	{
-		return new OrFilter( filters );
-	}
+	OrFilter or( Filter... filters );
 
-	public static AndFilter and( Filter... filters )
-	{
-		return new AndFilter( filters );
-	}
+	AndFilter and( Filter... filters );
 	
-	public static CompareCriterion property( String propertyName )
-	{
-		return new PropertyCriterion( propertyName );
-	}
+	CompareCriterion<T> property( String propertyName );
 	
-	public static Filter objectClass( final String objectClass )
-	{
-		return new ObjectClassFilter( objectClass );
-	}
+	Filter objectClass( final String objectClass );
 	
-	public static Filter not( final Filter filter )
-	{
-		return new NotFilter( filter );
-	}
+	Filter not( final Filter filter );
 	
-	public static CompareCriterion attribute( final String attributeName )
-	{
-		return new AttributeCriterion( attributeName );
-	}
+	CompareCriterion<T> attribute( final String attributeName );
 }

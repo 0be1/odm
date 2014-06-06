@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.ldap.LdapName;
 
@@ -55,34 +56,27 @@ public class ClassAssistant<T>
 		this.metadata = checkNotNull( metadata );
 	}
 
-	public void setIdentifier( Object object, Name value ) throws MappingException
+	public void setIdentifier( Object object, Name value )
 	{
 		String identifier = metadata.getIdentifierPropertyName();
 
 		try
 		{
-			PropertyUtils.setSimpleProperty( object, identifier,value );
+			PropertyUtils.setSimpleProperty( object, identifier, value );
 		}
 		catch ( Exception e )
 		{
-			throw new MappingException( e );
+			throw new UnsupportedOperationException( e );
 		}
 	}
 
-	public Name getIdentifier( Object object ) throws MappingException
+	public LdapName getIdentifier( Object object ) throws InvalidNameException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
 	{
 		String identifier = metadata.getIdentifierPropertyName();
 
-		try
-		{
-			return new LdapName( BeanUtils.getProperty( object, identifier ) );
-		}
-		catch ( Exception e )
-		{
-			throw new MappingException( e );
-		}
+		return new LdapName( BeanUtils.getProperty( object, identifier ) );
 	}
-
+	
 	public boolean isCollection( Type type )
 	{
 		Class<?> c = type.getClass();
@@ -90,7 +84,7 @@ public class ClassAssistant<T>
 		return Arrays.asList( c.getInterfaces() ).contains( Collection.class ) || c.equals( Collection.class );
 	}
 
-	public Object getValue( Object object, String propertyName ) throws MappingException
+	public Object getValue( Object object, String propertyName )
 	{
 		try
 		{
@@ -98,7 +92,7 @@ public class ClassAssistant<T>
 		}
 		catch ( Exception e )
 		{
-			throw new MappingException( e );
+			throw new UnsupportedOperationException( e );
 		}
 	}
 
@@ -153,17 +147,17 @@ public class ClassAssistant<T>
 		@SuppressWarnings( "unchecked" )
 		Class<T> c = (Class<T>)checkNotNull( entry ).getClass();
 
-		AttributeMetadata<T> ameta = metadata.getAttributeMetadataByPropertyName( propertyName );
+		final AttributeMetadata meta = metadata.getAttributeMetadataByPropertyName( propertyName );
 
-		if ( ameta == null )
+		if ( meta == null )
 			throw new MappingException( String.format( "propertyName: unknown property %s", propertyName ) );
 
-		if ( !ameta.isMultivalued() )
+		if ( !meta.isMultivalued() )
 			throw new MappingException( String.format( "propertyName: single valued property %s", propertyName ) );
 
 		final Collection<?> targetValues;
 
-		targetValues = buildCollection( ameta.getCollectionType(), ameta.getObjectType(), multipleValues );
+		targetValues = buildCollection( meta.getCollectionType(), meta.getObjectType(), multipleValues );
 
 		try
 		{

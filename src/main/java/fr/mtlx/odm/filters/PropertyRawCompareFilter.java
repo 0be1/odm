@@ -27,10 +27,8 @@ package fr.mtlx.odm.filters;
 import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassMetadata;
-import fr.mtlx.odm.MappingException;
-import fr.mtlx.odm.Session;
 
-class PropertyRawCompareFilter implements Filter
+class PropertyRawCompareFilter<T> extends FilterImpl
 {
 	private final String property;
 
@@ -38,29 +36,33 @@ class PropertyRawCompareFilter implements Filter
 
 	private final Comparison op;
 
-	PropertyRawCompareFilter( final Comparison op, final String property, final Object value )
+	private final Class<T> persistentClass;
+
+	PropertyRawCompareFilter( final Class<T> persistentClass, final Comparison op, final String property, final Object value )
 	{
 		this.property = checkNotNull( property );
 		this.value = value;
 
 		this.op = op;
+		
+		this.persistentClass = checkNotNull( persistentClass );
 	}
 
 	@Override
-	public String encode( final Class<?> persistentClass, final Session session )
+	public String encode()
 	{
-		ClassMetadata<?> metadata = checkNotNull( session ).getSessionFactory().getClassMetadata( persistentClass );
+		ClassMetadata<?> metadata = getSessionFactory().getClassMetadata( persistentClass );
 		
 		if ( metadata == null )
-			throw new MappingException( String.format( "%s is not a persistent class", persistentClass ) );
+			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", persistentClass ) );
 
-		AttributeMetadata<?> attribute = metadata.getAttributeMetadataByPropertyName( property );
+		AttributeMetadata attribute = metadata.getAttributeMetadataByPropertyName( property );
 
 		if ( attribute == null )
-			throw new MappingException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
+			throw new UnsupportedOperationException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
 
 		Filter filter = new RawCompareFilter( op, attribute.getAttirbuteName(), value );
 
-		return filter.encode( persistentClass, session );
+		return filter.encode();
 	}
 }

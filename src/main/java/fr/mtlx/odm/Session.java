@@ -24,8 +24,6 @@ package fr.mtlx.odm;
  * #L%
  */
 
-import java.lang.reflect.Type;
-
 import javax.naming.Name;
 import javax.naming.directory.ModificationItem;
 
@@ -43,7 +41,7 @@ public interface Session
 
 	boolean isPersistent( Object obj );
 
-	Converter getConverter( String syntax, Type objectType, Type directoryType ) throws MappingException;
+	Converter getSyntaxConverter( String syntax  ) throws MappingException;
 	
 	LdapOperations getLdapOperations();
 	

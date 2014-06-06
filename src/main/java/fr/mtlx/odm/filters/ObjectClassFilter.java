@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+import fr.mtlx.odm.SessionFactoryImpl;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -27,7 +29,7 @@ package fr.mtlx.odm.filters;
 
 public class ObjectClassFilter extends AttributeFilter
 {
-	ObjectClassFilter( String objectClass )
+	ObjectClassFilter( SessionFactoryImpl sessionFactory , String objectClass )
 	{
 		super(Comparison.equals, "objectClass", objectClass );
 	}

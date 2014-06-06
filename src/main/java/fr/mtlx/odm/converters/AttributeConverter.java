@@ -28,25 +28,25 @@ import javax.annotation.Nullable;
  * #L%
  */
 
-public abstract class GenericConverter<D, O> implements Converter
+public abstract class AttributeConverter<D, O> implements Converter
 {
-	private final Class<D> directoryType;
+	protected final Class<D> directoryType;
 
-	private final Class<O> objectType;
+	protected final Class<O> objectType;
 
-	public GenericConverter( final Class<D> directoryType, final Class<O> objectType )
+	public AttributeConverter( final Class<D> directoryType, final Class<O> objectType )
 	{
 		this.directoryType = checkNotNull( directoryType );
 		this.objectType = checkNotNull( objectType );
 	}
 
-	public abstract D to( @Nullable final O object ) throws ConvertionException;
+	public abstract D to( final O object ) throws ConvertionException;
 
 	public abstract O from( final D value ) throws ConvertionException;
 
 	@SuppressWarnings( "unchecked" )
 	@Override
-	public Object toDirectory( Object object ) throws ConvertionException
+	public final Object toDirectory( @Nullable final Object object ) throws ConvertionException
 	{
 		if ( object == null )
 			return null;
@@ -59,7 +59,7 @@ public abstract class GenericConverter<D, O> implements Converter
 
 	@SuppressWarnings( "unchecked" )
 	@Override
-	public Object fromDirectory( Object value ) throws ConvertionException
+	public final Object fromDirectory( @Nullable final Object value ) throws ConvertionException
 	{
 		if ( value == null )
 			return null;
@@ -71,14 +71,32 @@ public abstract class GenericConverter<D, O> implements Converter
 	}
 
 	@Override
-	public Class<?> directoryType()
+	public final Class<?> directoryType()
 	{
 		return directoryType;
 	}
 
 	@Override
-	public Class<?> objectType()
+	public final Class<?> objectType()
 	{
 		return objectType;
+	}
+	
+	@Override
+	public boolean equals( Object obj )
+	{
+		if (!(obj instanceof AttributeConverter)) {
+			return false;
+		}
+		
+		final AttributeConverter<?, ?> other = (AttributeConverter<?, ?>)obj;
+		
+		return (this.directoryType.equals( other.directoryType ) && this.objectType.equals( other.objectType ));
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return this.directoryType.hashCode() ^ this.objectType.hashCode();
 	}
 }

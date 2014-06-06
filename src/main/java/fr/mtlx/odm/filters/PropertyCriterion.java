@@ -25,61 +25,65 @@ package fr.mtlx.odm.filters;
  */
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import fr.mtlx.odm.SessionFactoryImpl;
 
-public class PropertyCriterion implements CompareCriterion
+public class PropertyCriterion<T> implements CompareCriterion<T>
 {
 	private final String propertyName;
-	
-	PropertyCriterion( final String propertyName )
+	private final Class<T> persistentClass;
+
+	PropertyCriterion( final Class<T> persistentClass, SessionFactoryImpl sessionFactory , final String propertyName )
 	{
 		this.propertyName = checkNotNull( propertyName );
+		
+		this.persistentClass = checkNotNull( persistentClass );
 	}
 	
 	@Override
 	public Filter equalsTo( final Object value )
 	{
-		return new PropertyCompareFilter( Comparison.equals, propertyName, value );
+		return new PropertyCompareFilter<T>( persistentClass, Comparison.equals, propertyName, value );
 	}
 
 	@Override
 	public Filter approx( final Object value )
 	{
-		return new PropertyCompareFilter( Comparison.approx, propertyName, value );
+		return new PropertyCompareFilter<T>( persistentClass, Comparison.approx, propertyName, value );
 	}
 
 	@Override
 	public Filter greaterOrEquals( final Object value )
 	{
-		return new PropertyCompareFilter( Comparison.greater, propertyName, value );
+		return new PropertyCompareFilter<T>( persistentClass, Comparison.greater, propertyName, value );
 	}
 
 	@Override
 	public Filter lessOrEquals( final Object value )
 	{
-		return new PropertyCompareFilter( Comparison.less, propertyName, value );
+		return new PropertyCompareFilter<T>( persistentClass, Comparison.less, propertyName, value );
 	}
 
 	@Override
 	public Filter present()
 	{
-		return new PropertyRawCompareFilter( Comparison.equals, propertyName, "*" );
+		return new PropertyRawCompareFilter<T>( persistentClass, Comparison.equals, propertyName, "*" );
 	}
 
 	@Override
 	public Filter substrings( final Object... values )
 	{
-		return new PropertySubstringsWithFilter( propertyName, values );
+		return new PropertySubstringsWithFilter<T>( persistentClass, propertyName, values );
 	}
 
 	@Override
 	public Filter startsWith( final Object value )
 	{
-		return new PropertyStartsWithFilter( propertyName, value );
+		return new PropertyStartsWithFilter<T>( persistentClass, propertyName, value );
 	}
 
 	@Override
 	public Filter endsWith( final Object value )
 	{
-		return new PropertyEndsWithFilter( propertyName, value );
+		return new PropertyEndsWithFilter<T>( persistentClass, propertyName, value );
 	}
 }

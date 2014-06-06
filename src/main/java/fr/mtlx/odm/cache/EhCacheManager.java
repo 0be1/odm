@@ -27,15 +27,16 @@ package fr.mtlx.odm.cache;
 import net.sf.ehcache.Ehcache;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.SessionFactory;
+import fr.mtlx.odm.SessionFactoryImpl;
 
 public class EhCacheManager implements CacheManager
 {
 	private final String regionName;
 	private final net.sf.ehcache.CacheManager cacheManager;
 
-	public final SessionFactory sessionFactory;
+	public final SessionFactoryImpl sessionFactory;
 
-	public EhCacheManager( final SessionFactory sessionFactory, final net.sf.ehcache.CacheManager cacheManager, final String regionName )
+	public EhCacheManager( final SessionFactoryImpl sessionFactory, final net.sf.ehcache.CacheManager cacheManager, final String regionName )
 	{
 		this.sessionFactory = sessionFactory;
 		this.cacheManager = cacheManager;

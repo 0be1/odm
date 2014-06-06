@@ -26,51 +26,37 @@ package fr.mtlx.odm;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 
-import javax.naming.InvalidNameException;
-import javax.naming.directory.DirContext;
-import javax.naming.ldap.Rdn;
-
-import org.springframework.ldap.core.ContextSource;
-
-import fr.mtlx.odm.cache.CacheManager;
-import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.filters.FilterBuilder;
 
 public interface SessionFactory extends Serializable
 {
-	<T> ClassMetadata<T> getClassMetadata( Class<T> entityClass );
-
-	ClassMetadata<?> getClassMetadata( String entityName );
-
-	boolean isPersistentClass( String className );
+	boolean isPersistentClass( final String className );
 
 	/**
 	 * clazz est persistente si c'est une super classe d'une classe mappée
+	 * 
 	 * @param clazz
 	 * @return true if clazz is persistent
 	 */
 	boolean isPersistentClass( Class<?> clazz );
 
-	DirContext getDirContext();
-
-	ContextSource getContextSource();
-	
 	Session openSession();
-	
+
 	void closeSession();
 	
-	Session getCurrentSession();
+	void addClass( Class<?> persistentClass );
 	
+	void addClass( String persistentClassName );
+
+	Session getCurrentSession();
+
+	<T> FilterBuilder<T> filterBuilder(Class<T> persistentClass);
+
 	boolean isOperationalAttribute( String attributeId );
 	
-	Converter getConverter( String syntax, Type objectType, Type directoryType );
+	<T> ClassMetadata<T> getClassMetadata( Class<T> entityClass );
 
-	<T> Rdn composeName( final T object, final String propertyName ) throws InvalidNameException, MappingException;
-
-	CacheManager getCacheManager();
-
-	ClassMetadata<?> getClassMetadata( String[] objectClasses ) throws IllegalAccessException, InvocationTargetException, ClassNotFoundException;
-	
-	<T> BasicProxyFactory<T> getProxyFactory( Class<T> clazz, Class<?>[] interfaces );
+	ClassMetadata<?> getClassMetadata( final String[] objectClasses ) throws IllegalAccessException, InvocationTargetException,
+			ClassNotFoundException;
 }

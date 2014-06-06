@@ -24,56 +24,41 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import fr.mtlx.odm.SessionFactoryImpl;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import com.google.common.collect.Lists;
-
-import fr.mtlx.odm.Session;
-
-public class AndFilter implements Filter
+public class AndFilter extends CompositeFilter
 {
-	private final List<Filter> filterlist;
 	
-	public AndFilter( )
+	AndFilter( final SessionFactoryImpl sessionFactory , final Filter... filters )
 	{
-		this.filterlist = Lists.newArrayList();
+		super( filters );
 	}
-	
-	public AndFilter( final Filter[] filters )
-	{
-		this.filterlist = Lists.newArrayList( checkNotNull( filters, "filters is null" ) );
-	}
-	
-	public AndFilter add( Filter filter )
+
+	@Override
+	public AndFilter add( final Filter filter )
 	{
 		if (filter instanceof AndFilter )
 		{
-			AndFilter andFilter = (AndFilter)filter;
-			
-			filterlist.addAll( andFilter.filterlist );
+			filters.addAll( ((AndFilter)filter).filters );
 		}
 		else
 		{
-			filterlist.add( checkNotNull( filter, "filter is null" ) );
+			super.add( filter );
 		}
 		
 		return this;
 	}
 	
 	@Override
-	public String encode( @Nullable final Class<?> persistentClass, @Nullable final Session session )
+	public String encode()
 	{
 		String retval;
 		
 		final StringBuilder sb = new StringBuilder( "(" ).append( '&' );
 
-		for ( Filter filter : filterlist )
+		for ( Filter filter : filters )
 		{
-			sb.append( filter.encode( persistentClass, session ) );
+			sb.append( filter.encode() );
 		}
 
 		sb.append( ")" );

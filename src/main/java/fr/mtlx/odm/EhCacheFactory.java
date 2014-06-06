@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import net.sf.ehcache.CacheManager;
 import fr.mtlx.odm.cache.EhCacheManager;
 
-public class EhCacheFactory implements CacheFactory
+public class EhCacheFactory extends CacheFactory
 {
 	private final CacheManager cacheManager;
 
@@ -38,7 +38,7 @@ public class EhCacheFactory implements CacheFactory
 	}
 
 	@Override
-	public fr.mtlx.odm.cache.CacheManager getCache( final SessionFactory sessionFactory, final String region )
+	fr.mtlx.odm.cache.CacheManager getCache( final SessionFactoryImpl sessionFactory, final String region )
 	{
 		return new EhCacheManager( sessionFactory, cacheManager, region );
 	}

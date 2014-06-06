@@ -26,11 +26,7 @@ package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import javax.annotation.Nullable;
-
-import fr.mtlx.odm.Session;
-
-class RawCompareFilter implements Filter
+class RawCompareFilter extends FilterImpl
 {
 	private final Comparison op;
 	
@@ -46,7 +42,7 @@ class RawCompareFilter implements Filter
 	}
 
 	@Override
-	public String encode( @Nullable final Class<?> persistentClass, @Nullable final Session session )
+	public String encode()
 	{
 		StringBuilder sb = new StringBuilder( "(" );
 

@@ -24,10 +24,6 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-import static fr.mtlx.odm.filters.FilterBuilder.and;
-import static fr.mtlx.odm.filters.FilterBuilder.objectClass;
-import static fr.mtlx.odm.filters.FilterBuilder.or;
-import static fr.mtlx.odm.filters.FilterBuilder.property;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -49,48 +45,48 @@ import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactory;
 import fr.mtlx.odm.model.Person;
 
-
 @RunWith( SpringJUnit4ClassRunner.class )
-//@ContextConfiguration( locations =
-//{ "classpath:testContext.xml", "classpath:ldapContext.xml" } )
+// @ContextConfiguration( locations =
+// { "classpath:testContext.xml", "classpath:ldapContext.xml" } )
 public class TestFilterBuilder
 {
 	@Autowired
 	private SessionFactory sessionFactory;
 
-	private <T> ParameterizedFilter<T> buildFilterForClass( Class<T> persistentClass )
+	private <T> CompositeFilter buildFilterForClass( Class<T> persistentClass ) throws MappingException
 	{
 		ClassMetadata<T> metadata = sessionFactory.getClassMetadata( persistentClass );
 
 		if ( metadata == null )
 			throw new MappingException( String.format( "%s is not a persistent class", persistentClass ) );
 
-		ParameterizedFilter<T> filter = new ParameterizedFilter<T>( persistentClass )
-		{
-		};
+		FilterBuilder<T> fb = sessionFactory.filterBuilder( persistentClass );
+
+		CompositeFilter filter = fb.and();
 
 		for ( String oc : metadata.getObjectClassHierarchy() )
 		{
-			filter.add( objectClass( oc ) );
+			filter.add( fb.objectClass( oc ) );
 		}
 
 		for ( String oc : metadata.getAuxiliaryClasses() )
 		{
-			filter.add( objectClass( oc ) );
+			filter.add( fb.objectClass( oc ) );
 		}
 
 		return filter;
 	}
 
-	
 	@Test
 	public void test()
 	{
-		ParameterizedFilter<Person> fb = buildFilterForClass( Person.class );
-		
-		fb.add( or( property( "commonName" ).equalsTo( "alex" ), property( "surname" ).equalsTo( "mathieu" ) ) );
+		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
 
-		String encodedFilter = fb.encode( sessionFactory.getCurrentSession() );
+		CompositeFilter filter = fb.and();
+
+		filter.add( fb.or( fb.property( "commonName" ).equalsTo( "alex" ), fb.property( "surname" ).equalsTo( "mathieu" ) ) );
+
+		String encodedFilter = filter.encode();
 
 		assertNotNull( encodedFilter );
 
@@ -104,31 +100,35 @@ public class TestFilterBuilder
 	}
 
 	@Test
-	public void testCombineAndFilters()
+	public void testCombineAndFilters() throws MappingException
 	{
-		ParameterizedFilter<Person> fb = buildFilterForClass( Person.class );
-		
-		fb.add( and( property( "commonName" ).equalsTo( "alex" ), property( "surname" ).equalsTo( "mathieu" ) ) );
+		CompositeFilter filter = buildFilterForClass( Person.class );
 
-		String encodedFilter = fb.encode( sessionFactory.getCurrentSession() );
+		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+		
+		filter.add( fb.and( fb.property( "commonName" ).equalsTo( "alex" ), fb.property( "surname" ).equalsTo( "mathieu" ) ) );
+
+		String encodedFilter = filter.encode();
 
 		assertNotNull( encodedFilter );
 
 		assertThat( CharMatcher.is( '&' ).countIn( encodedFilter ), is( 1 ) );
 	}
-	
-	@Test( expected= MappingException.class)
-	public void testPropertyFilterWrongType() throws InvalidNameException
+
+	@Test( expected = MappingException.class )
+	public void testPropertyFilterWrongType() throws InvalidNameException, MappingException
 	{
 		Person p = new Person();
-		
-		p.setDn( new LdapName("uid=test,dc=foo,dc=bar") );
-		
-		ParameterizedFilter<Person> fb = buildFilterForClass( Person.class );
-		
-		fb.add( property( "commonName" ).equalsTo( 1) ).add( property( "surname" ).equalsTo( "mathieu" ) );
 
-		String encodedFilter = fb.encode( sessionFactory.getCurrentSession() );
+		p.setDn( new LdapName( "uid=test,dc=foo,dc=bar" ) );
+
+		CompositeFilter filter = buildFilterForClass( Person.class );
+
+		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+		
+		filter.add( fb.property( "commonName" ).equalsTo( 1 ) ).add( fb.property( "surname" ).equalsTo( "mathieu" ) );
+
+		String encodedFilter = filter.encode();
 
 		assertNotNull( encodedFilter );
 

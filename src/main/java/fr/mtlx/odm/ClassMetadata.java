@@ -28,12 +28,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Set;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import fr.mtlx.odm.filters.Filter;
-
-import com.google.common.collect.ImmutableSet;
 
 public interface ClassMetadata<T>
 {
@@ -56,21 +55,19 @@ public interface ClassMetadata<T>
 
 	Constructor<T> getDefaultConstructor();
 
-	List<String> getObjectClassHierarchy();
+	ImmutableList<String> getObjectClassHierarchy();
 	
 	ImmutableSet<String> getAuxiliaryClasses();
 
 	String getStructuralClass();
 	
-	Set<String> getProperties();
-
 	Field getIdentifier();
 
 	Filter getByExampleFilter();
 
-	AttributeMetadata<T> getAttributeMetadataByAttributeName( String attributeName );
+	AttributeMetadata getAttributeMetadataByAttributeName( String attributeName );
 
-	AttributeMetadata<T> getAttributeMetadataByPropertyName( String propertyName );
+	AttributeMetadata getAttributeMetadataByPropertyName( String propertyName );
 	
 	Method[] prepersistMethods();
 	
@@ -81,4 +78,6 @@ public interface ClassMetadata<T>
 	 * @return
 	 */
 	boolean isStrict();
+
+	ImmutableSet<String> getProperties();
 }

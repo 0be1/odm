@@ -1,4 +1,7 @@
-package fr.mtlx.odm.filters;
+package fr.mtlx.odm.converters;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
 
 /*
  * #%L
@@ -24,25 +27,29 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public abstract class CompoundFilterBuilder implements CompareCriterion
+public class DistinguishedNameConverter extends SyntaxConverter<String, LdapName>
 {
-	public OrFilter or( final Filter... filters )
+	public DistinguishedNameConverter()
 	{
-		return new OrFilter( filters );
+		super( String.class, LdapName.class );
 	}
 
-	public AndFilter and( final Filter... filters )
+	@Override
+	public String to( final LdapName object ) throws ConvertionException
 	{
-		return new AndFilter( filters );
+		return object.toString();
 	}
 
-	public PropertyCriterion property( String propertyName )
+	@Override
+	public LdapName from( final String value ) throws ConvertionException
 	{
-		return new PropertyCriterion( propertyName );
-	}
-	
-	public NotFilter not( final Filter filter )
-	{
-		return new NotFilter( filter );
+		try
+		{
+			return new LdapName( value );
+		}
+		catch ( InvalidNameException e )
+		{
+			throw new ConvertionException( e );
+		}
 	}
 }

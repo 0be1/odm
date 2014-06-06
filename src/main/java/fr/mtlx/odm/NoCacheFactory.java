@@ -28,7 +28,7 @@ import fr.mtlx.odm.cache.CacheManager;
 import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.cache.NoCache;
 
-public class NoCacheFactory implements CacheFactory
+public class NoCacheFactory extends CacheFactory
 {
 	public static class NoCacheManager implements CacheManager
 	{
@@ -45,7 +45,7 @@ public class NoCacheFactory implements CacheFactory
 	}
 	
 	@Override
-	public CacheManager getCache( final SessionFactory sessionFactory, final String name )
+	CacheManager getCache( final SessionFactoryImpl sessionFactory, final String name )
 	{
 		return new NoCacheManager();
 	}

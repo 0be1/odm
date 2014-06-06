@@ -26,10 +26,6 @@ package fr.mtlx.odm.model;
 
 import java.io.Serializable;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-
 public abstract class IdProvider<Id extends Serializable>
 {
 	private transient final Class<Id> clazz;
@@ -66,12 +62,12 @@ public abstract class IdProvider<Id extends Serializable>
 
 		IdProvider<?> otherObject = (IdProvider<?>) obj;
 
-		return new EqualsBuilder().append( this.getDn(), otherObject.getDn() ).isEquals();
+		return this.getDn() != null && this.getDn().equals( otherObject.getDn() );
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return new HashCodeBuilder().append( this.getDn() ).toHashCode();
+		return this.getDn() == null ? 0 : this.getDn().hashCode();
 	}
 }

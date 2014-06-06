@@ -1,5 +1,6 @@
 package fr.mtlx.odm.converters;
 
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -24,39 +25,23 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class BooleanConverter extends AbstractConverter
+public class BooleanConverter extends SyntaxConverter<String, Boolean>
 {
-	@Override
-	public String getSyntax()
+	
+	public BooleanConverter()
 	{
-		return "1.3.6.1.4.1.1466.115.121.1.7";
+		super( String.class, Boolean.class);
 	}
 
 	@Override
-	public Object toDirectory( final Object object ) throws ConvertionException
+	public String to( Boolean object ) throws ConvertionException
 	{
-		Boolean retval = (Boolean)super.toDirectory( object );
-		
-		return retval != null ? retval.toString() : retval;
+		return object.toString();
 	}
 
 	@Override
-	public Object fromDirectory( final Object value ) throws ConvertionException
+	public Boolean from( String value ) throws ConvertionException
 	{
-		String retval = (String)super.fromDirectory( value );
-		
-		return retval != null ? new Boolean( retval ) : retval;
-	}
-
-	@Override
-	public Class<?> directoryType()
-	{
-		return String.class;
-	}
-
-	@Override
-	public Class<?> objectType()
-	{
-		return Boolean.class;
+		return new Boolean( value );
 	}
 }

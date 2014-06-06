@@ -26,8 +26,6 @@ package fr.mtlx.odm.converters;
 
 public interface Converter
 {
-	String getSyntax();
-	
 	Class<?> directoryType();
 	
 	Class<?> objectType();

@@ -27,8 +27,6 @@ package fr.mtlx.odm;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Queue;
@@ -58,7 +56,6 @@ import fr.mtlx.odm.cache.ContextMapCache;
 import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.cache.SessionCacheManager;
 import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.converters.EntryResolverConverter;
 
 public class SessionImpl implements Session
 {
@@ -133,7 +130,7 @@ public class SessionImpl implements Session
 
 	private final LdapTemplate ops;
 
-	private final SessionFactory sessionFactory;
+	private final SessionFactoryImpl sessionFactory;
 
 	private final CacheManager objectCacheManager;
 
@@ -176,7 +173,7 @@ public class SessionImpl implements Session
 		return retval;
 	}
 
-	public SessionImpl( final SessionFactory sessionFactory )
+	SessionImpl( final SpringSessionFactoryImpl sessionFactory )
 	{
 		this.sessionFactory = checkNotNull( sessionFactory, "sessionFactory is null" );
 
@@ -193,48 +190,32 @@ public class SessionImpl implements Session
 		getObjectCacheManager().clear();
 	}
 
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
+//	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	@Override
-	public Converter getConverter( final String syntax, final Type objectType, final Type directoryType ) throws MappingException
+	public Converter getSyntaxConverter( final String syntax  ) throws MappingException
 	{
-		final Type concreteType = inferGenericType( objectType );
+		
+		final Converter converter = getSessionFactory().getConverter( syntax );
 
-		Converter converter = getSessionFactory().getConverter( syntax, concreteType, directoryType );
-
-		if ( converter == null )
-		{
-			if ( objectType instanceof Class<?> )
-			{
-				Class<?> persistentClass = (Class<?>)concreteType;
-
-				if ( getSessionFactory().isPersistentClass( persistentClass ) )
-				{
-					converter = new EntryResolverConverter( persistentClass, this );
-				}
-			}
-		}
+//		if ( converter == null )
+//		{
+//			final Type concreteType = inferGenericType( objectType );
+//
+//			if ( objectType instanceof Class<?> )
+//			{
+//				Class<?> persistentClass = (Class<?>)concreteType;
+//
+//				if ( getSessionFactory().isPersistentClass( persistentClass ) )
+//				{
+//					converter = new EntryResolverConverter( persistentClass, this );
+//				}
+//			}
+//		}
 
 		if ( converter == null )
 			throw new MappingException( String.format( "no converter found for syntax %s", syntax ) );
 
 		return converter;
-	}
-
-	private Type inferGenericType( final Type type )
-	{
-		if ( type instanceof ParameterizedType )
-		{
-			ParameterizedType pType = (ParameterizedType)type;
-
-			final Type[] argumentTypes = pType.getActualTypeArguments();
-
-			if ( argumentTypes.length == 1 )
-				return argumentTypes[ 0 ];
-
-			return null;
-		}
-
-		return type;
 	}
 
 	@Override
@@ -244,7 +225,7 @@ public class SessionImpl implements Session
 	}
 
 	@Override
-	public SessionFactory getSessionFactory()
+	public SessionFactoryImpl getSessionFactory()
 	{
 		return sessionFactory;
 	}
@@ -355,13 +336,13 @@ public class SessionImpl implements Session
 
 			for ( String propertyName : metadata.getProperties() )
 			{
-				final AttributeMetadata<?> ameta = metadata.getAttributeMetadataByPropertyName( propertyName );
+				final AttributeMetadata ameta = metadata.getAttributeMetadataByPropertyName( propertyName );
 
 				@SuppressWarnings(
 				{ "rawtypes", "unchecked" } )
 				final ClassAssistant<?> assistant = new ClassAssistant( metadata );
 
-				final Converter converter = getConverter( ameta.getSyntax(), ameta.getObjectType(), ameta.getDirectoryType() );
+				final Converter converter = getSyntaxConverter( ameta.getSyntax() );
 
 				if ( ameta.isMultivalued() )
 				{

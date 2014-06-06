@@ -31,43 +31,50 @@ import javax.naming.Name;
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
-import fr.mtlx.odm.MappingException;
-import fr.mtlx.odm.Session;
+import fr.mtlx.odm.converters.ConvertionException;
 
-public class PropertyCompareFilter implements Filter
+public class PropertyCompareFilter<T> extends FilterImpl
 {
 	protected final String property;
 
 	protected final Object value;
 
 	protected final Comparison op;
+	
+	protected final Class<T> persistentClass;
 
-	PropertyCompareFilter( final Comparison op, final String property, final Object value )
+	private final Filter filter;
+
+	PropertyCompareFilter( final Class<T> persistantClass, final Comparison op, final String property, final Object value )
 	{
 		this.property = checkNotNull( property );
 		this.value = value;
 		this.op = op;
+		
+		this.persistentClass = checkNotNull( persistantClass );
+		
+		filter = composeFilter();
 	}
 
 	@Override
-	public String encode( final Class<?> persistentClass, final Session session )
+	public String encode()
 	{
-		return composeFilter( persistentClass, session ).encode( persistentClass, session );
+		return filter.encode();
 	}
 
-	protected Filter composeFilter( final Class<?> persistentClass, final Session session )
+	protected Filter composeFilter()
 	{
-		final ClassMetadata<?> metadata = checkNotNull( session ).getSessionFactory().getClassMetadata( persistentClass );
+		final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata( persistentClass );
 
 		if ( metadata == null )
-			throw new MappingException( String.format( "%s is not a persistent class", persistentClass ) );
+			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", persistentClass ) );
 
-		final AttributeMetadata<?> attribute = metadata.getAttributeMetadataByPropertyName( property );
+		final AttributeMetadata attribute = metadata.getAttributeMetadataByPropertyName( property );
 
 		if ( attribute == null )
-			throw new MappingException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
+			throw new UnsupportedOperationException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
 
-		return new RawCompareFilter( op, attribute.getAttirbuteName(), formatValue( encodeValue( value, attribute, session ) ) );
+		return new RawCompareFilter( op, attribute.getAttirbuteName(), formatValue( encodeValue( value, attribute ) ) );
 	}
 	
 	protected String formatValue( final String encodedValue )
@@ -75,7 +82,7 @@ public class PropertyCompareFilter implements Filter
 		return FilterEncoder.encode( encodedValue );
 	}
 	
-	protected String encodeValue( final Object value, final AttributeMetadata<?> attribute, final Session session )
+	protected String encodeValue( final Object value, final AttributeMetadata attribute )
 	{
 		if ( value != null )
 		{
@@ -84,9 +91,9 @@ public class PropertyCompareFilter implements Filter
 				Class<?> clazz = (Class<?>)attribute.getObjectType();
 
 				if ( !clazz.isInstance( value ) )
-					throw new MappingException( String.format( "wrong type (%s) for property %s in %s, expecting %s", value.getClass(), property, attribute.getObjectType(), clazz ) );
+					throw new UnsupportedOperationException( String.format( "wrong type (%s) for property %s in %s, expecting %s", value.getClass(), property, attribute.getObjectType(), clazz ) );
 
-				ClassMetadata<?> refmetadata = session.getSessionFactory().getClassMetadata( clazz );
+				ClassMetadata<?> refmetadata = getSessionFactory().getClassMetadata( clazz );
 
 				if ( refmetadata != null )
 				{
@@ -94,7 +101,15 @@ public class PropertyCompareFilter implements Filter
 					{ "rawtypes", "unchecked" } )
 					ClassAssistant<?> assistant = new ClassAssistant( refmetadata );
 
-					Name refdn = assistant.getIdentifier( value );
+					Name refdn;
+					try
+					{
+						refdn = assistant.getIdentifier( value );
+					}
+					catch ( Exception e )
+					{
+						throw new ConvertionException(e);
+					}
 
 					return refdn.toString();
 				}

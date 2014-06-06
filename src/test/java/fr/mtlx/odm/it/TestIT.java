@@ -40,7 +40,7 @@ import org.springframework.ldap.core.support.LdapContextSource;
 
 import fr.mtlx.odm.Session;
 import fr.mtlx.odm.SessionFactory;
-import fr.mtlx.odm.SessionFactoryImpl;
+import fr.mtlx.odm.SpringSessionFactoryImpl;
 import fr.mtlx.odm.model.Person;
 
 
@@ -73,9 +73,9 @@ public class TestIT
 		
 		ContextSource contextSource = getWiredContextSource( ds.getServer() );
 		
-		factory = new SessionFactoryImpl( contextSource );
+		factory = new SpringSessionFactoryImpl( contextSource );
 		
-		((SessionFactoryImpl )factory).addMappedClass( Person.class.getName() );
+		factory.addClass( Person.class );
 	}
 	
 	@Before

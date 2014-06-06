@@ -65,10 +65,10 @@ public class OperationsImpl<T> implements Operations<T>
 
 		this.session = checkNotNull( session );
 
-		this.metadata = session.getSessionFactory().getClassMetadata( persistentClass );
+		this.metadata = ((SessionFactoryImpl)session.getSessionFactory()).getClassMetadata( persistentClass );
 
 		if ( metadata == null )
-			throw new MappingException( String.format( "%s is not a persistent class", persistentClass ) );
+			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", persistentClass ) );
 
 		this.assistant = new ClassAssistant<T>( metadata );
 	}
@@ -98,7 +98,7 @@ public class OperationsImpl<T> implements Operations<T>
 
 			entry = mapper.doMapFromContext( context );
 
-			session.getSessionFactory().getCacheManager().getCacheFor( persistentClass ).store( dn, entry );
+			((SessionFactoryImpl)session.getSessionFactory()).getCacheManager().getCacheFor( persistentClass ).store( dn, entry );
 		}
 
 		return entry;
@@ -142,7 +142,7 @@ public class OperationsImpl<T> implements Operations<T>
 
 				entry = mapper.doMapFromContext( ctx );
 
-				session.getSessionFactory().getCacheManager().getCacheFor( persistentClass ).store( ctx.getDn(), entry );
+				((SessionFactoryImpl)session.getSessionFactory()).getCacheManager().getCacheFor( persistentClass ).store( ctx.getDn(), entry );
 			}
 			results.add( entry );
 		}

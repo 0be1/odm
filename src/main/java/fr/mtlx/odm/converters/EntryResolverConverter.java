@@ -26,64 +26,52 @@ package fr.mtlx.odm.converters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import javax.naming.Name;
 import javax.naming.NameNotFoundException;
+import javax.naming.ldap.LdapName;
 
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
-import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.Session;
 
-public class EntryResolverConverter<T> extends LdapNameConverter
+public class EntryResolverConverter<T extends Object> extends AttributeConverter<LdapName, T>
 {
 	private final Session session;
 
-	private final Class<T> persistentClass;
-
 	private final ClassMetadata<T> metadata;
 
-	public EntryResolverConverter( final Class<T> persistentClass, final Session session )
+	public EntryResolverConverter( final Class<T> objectClass, final Session session )
 	{
-		super();
+		super( LdapName.class, objectClass );
 
 		this.session = checkNotNull( session, "session is null" );
 
-		this.persistentClass = checkNotNull( persistentClass, "persistentClass is null" );
-
-		this.metadata = this.session.getSessionFactory().getClassMetadata( this.persistentClass );
+		this.metadata = session.getSessionFactory().getClassMetadata( this.objectType );
 
 		if ( metadata == null )
-			throw new MappingException( String.format( "%s is not a persistent class", this.persistentClass ) );
+			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", this.objectType ) );
 	}
 
 	@Override
-	public Object toDirectory( final Object object ) throws ConvertionException
+	public LdapName to( final T object ) throws ConvertionException
 	{
 		final ClassAssistant<T> assistant = new ClassAssistant<T>( metadata );
 
 		try
 		{
-			final Name dn = assistant.getIdentifier( object );
-
-			return super.toDirectory( dn );
+			return assistant.getIdentifier( object );
 		}
-		catch ( MappingException e )
+		catch ( Exception e )
 		{
 			throw new ConvertionException( e );
 		}
 	}
 
 	@Override
-	public Object fromDirectory( Object value ) throws ConvertionException
+	public T from( LdapName dn ) throws ConvertionException
 	{
-		final Name dn = (Name)super.fromDirectory( value );
-
-		if ( dn == null )
-			return null;
-
 		try
 		{
-			return session.getOperations( persistentClass ).lookup( dn );
+			return session.getOperations( objectType ).lookup( dn );
 		}
 		catch ( NameNotFoundException e )
 		{

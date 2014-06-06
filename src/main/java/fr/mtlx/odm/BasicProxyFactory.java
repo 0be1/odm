@@ -61,7 +61,7 @@ class BasicProxyFactory<T>
 			this.proxiedObject = checkNotNull( proxiedObject, "proxiedObject is null" );
 			this.proxiedClass = checkNotNull( proxiedClass, "proxiedClass is null" );
 
-			this.metadata = session.getSessionFactory().getClassMetadata( proxiedClass );
+			this.metadata = ((SessionFactoryImpl)session.getSessionFactory()).getClassMetadata( proxiedClass );
 
 			resolver = new ProxyResolver<S>( context, metadata, session );
 		}
@@ -89,7 +89,7 @@ class BasicProxyFactory<T>
 
 		private Method getSetter( final String property ) throws SecurityException, NoSuchMethodException
 		{
-			final AttributeMetadata<S> att = metadata.getAttributeMetadataByPropertyName( property );
+			final AttributeMetadata att = metadata.getAttributeMetadataByPropertyName( property );
 			if ( att.isMultivalued() )
 			{
 				return proxiedClass.getMethod( getSetterName( property ), att.getCollectionType() );

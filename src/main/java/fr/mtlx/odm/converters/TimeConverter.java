@@ -29,39 +29,27 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.SimpleTimeZone;
 
-public class TimeConverter extends AbstractConverter
+public class TimeConverter extends SyntaxConverter<String, Date>
 {
+	public TimeConverter()
+	{
+		super( String.class, Date.class );
+	}
+
 	public final static SimpleDateFormat generalizedTime;
-	
-	static
-	{
-		generalizedTime = new SimpleDateFormat( "yyyyMMddHHmmss'Z'" );
 
-		generalizedTime.setTimeZone( new SimpleTimeZone( 0, "Z" ) );	
-	}
-	
 	@Override
-	public String getSyntax()
+	public String to( final Date object ) throws ConvertionException
 	{
-		return "1.3.6.1.4.1.1466.115.121.1.24";
+		return generalizedTime.format( object );
 	}
 
 	@Override
-	public Object toDirectory( final Object object ) throws ConvertionException
+	public Date from( String value ) throws ConvertionException
 	{
-		final Date retval = (Date)super.toDirectory( object );
-		
-		return retval != null ? generalizedTime.format( retval ) : retval;
-	}
-
-	@Override
-	public Object fromDirectory( final Object value ) throws ConvertionException
-	{
-		final String retval = (String)super.fromDirectory( value );
-		
 		try
 		{
-			return retval != null ? generalizedTime.parseObject( retval ) : retval;
+			return (Date)generalizedTime.parseObject( value );
 		}
 		catch ( ParseException e )
 		{
@@ -69,15 +57,10 @@ public class TimeConverter extends AbstractConverter
 		}
 	}
 
-	@Override
-	public Class<?> directoryType()
+	static
 	{
-		return String.class;
-	}
+		generalizedTime = new SimpleDateFormat( "yyyyMMddHHmmss'Z'" );
 
-	@Override
-	public Class<?> objectType()
-	{
-		return Date.class;
+		generalizedTime.setTimeZone( new SimpleTimeZone( 0, "Z" ) );
 	}
 }

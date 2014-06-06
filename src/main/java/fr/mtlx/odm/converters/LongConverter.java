@@ -1,7 +1,5 @@
 package fr.mtlx.odm.converters;
 
-import javax.annotation.Nullable;
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -26,41 +24,29 @@ import javax.annotation.Nullable;
  * #L%
  */
 
-public abstract class AbstractConverter implements Converter
+public class LongConverter extends SyntaxConverter<String, Long>
 {
-	@Override
-	public Object toDirectory( @Nullable final Object object )  throws ConvertionException
+	public LongConverter()
 	{
-		if (object == null)
-			return object;
-		
-		if (! objectType().isInstance( object ) )
-			throw new ConvertionException("type mismatch");
-		
-		return object;
+		super( String.class, Long.class);
 	}
 
 	@Override
-	public Object fromDirectory( final Object value )  throws ConvertionException
+	public String to( final Long object ) throws ConvertionException
 	{
-		if (value == null)
-			return null;
-		
-		if (! directoryType().isInstance( value ) )
-			throw new ConvertionException("type mismatch");
-		
-		return value;
+		return object.toString();
 	}
-	
-	@Override
-	public abstract String getSyntax();
-	
 
 	@Override
-	public abstract Class<?> directoryType();
-	
-
-	@Override
-	public abstract Class<?> objectType();
-	
+	public Long from( final String value ) throws ConvertionException
+	{
+		try
+		{
+			return new Long( value );
+		}
+		catch ( NumberFormatException e )
+		{
+			throw new ConvertionException( e );
+		}
+	}
 }

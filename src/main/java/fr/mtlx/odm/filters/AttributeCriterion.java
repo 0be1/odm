@@ -28,11 +28,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Joiner;
 
-public class AttributeCriterion implements CompareCriterion
+import fr.mtlx.odm.SessionFactoryImpl;
+
+public class AttributeCriterion<T> implements CompareCriterion<T>
 {
 	private final String attributeName;
 	
-	AttributeCriterion( final String propertyName )
+	AttributeCriterion( SessionFactoryImpl sessionFactory , final String propertyName )
 	{
 		this.attributeName = checkNotNull( propertyName );
 	}

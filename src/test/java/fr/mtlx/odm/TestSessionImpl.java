@@ -24,8 +24,6 @@ package fr.mtlx.odm;
  * #L%
  */
 
-import static fr.mtlx.odm.filters.FilterBuilder.not;
-import static fr.mtlx.odm.filters.FilterBuilder.objectClass;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -55,7 +53,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.support.SingleContextSource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -63,35 +60,33 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.model.GroupOfNames;
 import fr.mtlx.odm.model.GroupOfPersons;
 import fr.mtlx.odm.model.OrganizationalPerson;
 import fr.mtlx.odm.model.Person;
 
 @RunWith( SpringJUnit4ClassRunner.class )
-//@ContextConfiguration( locations =
-//{ "classpath:testContext.xml", "classpath:ldapContext.xml" } )
+// @ContextConfiguration( locations =
+// { "classpath:testContext.xml", "classpath:ldapContext.xml" } )
 @Ignore
 public class TestSessionImpl
 {
 	private SessionFactory sessionFactory;
 
 	private Session session;
-	
-	private ContextSource contextSource;
-	
+
 	private LdapContext dirContext;
-	
+
 	@Before
 	public void openSession()
 	{
 		dirContext = mock( LdapContext.class );
-		
-		contextSource = new SingleContextSource( dirContext );
-		
-	
-		sessionFactory = new SessionFactoryImpl( contextSource );
-		
+
+		SingleContextSource contextSource = new SingleContextSource( dirContext );
+
+		sessionFactory = new SpringSessionFactoryImpl( contextSource );
+
 		session = sessionFactory.openSession();
 	}
 
@@ -106,7 +101,7 @@ public class TestSessionImpl
 	public void testLookupPerson() throws NamingException
 	{
 
-		Name dn = new LdapName("cn=dummy_person,ou=personnes");
+		Name dn = new LdapName( "cn=dummy_person,ou=personnes" );
 
 		when( dirContext.lookup( dn ) ).thenReturn( dirContext );
 
@@ -122,7 +117,7 @@ public class TestSessionImpl
 	@Test
 	public void testLookupOrganizationalPerson() throws InvalidNameException, javax.naming.NameNotFoundException
 	{
-		Name dn = new LdapName("cn=dummy_op,ou=personnes");
+		Name dn = new LdapName( "cn=dummy_op,ou=personnes" );
 
 		OrganizationalPerson entry = session.getOperations( OrganizationalPerson.class ).lookup( dn );
 
@@ -142,7 +137,7 @@ public class TestSessionImpl
 	@Test( expected = NameNotFoundException.class )
 	public void testLookupUnknowDn() throws InvalidNameException, NameNotFoundException
 	{
-		Name dn = new LdapName("cn=foo,ou=personnes");
+		Name dn = new LdapName( "cn=foo,ou=personnes" );
 
 		session.getOperations( Person.class ).lookup( dn );
 	}
@@ -151,7 +146,7 @@ public class TestSessionImpl
 	@Ignore
 	public void testLookupGroupOfNames() throws InvalidNameException, NameNotFoundException
 	{
-		Name dn = new LdapName("cn=prod,ou=groupes");
+		Name dn = new LdapName( "cn=prod,ou=groupes" );
 
 		GroupOfNames entry = session.getOperations( GroupOfNames.class ).lookup( dn );
 
@@ -168,7 +163,7 @@ public class TestSessionImpl
 	public void testIsPersistent() throws InvalidNameException, NameNotFoundException
 	{
 		Name dn = new LdapName( "cn=alex,ou=personnes" );
-		
+
 		Object entry = session.getOperations( Person.class ).lookup( dn );
 
 		assertTrue( session.isPersistent( entry ) );
@@ -181,7 +176,7 @@ public class TestSessionImpl
 
 		session.getOperations( Person.class ).lookup( dn );
 
-		dn = new LdapName("cn=prod,ou=groupes");
+		dn = new LdapName( "cn=prod,ou=groupes" );
 
 		GroupOfPersons entry = session.getOperations( GroupOfPersons.class ).lookup( dn );
 
@@ -233,9 +228,10 @@ public class TestSessionImpl
 	@Test
 	public void testSearch() throws InvalidNameException, SizeLimitExceededException
 	{
-		Name dn = new LdapName("ou=personnes");
+		Name dn = new LdapName( "ou=personnes" );
 
-		List<Person> entries = session.getOperations( Person.class ).search( dn ).add( not( objectClass( "ENTPerson" ) ) ).list();
+		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+		List<Person> entries = session.getOperations( Person.class ).search( dn ).add( fb.not( fb.objectClass( "ENTPerson" ) ) ).list();
 
 		assertNotNull( entries );
 
@@ -254,12 +250,14 @@ public class TestSessionImpl
 	@Test
 	public void testPagedSearch() throws InvalidNameException
 	{
-		Name dn = new LdapName("ou=personnes");
+		Name dn = new LdapName( "ou=personnes" );
 		int n = 0;
-		
+
+		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+
 		Iterable<List<Person>> results = session.getOperations( Person.class ).search( dn )
-			.add( not( objectClass( "ENTPerson" ) ) )
-			.pages( 5 );
+				.add( fb.not( fb.objectClass( "ENTPerson" ) ) )
+				.pages( 5 );
 
 		assertNotNull( results );
 
@@ -308,7 +306,7 @@ public class TestSessionImpl
 	@Test
 	public void testModify() throws InvalidNameException, NameNotFoundException
 	{
-		Name dn = new LdapName("cn=fire,ou=personnes");
+		Name dn = new LdapName( "cn=fire,ou=personnes" );
 
 		Person entry = session.getOperations( Person.class ).lookup( dn );
 
@@ -324,7 +322,7 @@ public class TestSessionImpl
 	@Test
 	public void testUnbind() throws InvalidNameException, NameNotFoundException
 	{
-		Name dn = new LdapName("cn=fire,ou=personnes");
+		Name dn = new LdapName( "cn=fire,ou=personnes" );
 
 		Person entry = session.getOperations( Person.class ).lookup( dn );
 

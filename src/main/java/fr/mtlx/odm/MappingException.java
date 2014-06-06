@@ -24,14 +24,9 @@ package fr.mtlx.odm;
  * #L%
  */
 
-public class MappingException extends RuntimeException
+@SuppressWarnings( "serial" )
+public class MappingException extends Exception
 {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 2908057853179144437L;
-
-	
 	public MappingException()
 	{
 		super();

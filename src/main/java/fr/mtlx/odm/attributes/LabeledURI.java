@@ -66,4 +66,10 @@ public class LabeledURI implements Attribute
 
 		return retval.toString();
 	}
+
+	@Override
+	public String getSyntax()
+	{
+		return "1.3.6.1.4.1.1466.115.121.1.15";
+	}
 }

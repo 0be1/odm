@@ -24,23 +24,22 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class DirectoryStringConverter extends AbstractConverter
+public class DirectoryStringConverter extends SyntaxConverter<String, String>
 {
-	@Override
-	public String getSyntax()
+	public DirectoryStringConverter()
 	{
-		return "1.3.6.1.4.1.1466.115.121.1.15";
+		super( String.class, String.class );
 	}
 
 	@Override
-	public Class<?> directoryType()
+	public String to( String object ) throws ConvertionException
 	{
-		return String.class;
+		return object;
 	}
 
 	@Override
-	public Class<?> objectType()
+	public String from( String value ) throws ConvertionException
 	{
-		return String.class;
+		return value;
 	}
 }

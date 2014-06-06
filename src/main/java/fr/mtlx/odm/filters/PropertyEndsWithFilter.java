@@ -1,5 +1,6 @@
 package fr.mtlx.odm.filters;
 
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,11 +26,11 @@ package fr.mtlx.odm.filters;
  */
 
 
-public class PropertyEndsWithFilter extends PropertyCompareFilter
+public class PropertyEndsWithFilter<T> extends PropertyCompareFilter<T>
 {
-	PropertyEndsWithFilter( final String property, final Object value )
+	PropertyEndsWithFilter( final Class<T> persistentClass, final String property, final Object value )
 	{
-		super( Comparison.equals, property, value );
+		super( persistentClass, Comparison.equals, property, value );
 	}
 
 	@Override

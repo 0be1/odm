@@ -32,7 +32,7 @@ import fr.mtlx.odm.attributes.LabeledURI;
  * #L%
  */
 
-public class LabeledURIConverter extends GenericConverter<String, LabeledURI>
+public class LabeledURIConverter extends AttributeConverter<String, LabeledURI>
 {
 	protected LabeledURIConverter( final Class<String> directoryType, final Class<LabeledURI> objectType )
 	{
@@ -42,12 +42,6 @@ public class LabeledURIConverter extends GenericConverter<String, LabeledURI>
 	public LabeledURIConverter()
 	{
 		this( String.class, LabeledURI.class );
-	}
-
-	@Override
-	public String getSyntax()
-	{
-		return "1.3.6.1.4.1.1466.115.121.1.15";
 	}
 
 	@Override

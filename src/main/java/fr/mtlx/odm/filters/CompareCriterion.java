@@ -24,7 +24,7 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public interface CompareCriterion
+public interface CompareCriterion<T>
 {
 	Filter equalsTo( Object value );
 	

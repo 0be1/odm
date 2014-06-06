@@ -26,7 +26,7 @@ package fr.mtlx.odm;
 
 import fr.mtlx.odm.cache.CacheManager;
 
-public interface CacheFactory
+abstract class CacheFactory
 {
-	CacheManager getCache( final SessionFactory sessionFactory, final String name );
+	abstract CacheManager getCache( final SessionFactoryImpl sessionFactory, final String name );
 }

@@ -24,49 +24,29 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class IntegerConverter extends AbstractConverter
+public class IntegerConverter extends SyntaxConverter<String, Integer>
 {
-	@Override
-	public String getSyntax()
+	public IntegerConverter()
 	{
-		return "1.3.6.1.4.1.1466.115.121.1.27";
+		super( String.class, Integer.class);
 	}
 
 	@Override
-	public Object toDirectory( Object object ) throws ConvertionException
+	public String to( final Integer object ) throws ConvertionException
 	{
-		final Integer retval = (Integer)super.toDirectory( object );
-
-		return retval != null ? object.toString() : retval;
+		return object.toString();
 	}
 
 	@Override
-	public Object fromDirectory( Object value ) throws ConvertionException
+	public Integer from( final String value ) throws ConvertionException
 	{
-		final String retval = (String)super.fromDirectory( value );
-
-		if ( retval == null )
-			return retval;
-
 		try
 		{
-			return new Integer( value.toString() );
+			return new Integer( value );
 		}
 		catch ( NumberFormatException e )
 		{
 			throw new ConvertionException( e );
 		}
-	}
-
-	@Override
-	public Class<?> directoryType()
-	{
-		return String.class;
-	}
-
-	@Override
-	public Class<?> objectType()
-	{
-		return Integer.class;
 	}
 }

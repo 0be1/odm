@@ -30,16 +30,15 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 import fr.mtlx.odm.AttributeMetadata;
-import fr.mtlx.odm.Session;
 
 
-public class PropertySubstringsWithFilter extends PropertyCompareFilter
+public class PropertySubstringsWithFilter<T> extends PropertyCompareFilter<T>
 {
 	public final static char WILDCARD = '*';
 	
-	PropertySubstringsWithFilter( final String property, final Object... values )
+	PropertySubstringsWithFilter( final Class<T> persitentClass, final String property, final Object... values )
 	{
-		super( Comparison.equals, property, values );
+		super( persitentClass, Comparison.equals, property, values );
 	}
 
 	@Override
@@ -49,7 +48,7 @@ public class PropertySubstringsWithFilter extends PropertyCompareFilter
 	}
 	
 	@Override
-	protected String encodeValue( final Object value, final AttributeMetadata<?> attribute, final Session session )
+	protected String encodeValue( final Object value, final AttributeMetadata attribute)
 	{
 		List<String> encodedValues = Lists.newArrayList();
 		
@@ -57,7 +56,7 @@ public class PropertySubstringsWithFilter extends PropertyCompareFilter
 		
 		for (Object val : values )
 		{
-			encodedValues.add( super.encodeValue( val, attribute, session ) );
+			encodedValues.add( super.encodeValue( val, attribute ) );
 		}
 		
 		return Joiner.on( WILDCARD ).skipNulls().join( encodedValues );
