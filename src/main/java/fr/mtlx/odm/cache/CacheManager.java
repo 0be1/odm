@@ -24,9 +24,8 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
-public interface CacheManager
-{
-	<T> EntityCache<T> getCacheFor( Class<T> persistentClass );
-	
-	void clear( );
+public interface CacheManager {
+	<T> EntityCache<T> getCacheFor(Class<T> persistentClass);
+
+	void clear();
 }

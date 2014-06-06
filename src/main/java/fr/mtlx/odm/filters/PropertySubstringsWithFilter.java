@@ -31,34 +31,30 @@ import com.google.common.collect.Lists;
 
 import fr.mtlx.odm.AttributeMetadata;
 
-
-public class PropertySubstringsWithFilter<T> extends PropertyCompareFilter<T>
-{
+public class PropertySubstringsWithFilter<T> extends PropertyCompareFilter<T> {
 	public final static char WILDCARD = '*';
-	
-	PropertySubstringsWithFilter( final Class<T> persitentClass, final String property, final Object... values )
-	{
-		super( persitentClass, Comparison.equals, property, values );
+
+	PropertySubstringsWithFilter(final Class<T> persitentClass,
+			final String property, final Object... values) {
+		super(persitentClass, Comparison.equals, property, values);
 	}
 
 	@Override
-	protected String formatValue( final String encodedValue )
-	{
+	protected String formatValue(final String encodedValue) {
 		return WILDCARD + encodedValue + WILDCARD;
 	}
-	
+
 	@Override
-	protected String encodeValue( final Object value, final AttributeMetadata attribute)
-	{
+	protected String encodeValue(final Object value,
+			final AttributeMetadata attribute) {
 		List<String> encodedValues = Lists.newArrayList();
-		
-		Object[]  values = (Object[])value;
-		
-		for (Object val : values )
-		{
-			encodedValues.add( super.encodeValue( val, attribute ) );
+
+		Object[] values = (Object[]) value;
+
+		for (Object val : values) {
+			encodedValues.add(super.encodeValue(val, attribute));
 		}
-		
-		return Joiner.on( WILDCARD ).skipNulls().join( encodedValues );
+
+		return Joiner.on(WILDCARD).skipNulls().join(encodedValues);
 	}
 }

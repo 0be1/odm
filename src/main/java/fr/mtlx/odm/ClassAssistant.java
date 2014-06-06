@@ -47,171 +47,139 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.ReflectionUtils.FieldCallback;
 import org.springframework.util.ReflectionUtils.FieldFilter;
 
-public class ClassAssistant<T>
-{
+public class ClassAssistant<T> {
 	private final ClassMetadata<T> metadata;
 
-	public ClassAssistant( final ClassMetadata<T> metadata )
-	{
-		this.metadata = checkNotNull( metadata );
+	public ClassAssistant(final ClassMetadata<T> metadata) {
+		this.metadata = checkNotNull(metadata);
 	}
 
-	public void setIdentifier( Object object, Name value )
-	{
+	public void setIdentifier(Object object, Name value) {
 		String identifier = metadata.getIdentifierPropertyName();
 
-		try
-		{
-			PropertyUtils.setSimpleProperty( object, identifier, value );
-		}
-		catch ( Exception e )
-		{
-			throw new UnsupportedOperationException( e );
+		try {
+			PropertyUtils.setSimpleProperty(object, identifier, value);
+		} catch (Exception e) {
+			throw new UnsupportedOperationException(e);
 		}
 	}
 
-	public LdapName getIdentifier( Object object ) throws InvalidNameException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
-	{
+	public LdapName getIdentifier(Object object) throws InvalidNameException,
+			IllegalAccessException, InvocationTargetException,
+			NoSuchMethodException {
 		String identifier = metadata.getIdentifierPropertyName();
 
-		return new LdapName( BeanUtils.getProperty( object, identifier ) );
+		return new LdapName(BeanUtils.getProperty(object, identifier));
 	}
-	
-	public boolean isCollection( Type type )
-	{
+
+	public boolean isCollection(Type type) {
 		Class<?> c = type.getClass();
 
-		return Arrays.asList( c.getInterfaces() ).contains( Collection.class ) || c.equals( Collection.class );
+		return Arrays.asList(c.getInterfaces()).contains(Collection.class)
+				|| c.equals(Collection.class);
 	}
 
-	public Object getValue( Object object, String propertyName )
-	{
-		try
-		{
-			return PropertyUtils.getSimpleProperty( object, propertyName );
-		}
-		catch ( Exception e )
-		{
-			throw new UnsupportedOperationException( e );
+	public Object getValue(Object object, String propertyName) {
+		try {
+			return PropertyUtils.getSimpleProperty(object, propertyName);
+		} catch (Exception e) {
+			throw new UnsupportedOperationException(e);
 		}
 	}
 
-	@SuppressWarnings(
-	{ "unchecked", "rawtypes" } )
-	private <V> Collection<V> buildCollection( final Class<? extends Collection<?>> collectionType, final Type componentType, final Collection<V> elements ) throws MappingException
-	{
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <V> Collection<V> buildCollection(
+			final Class<? extends Collection<?>> collectionType,
+			final Type componentType, final Collection<V> elements)
+			throws MappingException {
 		Collection values;
 
-		if ( collectionType.equals( List.class ) )
-		{
-			values = new ArrayList<V>( elements );
-		}
-		else if ( collectionType.equals( Set.class ) )
-		{
-			return new HashSet<V>( elements );
-		}
-		else if ( collectionType.equals( Collection.class ) )
-		{
-			values = new ArrayList<V>( elements );
-		}
-		else
-		{
-			throw new MappingException( "unsupported collection" );
+		if (collectionType.equals(List.class)) {
+			values = new ArrayList<V>(elements);
+		} else if (collectionType.equals(Set.class)) {
+			return new HashSet<V>(elements);
+		} else if (collectionType.equals(Collection.class)) {
+			values = new ArrayList<V>(elements);
+		} else {
+			throw new MappingException("unsupported collection");
 		}
 
 		return values;
 	}
 
-	public void setSimpleProperty( final String propertyName, T entry, final Object singleValue ) throws MappingException
-	{
-		try
-		{
-			PropertyUtils.setSimpleProperty( entry, propertyName, singleValue );
-		}
-		catch ( IllegalAccessException e )
-		{
-			throw new MappingException( e );
-		}
-		catch ( InvocationTargetException e )
-		{
-			throw new MappingException( e );
-		}
-		catch ( NoSuchMethodException e )
-		{
-			throw new MappingException( e );
+	public void setSimpleProperty(final String propertyName, T entry,
+			final Object singleValue) throws MappingException {
+		try {
+			PropertyUtils.setSimpleProperty(entry, propertyName, singleValue);
+		} catch (IllegalAccessException e) {
+			throw new MappingException(e);
+		} catch (InvocationTargetException e) {
+			throw new MappingException(e);
+		} catch (NoSuchMethodException e) {
+			throw new MappingException(e);
 		}
 	}
 
-	public <V> void setProperty( final String propertyName, final T entry, final Collection<V> multipleValues ) throws MappingException
-	{
-		@SuppressWarnings( "unchecked" )
-		Class<T> c = (Class<T>)checkNotNull( entry ).getClass();
+	public <V> void setProperty(final String propertyName, final T entry,
+			final Collection<V> multipleValues) throws MappingException {
+		@SuppressWarnings("unchecked")
+		Class<T> c = (Class<T>) checkNotNull(entry).getClass();
 
-		final AttributeMetadata meta = metadata.getAttributeMetadataByPropertyName( propertyName );
+		final AttributeMetadata meta = metadata
+				.getAttributeMetadataByPropertyName(propertyName);
 
-		if ( meta == null )
-			throw new MappingException( String.format( "propertyName: unknown property %s", propertyName ) );
+		if (meta == null)
+			throw new MappingException(String.format(
+					"propertyName: unknown property %s", propertyName));
 
-		if ( !meta.isMultivalued() )
-			throw new MappingException( String.format( "propertyName: single valued property %s", propertyName ) );
+		if (!meta.isMultivalued())
+			throw new MappingException(String.format(
+					"propertyName: single valued property %s", propertyName));
 
 		final Collection<?> targetValues;
 
-		targetValues = buildCollection( meta.getCollectionType(), meta.getObjectType(), multipleValues );
+		targetValues = buildCollection(meta.getCollectionType(),
+				meta.getObjectType(), multipleValues);
 
-		try
-		{
-			PropertyUtils.setProperty( entry, propertyName, targetValues );
-		}
-		catch ( IllegalAccessException e )
-		{
-			throw new MappingException( e );
-		}
-		catch ( InvocationTargetException e )
-		{
-			throw new MappingException( e );
-		}
-		catch ( NoSuchMethodException e )
-		{
-			try
-			{
-				ReflectionUtils.doWithFields( c, new FieldCallback()
-				{
+		try {
+			PropertyUtils.setProperty(entry, propertyName, targetValues);
+		} catch (IllegalAccessException e) {
+			throw new MappingException(e);
+		} catch (InvocationTargetException e) {
+			throw new MappingException(e);
+		} catch (NoSuchMethodException e) {
+			try {
+				ReflectionUtils.doWithFields(c, new FieldCallback() {
 
 					@Override
-					public void doWith( final Field f ) throws IllegalArgumentException, IllegalAccessException
-					{
+					public void doWith(final Field f)
+							throws IllegalArgumentException,
+							IllegalAccessException {
 						boolean secured = !f.isAccessible();
 
-						if ( secured )
-							f.setAccessible( true );
+						if (secured)
+							f.setAccessible(true);
 
-						f.set( entry, targetValues );
+						f.set(entry, targetValues);
 
-						if ( secured )
-							f.setAccessible( false );
+						if (secured)
+							f.setAccessible(false);
 					}
-				},
-						new FieldFilter()
-						{
+				}, new FieldFilter() {
 
-							@Override
-							public boolean matches( final Field field )
-							{
-								final int modifiers = field.getModifiers();
-								// no static fields please
-								return !Modifier.isStatic( modifiers ) && field.getName() == propertyName;
-							}
-						} );
+					@Override
+					public boolean matches(final Field field) {
+						final int modifiers = field.getModifiers();
+						// no static fields please
+						return !Modifier.isStatic(modifiers)
+								&& field.getName() == propertyName;
+					}
+				});
 
-			}
-			catch ( SecurityException e1 )
-			{
-				throw new MappingException( e1 );
-			}
-			catch ( IllegalArgumentException e1 )
-			{
-				throw new MappingException( e1 );
+			} catch (SecurityException e1) {
+				throw new MappingException(e1);
+			} catch (IllegalArgumentException e1) {
+				throw new MappingException(e1);
 			}
 		}
 	}

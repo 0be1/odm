@@ -24,22 +24,18 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class DirectoryStringConverter extends SyntaxConverter<String, String>
-{
-	public DirectoryStringConverter()
-	{
-		super( String.class, String.class );
+public class DirectoryStringConverter extends SyntaxConverter<String, String> {
+	public DirectoryStringConverter() {
+		super(String.class, String.class);
 	}
 
 	@Override
-	public String to( String object ) throws ConvertionException
-	{
+	public String to(String object) throws ConvertionException {
 		return object;
 	}
 
 	@Override
-	public String from( String value ) throws ConvertionException
-	{
+	public String from(String value) throws ConvertionException {
 		return value;
 	}
 }

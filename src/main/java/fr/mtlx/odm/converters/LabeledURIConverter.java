@@ -32,46 +32,40 @@ import fr.mtlx.odm.attributes.LabeledURI;
  * #L%
  */
 
-public class LabeledURIConverter extends AttributeConverter<String, LabeledURI>
-{
-	protected LabeledURIConverter( final Class<String> directoryType, final Class<LabeledURI> objectType )
-	{
-		super( directoryType, objectType );
+public class LabeledURIConverter extends AttributeConverter<String, LabeledURI> {
+	protected LabeledURIConverter(final Class<String> directoryType,
+			final Class<LabeledURI> objectType) {
+		super(directoryType, objectType);
 	}
-	
-	public LabeledURIConverter()
-	{
-		this( String.class, LabeledURI.class );
+
+	public LabeledURIConverter() {
+		this(String.class, LabeledURI.class);
 	}
 
 	@Override
-	public String to( final LabeledURI object ) throws ConvertionException
-	{
+	public String to(final LabeledURI object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public LabeledURI from( final String value ) throws ConvertionException
-	{
-		final Iterator<String> iterator = Splitter.on( ' ' ).limit( 1 ).trimResults().split( value ).iterator();
+	public LabeledURI from(final String value) throws ConvertionException {
+		final Iterator<String> iterator = Splitter.on(' ').limit(1)
+				.trimResults().split(value).iterator();
 
 		URI uri;
-		try
-		{
-			uri = new URI( iterator.next() );
-		}
-		catch ( Exception e )
-		{
-			throw new ConvertionException( e );
+		try {
+			uri = new URI(iterator.next());
+		} catch (Exception e) {
+			throw new ConvertionException(e);
 		}
 
 		final String label;
 
-		if ( iterator.hasNext() )
-			label = Strings.emptyToNull( iterator.next() );
+		if (iterator.hasNext())
+			label = Strings.emptyToNull(iterator.next());
 		else
 			label = null;
 
-		return new LabeledURI( uri, label );
+		return new LabeledURI(uri, label);
 	}
 }

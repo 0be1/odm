@@ -34,15 +34,14 @@ import com.google.common.collect.ImmutableSet;
 
 import fr.mtlx.odm.filters.Filter;
 
-public interface ClassMetadata<T>
-{
+public interface ClassMetadata<T> {
 	Class<T> getEntryClass();
-	
+
 	/**
 	 * Get the name of the identifier property (or return null)
 	 */
 	String getIdentifierPropertyName();
-	
+
 	/**
 	 * Get the identifier type
 	 */
@@ -56,25 +55,27 @@ public interface ClassMetadata<T>
 	Constructor<T> getDefaultConstructor();
 
 	ImmutableList<String> getObjectClassHierarchy();
-	
+
 	ImmutableSet<String> getAuxiliaryClasses();
 
 	String getStructuralClass();
-	
+
 	Field getIdentifier();
 
 	Filter getByExampleFilter();
 
-	AttributeMetadata getAttributeMetadataByAttributeName( String attributeName );
+	AttributeMetadata getAttributeMetadataByAttributeName(String attributeName);
 
-	AttributeMetadata getAttributeMetadataByPropertyName( String propertyName );
-	
+	AttributeMetadata getAttributeMetadataByPropertyName(String propertyName);
+
 	Method[] prepersistMethods();
-	
+
 	boolean isCacheable();
-	
+
 	/**
-	 * an exception will be raised if non-matched attributes are found in the entry  
+	 * an exception will be raised if non-matched attributes are found in the
+	 * entry
+	 * 
 	 * @return
 	 */
 	boolean isStrict();

@@ -24,29 +24,21 @@ package fr.mtlx.odm;
  * #L%
  */
 
-@SuppressWarnings( "serial" )
-public class MappingException extends Exception
-{
-	public MappingException()
-	{
+@SuppressWarnings("serial")
+public class MappingException extends Exception {
+	public MappingException() {
 		super();
 	}
 
-
-	public MappingException( String message, Throwable cause )
-	{
-		super( message, cause );
+	public MappingException(String message, Throwable cause) {
+		super(message, cause);
 	}
 
-
-	public MappingException( Throwable cause )
-	{
-		super( cause );
+	public MappingException(Throwable cause) {
+		super(cause);
 	}
 
-
-	public MappingException( String message )
-	{
+	public MappingException(String message) {
 		super(message);
 	}
 }

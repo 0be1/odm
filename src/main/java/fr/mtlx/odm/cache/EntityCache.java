@@ -24,6 +24,5 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
-public interface EntityCache<T> extends CacheByName<T>
-{
+public interface EntityCache<T> extends CacheByName<T> {
 }

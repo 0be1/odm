@@ -24,17 +24,16 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
-public interface Cache<T,K>
-{
+public interface Cache<T, K> {
 
-	T store( K key, T object );
-	
-	T retrieve( K key );
-	
-	T remove( K key );
-	
+	T store(K key, T object);
+
+	T retrieve(K key);
+
+	T remove(K key);
+
 	void clear();
-	
-	boolean contains( K key );
-	
+
+	boolean contains(K key);
+
 }

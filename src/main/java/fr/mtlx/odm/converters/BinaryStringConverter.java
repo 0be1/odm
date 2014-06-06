@@ -24,22 +24,18 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class BinaryStringConverter extends SyntaxConverter<byte[], String>
-{
-	public BinaryStringConverter()
-	{
-		super( byte[].class, String.class);
+public class BinaryStringConverter extends SyntaxConverter<byte[], String> {
+	public BinaryStringConverter() {
+		super(byte[].class, String.class);
 	}
 
 	@Override
-	public String from( byte[] object ) throws ConvertionException
-	{
+	public String from(byte[] object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public byte[] to( String value ) throws ConvertionException
-	{
+	public byte[] to(String value) throws ConvertionException {
 		return value.getBytes();
 	}
 }

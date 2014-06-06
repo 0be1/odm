@@ -28,25 +28,23 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.CharMatcher;
 
-class FilterEncoder
-{
-	static String encode( @Nullable Object value )
-	{
-		if ( value == null )
+class FilterEncoder {
+	static String encode(@Nullable Object value) {
+		if (value == null)
 			return null;
-		
+
 		String strValue = value.toString();
-		
-		strValue = CharMatcher.is( '*' ).replaceFrom( strValue, "\2a" );
-		
-		strValue = CharMatcher.is( '(' ).replaceFrom( strValue, "\28" );
-		
-		strValue = CharMatcher.is( ')' ).replaceFrom( strValue, "\29" );
-		
-		strValue = CharMatcher.is( '\\' ).replaceFrom( strValue, "\5c" );
-		
-		strValue = CharMatcher.is( '\0' ).replaceFrom( strValue, "\00" );
-		
+
+		strValue = CharMatcher.is('*').replaceFrom(strValue, "\2a");
+
+		strValue = CharMatcher.is('(').replaceFrom(strValue, "\28");
+
+		strValue = CharMatcher.is(')').replaceFrom(strValue, "\29");
+
+		strValue = CharMatcher.is('\\').replaceFrom(strValue, "\5c");
+
+		strValue = CharMatcher.is('\0').replaceFrom(strValue, "\00");
+
 		return strValue;
 	}
 }

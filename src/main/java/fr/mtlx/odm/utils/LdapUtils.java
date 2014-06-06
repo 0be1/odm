@@ -31,24 +31,16 @@ import javax.naming.Name;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
-public class LdapUtils
-{
-	private static LdapName buildLdapName( final Name dn )
-	{
+public class LdapUtils {
+	private static LdapName buildLdapName(final Name dn) {
 		final LdapName name;
 
-		if ( dn instanceof LdapName )
-		{
-			name = (LdapName)dn;
-		}
-		else
-		{
-			try
-			{
-				name = new LdapName( dn.toString() );
-			}
-			catch ( InvalidNameException e )
-			{
+		if (dn instanceof LdapName) {
+			name = (LdapName) dn;
+		} else {
+			try {
+				name = new LdapName(dn.toString());
+			} catch (InvalidNameException e) {
 				return null;
 			}
 		}
@@ -56,26 +48,22 @@ public class LdapUtils
 		return name;
 	}
 
-	public static Name getDistinguishedNameParent( final Name dn )
-	{
-		final LdapName name = buildLdapName( dn );
+	public static Name getDistinguishedNameParent(final Name dn) {
+		final LdapName name = buildLdapName(dn);
 
-		return name.getPrefix( name.size() - 1 );
+		return name.getPrefix(name.size() - 1);
 	}
 
-	public static Name getDistinguishedNamePrefix( final Name dn, String from )
-	{
+	public static Name getDistinguishedNamePrefix(final Name dn, String from) {
 		int i = 0;
-		
-		LdapName name = buildLdapName( dn );
-		
+
+		LdapName name = buildLdapName(dn);
+
 		List<Rdn> rdns = name.getRdns();
-		
-		for ( ; i < rdns.size(); i++  )
-		{
-			if ( from.equalsIgnoreCase( rdns.get(i).getType() ) )
-			{
-				return name.getPrefix( i + 1 );
+
+		for (; i < rdns.size(); i++) {
+			if (from.equalsIgnoreCase(rdns.get(i).getType())) {
+				return name.getPrefix(i + 1);
 			}
 		}
 

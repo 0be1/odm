@@ -29,34 +29,34 @@ import java.lang.reflect.InvocationTargetException;
 
 import fr.mtlx.odm.filters.FilterBuilder;
 
-public interface SessionFactory extends Serializable
-{
-	boolean isPersistentClass( final String className );
+public interface SessionFactory extends Serializable {
+	boolean isPersistentClass(final String className);
 
 	/**
-	 * clazz est persistente si c'est une super classe d'une classe mappÃ©e
+	 * clazz est persistente si c'est une super classe d'une classe mappée
 	 * 
 	 * @param clazz
 	 * @return true if clazz is persistent
 	 */
-	boolean isPersistentClass( Class<?> clazz );
+	boolean isPersistentClass(final Class<?> clazz);
 
 	Session openSession();
 
 	void closeSession();
-	
-	void addClass( Class<?> persistentClass );
-	
-	void addClass( String persistentClassName );
+
+	void addClass(final Class<?> persistentClass);
+
+	void addClass(final String persistentClassName);
 
 	Session getCurrentSession();
 
 	<T> FilterBuilder<T> filterBuilder(Class<T> persistentClass);
 
-	boolean isOperationalAttribute( String attributeId );
-	
-	<T> ClassMetadata<T> getClassMetadata( Class<T> entityClass );
+	boolean isOperationalAttribute(String attributeId);
 
-	ClassMetadata<?> getClassMetadata( final String[] objectClasses ) throws IllegalAccessException, InvocationTargetException,
+	<T> ClassMetadata<T> getClassMetadata(Class<T> entityClass);
+
+	ClassMetadata<?> getClassMetadata(final String[] objectClasses)
+			throws IllegalAccessException, InvocationTargetException,
 			ClassNotFoundException;
 }

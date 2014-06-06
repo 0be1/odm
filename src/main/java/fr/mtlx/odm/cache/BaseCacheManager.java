@@ -31,45 +31,40 @@ import com.google.common.collect.Maps;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.SessionFactoryImpl;
 
-public class BaseCacheManager implements CacheManager
-{
-	private final Map<Class<?>, EntityCache<?>> caches = Maps.newConcurrentMap();
+public class BaseCacheManager implements CacheManager {
+	private final Map<Class<?>, EntityCache<?>> caches = Maps
+			.newConcurrentMap();
 
 	public final SessionFactoryImpl sessionFactory;
 
-	public BaseCacheManager( final SessionFactoryImpl sessionFactory )
-	{
+	public BaseCacheManager(final SessionFactoryImpl sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 
 	@Override
-	public <T> EntityCache<T> getCacheFor( Class<T> persistentClass )
-	{
-		ClassMetadata<T> metaData = sessionFactory.getClassMetadata( persistentClass );
-		
-		if ( metaData == null || ! metaData.isCacheable() )
-		{
+	public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
+		ClassMetadata<T> metaData = sessionFactory
+				.getClassMetadata(persistentClass);
+
+		if (metaData == null || !metaData.isCacheable()) {
 			return new NoCache<T>();
 		}
-		
-		@SuppressWarnings( "unchecked" )
-		EntityCache<T> cache = (EntityCache<T>)caches.get( persistentClass );
 
-		if ( cache == null )
-		{
-			cache = new EntityMapCache<T>( persistentClass.getName() );
+		@SuppressWarnings("unchecked")
+		EntityCache<T> cache = (EntityCache<T>) caches.get(persistentClass);
 
-			caches.put( persistentClass, cache );
+		if (cache == null) {
+			cache = new EntityMapCache<T>(persistentClass.getName());
+
+			caches.put(persistentClass, cache);
 		}
 
 		return cache;
 	}
 
 	@Override
-	public void clear( )
-	{
-		for (EntityCache<?> cache : caches.values() )
-		{
+	public void clear() {
+		for (EntityCache<?> cache : caches.values()) {
 			cache.clear();
 		}
 	}

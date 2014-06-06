@@ -6,19 +6,16 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-public abstract class CompositeFilter extends FilterImpl
-{
+public abstract class CompositeFilter extends FilterImpl {
 	protected final List<Filter> filters;
-	
-	public CompositeFilter( final Filter... filters )
-	{
-		this.filters = Lists.newArrayList( filters );
+
+	public CompositeFilter(final Filter... filters) {
+		this.filters = Lists.newArrayList(filters);
 	}
 
-	public CompositeFilter add( Filter filter )
-	{
-		filters.add( checkNotNull( filter ) );
-		
+	public CompositeFilter add(Filter filter) {
+		filters.add(checkNotNull(filter));
+
 		return this;
 	}
 }

@@ -28,10 +28,8 @@ import javax.naming.Name;
 
 import org.springframework.ldap.core.DirContextOperations;
 
+public interface ContextCache extends Cache<DirContextOperations, Name> {
 
-public interface ContextCache extends Cache<DirContextOperations, Name>
-{
+	DirContextOperations store(DirContextOperations context);
 
-	DirContextOperations store( DirContextOperations context );
-	
 }

@@ -24,42 +24,35 @@ package fr.mtlx.odm.model;
  * #L%
  */
 
-
 import javax.persistence.Cacheable;
 
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
 
-@Entry(objectClasses =
-{ "organization" }, ignoreNonMatched = true )
+@Entry(objectClasses = { "organization" }, ignoreNonMatched = true)
 @Cacheable
-public class Organization extends Top
-{
+public class Organization extends Top {
 	private static final long serialVersionUID = -1709060834240017575L;
 
-	@Attribute(aliases="o")
+	@Attribute(aliases = "o")
 	private String organizationName;
-	
+
 	@Attribute
 	private String description;
 
-	public String getOrganizationName()
-	{
+	public String getOrganizationName() {
 		return organizationName;
 	}
 
-	public void setOrganizationName( final String organizationName )
-	{
+	public void setOrganizationName(final String organizationName) {
 		this.organizationName = organizationName;
 	}
 
-	public String getDescription()
-	{
+	public String getDescription() {
 		return description;
 	}
 
-	public void setDescription( final String description )
-	{
+	public void setDescription(final String description) {
 		this.description = description;
 	}
 }

@@ -24,10 +24,9 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public class AttributeFilter extends RawCompareFilter
-{
-	public AttributeFilter( Comparison op, final String attribute, final Object value )
-	{
-		super( op, attribute, FilterEncoder.encode( value ) );
+public class AttributeFilter extends RawCompareFilter {
+	public AttributeFilter(Comparison op, final String attribute,
+			final Object value) {
+		super(op, attribute, FilterEncoder.encode(value));
 	}
 }

@@ -24,13 +24,12 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public interface Converter
-{
+public interface Converter {
 	Class<?> directoryType();
-	
-	Class<?> objectType();
-	
-	Object toDirectory( Object object ) throws ConvertionException;
 
-	Object fromDirectory( Object value ) throws ConvertionException;
+	Class<?> objectType();
+
+	Object toDirectory(Object object) throws ConvertionException;
+
+	Object fromDirectory(Object value) throws ConvertionException;
 }

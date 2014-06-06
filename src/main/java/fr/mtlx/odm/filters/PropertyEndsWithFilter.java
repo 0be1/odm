@@ -1,6 +1,5 @@
 package fr.mtlx.odm.filters;
 
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,17 +24,14 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-
-public class PropertyEndsWithFilter<T> extends PropertyCompareFilter<T>
-{
-	PropertyEndsWithFilter( final Class<T> persistentClass, final String property, final Object value )
-	{
-		super( persistentClass, Comparison.equals, property, value );
+public class PropertyEndsWithFilter<T> extends PropertyCompareFilter<T> {
+	PropertyEndsWithFilter(final Class<T> persistentClass,
+			final String property, final Object value) {
+		super(persistentClass, Comparison.equals, property, value);
 	}
 
 	@Override
-	protected String formatValue( final String encodedValue )
-	{
+	protected String formatValue(final String encodedValue) {
 		return '*' + encodedValue;
 	}
 }

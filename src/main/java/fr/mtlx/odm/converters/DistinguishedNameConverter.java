@@ -27,29 +27,23 @@ import javax.naming.ldap.LdapName;
  * #L%
  */
 
-public class DistinguishedNameConverter extends SyntaxConverter<String, LdapName>
-{
-	public DistinguishedNameConverter()
-	{
-		super( String.class, LdapName.class );
+public class DistinguishedNameConverter extends
+		SyntaxConverter<String, LdapName> {
+	public DistinguishedNameConverter() {
+		super(String.class, LdapName.class);
 	}
 
 	@Override
-	public String to( final LdapName object ) throws ConvertionException
-	{
+	public String to(final LdapName object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public LdapName from( final String value ) throws ConvertionException
-	{
-		try
-		{
-			return new LdapName( value );
-		}
-		catch ( InvalidNameException e )
-		{
-			throw new ConvertionException( e );
+	public LdapName from(final String value) throws ConvertionException {
+		try {
+			return new LdapName(value);
+		} catch (InvalidNameException e) {
+			throw new ConvertionException(e);
 		}
 	}
 }

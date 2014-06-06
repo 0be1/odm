@@ -26,48 +26,40 @@ package fr.mtlx.odm.model;
 
 import java.io.Serializable;
 
-public abstract class IdProvider<Id extends Serializable>
-{
+public abstract class IdProvider<Id extends Serializable> {
 	private transient final Class<Id> clazz;
 
 	public abstract Id getDn();
 
-	public abstract void setDn( Id id );
+	public abstract void setDn(Id id);
 
-	public IdProvider( Class<Id> clazz )
-	{
-		if ( clazz == null )
-		{
-			throw new IllegalArgumentException( "clazz" );
+	public IdProvider(Class<Id> clazz) {
+		if (clazz == null) {
+			throw new IllegalArgumentException("clazz");
 		}
 		this.clazz = clazz;
 	}
 
-	public boolean sameClassAs( Object o )
-	{
+	public boolean sameClassAs(Object o) {
 		return o != null && o.getClass() == clazz;
 	}
 
 	@Override
-	public boolean equals( Object obj )
-	{
-		if ( obj == this )
-		{
+	public boolean equals(Object obj) {
+		if (obj == this) {
 			return true;
 		}
-		if ( obj == null || !( obj instanceof IdProvider<?> ) )
-		{
+		if (obj == null || !(obj instanceof IdProvider<?>)) {
 			return false;
 		}
 
 		IdProvider<?> otherObject = (IdProvider<?>) obj;
 
-		return this.getDn() != null && this.getDn().equals( otherObject.getDn() );
+		return this.getDn() != null && this.getDn().equals(otherObject.getDn());
 	}
 
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		return this.getDn() == null ? 0 : this.getDn().hashCode();
 	}
 }

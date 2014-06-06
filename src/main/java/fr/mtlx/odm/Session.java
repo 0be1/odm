@@ -31,19 +31,18 @@ import org.springframework.ldap.core.LdapOperations;
 
 import fr.mtlx.odm.converters.Converter;
 
-public interface Session
-{
+public interface Session {
 	void close();
 
-	void modifyAttributes( Name dn, ModificationItem[] mods );
-	
+	void modifyAttributes(Name dn, ModificationItem[] mods);
+
 	SessionFactory getSessionFactory();
 
-	boolean isPersistent( Object obj );
+	boolean isPersistent(Object obj);
 
-	Converter getSyntaxConverter( String syntax  ) throws MappingException;
-	
+	Converter getSyntaxConverter(String syntax) throws MappingException;
+
 	LdapOperations getLdapOperations();
-	
-	<T> Operations<T> getOperations( Class<T> persistentClass ); 
+
+	<T> Operations<T> getOperations(Class<T> persistentClass);
 }

@@ -26,46 +26,38 @@ package fr.mtlx.odm.filters;
 
 import fr.mtlx.odm.SessionFactoryImpl;
 
-public class AndFilter extends CompositeFilter
-{
-	
-	AndFilter( final SessionFactoryImpl sessionFactory , final Filter... filters )
-	{
-		super( filters );
+public class AndFilter extends CompositeFilter {
+
+	AndFilter(final SessionFactoryImpl sessionFactory, final Filter... filters) {
+		super(filters);
 	}
 
 	@Override
-	public AndFilter add( final Filter filter )
-	{
-		if (filter instanceof AndFilter )
-		{
-			filters.addAll( ((AndFilter)filter).filters );
+	public AndFilter add(final Filter filter) {
+		if (filter instanceof AndFilter) {
+			filters.addAll(((AndFilter) filter).filters);
+		} else {
+			super.add(filter);
 		}
-		else
-		{
-			super.add( filter );
-		}
-		
+
 		return this;
 	}
-	
-	@Override
-	public String encode()
-	{
-		String retval;
-		
-		final StringBuilder sb = new StringBuilder( "(" ).append( '&' );
 
-		for ( Filter filter : filters )
-		{
-			sb.append( filter.encode() );
+	@Override
+	public String encode() {
+		String retval;
+
+		final StringBuilder sb = new StringBuilder("(").append('&');
+
+		for (Filter filter : filters) {
+			sb.append(filter.encode());
 		}
 
-		sb.append( ")" );
+		sb.append(")");
 
 		retval = sb.toString();
 
-		assert retval != null && retval.startsWith( "(" ) && retval.endsWith( ")" );
+		assert retval != null && retval.startsWith("(") && retval.endsWith(")");
 
 		return retval;
 	}

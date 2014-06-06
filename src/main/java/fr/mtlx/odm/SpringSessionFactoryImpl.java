@@ -42,9 +42,9 @@ import com.google.common.collect.Sets;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.converters.DefaultConverters;
 
-@SuppressWarnings( "serial" )
-public class SpringSessionFactoryImpl extends SessionFactoryImpl implements InitializingBean
-{
+@SuppressWarnings("serial")
+public class SpringSessionFactoryImpl extends SessionFactoryImpl implements
+		InitializingBean {
 	private final ContextSource contextSource;
 
 	private List<String> mappedClasses;
@@ -53,85 +53,74 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 
 	private Set<String> operationalAttributes = Sets.newHashSet();
 
-	public SpringSessionFactoryImpl( final ContextSource contextSource )
-	{
-		this.contextSource = checkNotNull( contextSource );
+	public SpringSessionFactoryImpl(final ContextSource contextSource) {
+		this.contextSource = checkNotNull(contextSource);
 
-		this.ldapTemplate = new LdapTemplate( contextSource );
+		this.ldapTemplate = new LdapTemplate(contextSource);
 	}
 
-	public SpringSessionFactoryImpl( final ContextSource contextSource, final CacheFactory cacheFactory, final String region )
-	{
-		this( checkNotNull( contextSource ) );
+	public SpringSessionFactoryImpl(final ContextSource contextSource,
+			final CacheFactory cacheFactory, final String region) {
+		this(checkNotNull(contextSource));
 	}
 
-	public ContextSource getContextSource()
-	{
+	public ContextSource getContextSource() {
 		return contextSource;
 	}
 
-	public DirContext getDirContext()
-	{
+	public DirContext getDirContext() {
 		return contextSource.getReadWriteContext();
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception
-	{
-		for ( Entry<String, Converter> entry : DefaultConverters.defaultSyntaxConverters.entrySet() )
-		{
-			addSyntaxConverter( entry.getKey(), entry.getValue() );
+	public void afterPropertiesSet() throws Exception {
+		for (Entry<String, Converter> entry : DefaultConverters.defaultSyntaxConverters
+				.entrySet()) {
+			addSyntaxConverter(entry.getKey(), entry.getValue());
 		}
 
-		for ( Entry<Type, Converter> entry : DefaultConverters.defaultAttributeConverters.entrySet() )
-		{
-			addAttributeConverter( entry.getKey(), entry.getValue() );
+		for (Entry<Type, Converter> entry : DefaultConverters.defaultAttributeConverters
+				.entrySet()) {
+			addAttributeConverter(entry.getKey(), entry.getValue());
 		}
 
-		for ( String className : mappedClasses )
-		{
-			mapClass( className );
+		for (String className : mappedClasses) {
+			mapClass(className);
 		}
 
 		init();
 	}
 
-	public LdapTemplate getLdapTemplate()
-	{
+	public LdapTemplate getLdapTemplate() {
 		return this.ldapTemplate;
 	}
 
 	@Override
-	public boolean isOperationalAttribute( String attributeId )
-	{
-		return super.isOperationalAttribute( attributeId ) || operationalAttributes.contains( attributeId );
+	public boolean isOperationalAttribute(String attributeId) {
+		return super.isOperationalAttribute(attributeId)
+				|| operationalAttributes.contains(attributeId);
 	}
 
-	public void setOperationalAttributes( Set<String> operationalAttributes )
-	{
+	public void setOperationalAttributes(Set<String> operationalAttributes) {
 		this.operationalAttributes = operationalAttributes;
 	}
 
-	public void setMappedClasses( List<String> mappedClasses )
-	{
+	public void setMappedClasses(List<String> mappedClasses) {
 		this.mappedClasses = mappedClasses;
 	}
 
 	@Override
-	public Session openSession()
-	{
-		return new SessionImpl( this );
+	public Session openSession() {
+		return new SessionImpl(this);
 	}
 
 	@Override
-	public void addClass( Class<?> persistentClass )
-	{
-		mappedClasses.add( persistentClass.getCanonicalName() );
+	public void addClass(Class<?> persistentClass) {
+		mappedClasses.add(persistentClass.getCanonicalName());
 	}
 
 	@Override
-	public void addClass( String persistentClassName )
-	{
-		mappedClasses.add( persistentClassName );
+	public void addClass(String persistentClassName) {
+		mappedClasses.add(persistentClassName);
 	}
 }

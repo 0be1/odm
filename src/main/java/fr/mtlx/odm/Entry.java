@@ -38,16 +38,16 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Entry {
-    /**
-     * A list of LDAP object classes that the annotated Java class represents.
-     * <p>
-     * All fields will be persisted to LDAP unless annotated {@link Transient}.
-     * 
-     * @return A list of LDAP classes which the annotated Java class represents.
-     */
-    String[] objectClasses() default {};
-    
-    String[] auxiliaryObjectClasses() default {};
-    
-    boolean ignoreNonMatched() default false;
+	/**
+	 * A list of LDAP object classes that the annotated Java class represents.
+	 * <p>
+	 * All fields will be persisted to LDAP unless annotated {@link Transient}.
+	 * 
+	 * @return A list of LDAP classes which the annotated Java class represents.
+	 */
+	String[] objectClasses() default {};
+
+	String[] auxiliaryObjectClasses() default {};
+
+	boolean ignoreNonMatched() default false;
 }

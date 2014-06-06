@@ -57,74 +57,62 @@ import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.cache.SessionCacheManager;
 import fr.mtlx.odm.converters.Converter;
 
-public class SessionImpl implements Session
-{
-	class CachingContextMapper<T> extends AbstractContextMapper<T>
-	{
+public class SessionImpl implements Session {
+	class CachingContextMapper<T> extends AbstractContextMapper<T> {
 		private final Queue<DirContextOperations> queue = Lists.newLinkedList();
 
-		public Queue<DirContextOperations> getContextQueue()
-		{
+		public Queue<DirContextOperations> getContextQueue() {
 			return queue;
 		}
 
-		@SuppressWarnings( "unchecked" )
+		@SuppressWarnings("unchecked")
 		@Override
-		protected T doMapFromContext( final DirContextOperations ctx )
-		{
-			contextCache.store( ctx );
+		protected T doMapFromContext(final DirContextOperations ctx) {
+			contextCache.store(ctx);
 
-			queue.offer( ctx );
+			queue.offer(ctx);
 
-			return (T)ctx;
+			return (T) ctx;
 		}
 
 	}
 
-	class MappingContextMapper<T> extends AbstractContextMapper<T>
-	{
+	class MappingContextMapper<T> extends AbstractContextMapper<T> {
 		private final Class<T> persistentClass;
 
 		private final ClassAssistant<T> assistant;
 
-		MappingContextMapper( final Class<T> persistentClass, final ClassAssistant<T> assistant )
-		{
-			this.persistentClass = checkNotNull( persistentClass );
-			this.assistant = checkNotNull( assistant );
+		MappingContextMapper(final Class<T> persistentClass,
+				final ClassAssistant<T> assistant) {
+			this.persistentClass = checkNotNull(persistentClass);
+			this.assistant = checkNotNull(assistant);
 		}
 
-		@SuppressWarnings( "unchecked" )
+		@SuppressWarnings("unchecked")
 		@Override
-		protected T doMapFromContext( final DirContextOperations ctx )
-		{
+		protected T doMapFromContext(final DirContextOperations ctx) {
 			final T entry;
 
-			try
-			{
-				entry = (T)dirContextObjectFactory( checkNotNull( ctx ) );
-				
-				assistant.setIdentifier( entry,  ctx.getDn() );
-			}
-			catch ( ClassNotFoundException e )
-			{
-				throw new RuntimeException( e );
-			}
-			catch ( InstantiationException e )
-			{
-				throw new RuntimeException( e );
-			}
-			catch ( InvalidNameException e )
-			{
-				throw new RuntimeException( e );
+			try {
+				entry = (T) dirContextObjectFactory(checkNotNull(ctx));
+
+				assistant.setIdentifier(entry, ctx.getDn());
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			} catch (InstantiationException e) {
+				throw new RuntimeException(e);
+			} catch (InvalidNameException e) {
+				throw new RuntimeException(e);
 			}
 
-			getObjectCacheManager().getCacheFor( persistentClass ).store( ctx.getDn(), entry );
-						
+			getObjectCacheManager().getCacheFor(persistentClass).store(
+					ctx.getDn(), entry);
+
 			return entry;
 		}
 	}
 
-	private final Logger log = LoggerFactory.getLogger( Session.class );
+	private final Logger log = LoggerFactory.getLogger(Session.class);
 
 	private final ContextCache contextCache = new ContextMapCache();
 
@@ -134,297 +122,273 @@ public class SessionImpl implements Session
 
 	private final CacheManager objectCacheManager;
 
-	public final static DirContextProcessor nullDirContextProcessor = new DirContextProcessor()
-	{
+	public final static DirContextProcessor nullDirContextProcessor = new DirContextProcessor() {
 		@Override
-		public void postProcess( DirContext ctx ) throws NamingException
-		{
+		public void postProcess(DirContext ctx) throws NamingException {
 			// Do nothing
 		}
 
 		@Override
-		public void preProcess( DirContext ctx ) throws NamingException
-		{
+		public void preProcess(DirContext ctx) throws NamingException {
 			// Do nothing
 		}
 	};
 
-	public static SearchControls copySearchControls( final SearchControls controls )
-	{
+	public static SearchControls copySearchControls(
+			final SearchControls controls) {
 		final SearchControls retval = new SearchControls();
 
-		retval.setCountLimit( controls.getCountLimit() );
-		retval.setDerefLinkFlag( controls.getDerefLinkFlag() );
-		retval.setReturningObjFlag( false );
-		retval.setSearchScope( controls.getSearchScope() );
-		retval.setTimeLimit( controls.getTimeLimit() );
+		retval.setCountLimit(controls.getCountLimit());
+		retval.setDerefLinkFlag(controls.getDerefLinkFlag());
+		retval.setReturningObjFlag(false);
+		retval.setSearchScope(controls.getSearchScope());
+		retval.setTimeLimit(controls.getTimeLimit());
 
 		return retval;
 	}
 
-	public static SearchControls getDefaultSearchControls()
-	{
+	public static SearchControls getDefaultSearchControls() {
 		final SearchControls retval = new SearchControls();
 
-		retval.setSearchScope( SearchControls.SUBTREE_SCOPE );
+		retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-		retval.setReturningObjFlag( false );
+		retval.setReturningObjFlag(false);
 
 		return retval;
 	}
 
-	SessionImpl( final SpringSessionFactoryImpl sessionFactory )
-	{
-		this.sessionFactory = checkNotNull( sessionFactory, "sessionFactory is null" );
+	SessionImpl(final SpringSessionFactoryImpl sessionFactory) {
+		this.sessionFactory = checkNotNull(sessionFactory,
+				"sessionFactory is null");
 
-		this.ops = new LdapTemplate( sessionFactory.getContextSource() );
+		this.ops = new LdapTemplate(sessionFactory.getContextSource());
 
-		this.objectCacheManager = new SessionCacheManager( this );
+		this.objectCacheManager = new SessionCacheManager(this);
 	}
 
 	@Override
-	public void close()
-	{
+	public void close() {
 		getContextCache().clear();
 
 		getObjectCacheManager().clear();
 	}
 
-//	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	// @SuppressWarnings( { "unchecked", "rawtypes" } )
 	@Override
-	public Converter getSyntaxConverter( final String syntax  ) throws MappingException
-	{
-		
-		final Converter converter = getSessionFactory().getConverter( syntax );
+	public Converter getSyntaxConverter(final String syntax)
+			throws MappingException {
 
-//		if ( converter == null )
-//		{
-//			final Type concreteType = inferGenericType( objectType );
-//
-//			if ( objectType instanceof Class<?> )
-//			{
-//				Class<?> persistentClass = (Class<?>)concreteType;
-//
-//				if ( getSessionFactory().isPersistentClass( persistentClass ) )
-//				{
-//					converter = new EntryResolverConverter( persistentClass, this );
-//				}
-//			}
-//		}
+		final Converter converter = getSessionFactory().getConverter(syntax);
 
-		if ( converter == null )
-			throw new MappingException( String.format( "no converter found for syntax %s", syntax ) );
+		// if ( converter == null )
+		// {
+		// final Type concreteType = inferGenericType( objectType );
+		//
+		// if ( objectType instanceof Class<?> )
+		// {
+		// Class<?> persistentClass = (Class<?>)concreteType;
+		//
+		// if ( getSessionFactory().isPersistentClass( persistentClass ) )
+		// {
+		// converter = new EntryResolverConverter( persistentClass, this );
+		// }
+		// }
+		// }
+
+		if (converter == null)
+			throw new MappingException(String.format(
+					"no converter found for syntax %s", syntax));
 
 		return converter;
 	}
 
 	@Override
-	public LdapOperations getLdapOperations()
-	{
+	public LdapOperations getLdapOperations() {
 		return ops;
 	}
 
 	@Override
-	public SessionFactoryImpl getSessionFactory()
-	{
+	public SessionFactoryImpl getSessionFactory() {
 		return sessionFactory;
 	}
 
 	@Override
-	public boolean isPersistent( final Object obj )
-	{
+	public boolean isPersistent(final Object obj) {
 		final Name dn;
 		final Class<?> clazz;
 		final ClassMetadata<?> metadata;
 
-		if ( obj == null )
+		if (obj == null)
 			return false;
 
 		clazz = obj.getClass();
 
-		metadata = getSessionFactory().getClassMetadata( clazz );
+		metadata = getSessionFactory().getClassMetadata(clazz);
 
-		if ( metadata == null )
+		if (metadata == null)
 			return false;
 
-		try
-		{
-			@SuppressWarnings(
-			{ "unchecked", "rawtypes" } )
-			final ClassAssistant<?> assistant = new ClassAssistant( metadata );
+		try {
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			final ClassAssistant<?> assistant = new ClassAssistant(metadata);
 
-			dn = assistant.getIdentifier( obj );
-		}
-		catch ( Exception e )
-		{
+			dn = assistant.getIdentifier(obj);
+		} catch (Exception e) {
 			return false;
 		}
 
-		return contextCache.contains( dn );
+		return contextCache.contains(dn);
 	}
 
 	@Override
-	public void modifyAttributes( final Name dn, final ModificationItem[] mods )
-	{
-		ops.modifyAttributes( dn, mods );
+	public void modifyAttributes(final Name dn, final ModificationItem[] mods) {
+		ops.modifyAttributes(dn, mods);
 	}
 
-	<T> CachingContextMapper<T> newCachingContextMapper()
-	{
+	<T> CachingContextMapper<T> newCachingContextMapper() {
 		return new CachingContextMapper<T>();
 	}
 
-	private Object dirContextObjectFactory( final DirContextOperations context ) throws ClassNotFoundException, InstantiationException, InvalidNameException
-	{
-		final String[] objectClasses = context.getStringAttributes( "objectClass" );
+	private Object dirContextObjectFactory(final DirContextOperations context)
+			throws ClassNotFoundException, InstantiationException,
+			InvalidNameException {
+		final String[] objectClasses = context
+				.getStringAttributes("objectClass");
 
 		assert objectClasses != null && objectClasses.length > 0;
 
-		try
-		{
-			final ClassMetadata<?> metadata = sessionFactory.getClassMetadata( objectClasses );
-			
-			return sessionFactory.getProxyFactory( metadata.getEntryClass(), new Class[] {} ).getProxy( this, context );
-		}
-		catch ( IllegalAccessException e )
-		{
-			throw new RuntimeException( e );
-		}
-		catch ( InvocationTargetException e )
-		{
-			throw new RuntimeException( e );
+		try {
+			final ClassMetadata<?> metadata = sessionFactory
+					.getClassMetadata(objectClasses);
+
+			return sessionFactory.getProxyFactory(metadata.getEntryClass(),
+					new Class[] {}).getProxy(this, context);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
-	DirContextOperations doLookup( final Name dn )
-	{
-		final DirContextOperations ctx = ops.lookupContext( checkNotNull( dn, "dn is null" ) );
+	DirContextOperations doLookup(final Name dn) {
+		final DirContextOperations ctx = ops.lookupContext(checkNotNull(dn,
+				"dn is null"));
 
 		final Name _dn = ctx.getDn();
-		
-		assert dn.equals( _dn  ) : "lookup DN does not match context DN";
 
-		if ( log.isDebugEnabled() )
-		{
-			log.debug( "caching context {} ", _dn );
+		assert dn.equals(_dn) : "lookup DN does not match context DN";
+
+		if (log.isDebugEnabled()) {
+			log.debug("caching context {} ", _dn);
 		}
 
-		contextCache.store( ctx );
+		contextCache.store(ctx);
 
 		return ctx;
 	}
 
-	void mapToContext( final Object transientObject, final DirContextOperations context )
-	{
-		final ClassMetadata<?> metadata = getSessionFactory().getClassMetadata( checkNotNull( transientObject ).getClass() );
+	void mapToContext(final Object transientObject,
+			final DirContextOperations context) {
+		final ClassMetadata<?> metadata = getSessionFactory().getClassMetadata(
+				checkNotNull(transientObject).getClass());
 
-		try
-		{
+		try {
 			final Set<String> objectClasses = Sets.newHashSet();
 
-			final String[] objectClassesRaw = context.getStringAttributes( "objectClass" );
+			final String[] objectClassesRaw = context
+					.getStringAttributes("objectClass");
 
-			if ( objectClassesRaw != null )
-				objectClasses.addAll( Arrays.asList( objectClassesRaw ) );
+			if (objectClassesRaw != null)
+				objectClasses.addAll(Arrays.asList(objectClassesRaw));
 
 			// ObjectClasses
-			for ( String objectClass : metadata.getObjectClassHierarchy() )
-			{
-				if ( !objectClasses.contains( objectClass ) )
-					context.addAttributeValue( "objectClass", objectClass );
+			for (String objectClass : metadata.getObjectClassHierarchy()) {
+				if (!objectClasses.contains(objectClass))
+					context.addAttributeValue("objectClass", objectClass);
 			}
 
-			for ( String propertyName : metadata.getProperties() )
-			{
-				final AttributeMetadata ameta = metadata.getAttributeMetadataByPropertyName( propertyName );
+			for (String propertyName : metadata.getProperties()) {
+				final AttributeMetadata ameta = metadata
+						.getAttributeMetadataByPropertyName(propertyName);
 
-				@SuppressWarnings(
-				{ "rawtypes", "unchecked" } )
-				final ClassAssistant<?> assistant = new ClassAssistant( metadata );
+				@SuppressWarnings({ "rawtypes", "unchecked" })
+				final ClassAssistant<?> assistant = new ClassAssistant(metadata);
 
-				final Converter converter = getSyntaxConverter( ameta.getSyntax() );
+				final Converter converter = getSyntaxConverter(ameta
+						.getSyntax());
 
-				if ( ameta.isMultivalued() )
-				{
-					final Collection<?> values = (Collection<?>)assistant.getValue( transientObject, propertyName );
+				if (ameta.isMultivalued()) {
+					final Collection<?> values = (Collection<?>) assistant
+							.getValue(transientObject, propertyName);
 
-					if ( values != null )
-					{
-						for ( Object value : values )
-						{
-							if ( value != null )
-								context.addAttributeValue( ameta.getAttirbuteName(), converter.toDirectory( value ) );
+					if (values != null) {
+						for (Object value : values) {
+							if (value != null)
+								context.addAttributeValue(
+										ameta.getAttirbuteName(),
+										converter.toDirectory(value));
 						}
-					}
-					else
-					{
+					} else {
 						// remove the attribute from the entry
-						context.setAttributeValues( ameta.getAttirbuteName(), null );
+						context.setAttributeValues(ameta.getAttirbuteName(),
+								null);
 					}
-				}
-				else
-				{
+				} else {
 					final String attributeId = ameta.getAttirbuteName();
 
-					final Object currentValue = converter.toDirectory( assistant.getValue( transientObject, propertyName ) );
+					final Object currentValue = converter.toDirectory(assistant
+							.getValue(transientObject, propertyName));
 
-					final Object persistedValue = converter.fromDirectory( context.getObjectAttribute( attributeId ) );
+					final Object persistedValue = converter
+							.fromDirectory(context
+									.getObjectAttribute(attributeId));
 
-					if ( persistedValue != null && currentValue != null )
-					{
-						if ( !persistedValue.equals( currentValue ) )
-						{
-							context.removeAttributeValue( attributeId, persistedValue );
+					if (persistedValue != null && currentValue != null) {
+						if (!persistedValue.equals(currentValue)) {
+							context.removeAttributeValue(attributeId,
+									persistedValue);
 
-							context.addAttributeValue( attributeId, currentValue );
+							context.addAttributeValue(attributeId, currentValue);
 						}
-					}
-					else if ( persistedValue != null )
-					{
-						context.removeAttributeValue( attributeId, persistedValue );
-					}
-					else if ( currentValue != null )
-					{
-						context.removeAttributeValue( attributeId, persistedValue ); // null
-						context.addAttributeValue( attributeId, currentValue );
+					} else if (persistedValue != null) {
+						context.removeAttributeValue(attributeId,
+								persistedValue);
+					} else if (currentValue != null) {
+						context.removeAttributeValue(attributeId,
+								persistedValue); // null
+						context.addAttributeValue(attributeId, currentValue);
 					}
 				}
 			}
-		}
-		catch ( Exception e )
-		{
-			throw new RuntimeException( e );
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
-	public <T> Operations<T> getOperations( final Class<T> persistentClass )
-	{
-		return new OperationsImpl<T>( this, checkNotNull( persistentClass ) );
+	public <T> Operations<T> getOperations(final Class<T> persistentClass) {
+		return new OperationsImpl<T>(this, checkNotNull(persistentClass));
 	}
 
-	public ContextCache getContextCache()
-	{
+	public ContextCache getContextCache() {
 		return contextCache;
 	}
 
-	<T> T getFromCache( final Class<T> persistentClass, final Name dn )
-	{
-		final EntityCache<T> sessionCache = getObjectCacheManager().getCacheFor( persistentClass );
+	<T> T getFromCache(final Class<T> persistentClass, final Name dn) {
+		final EntityCache<T> sessionCache = getObjectCacheManager()
+				.getCacheFor(persistentClass);
 
-		T entry = sessionCache.retrieve( dn );
+		T entry = sessionCache.retrieve(dn);
 
-		if ( entry == null )
-		{
-			final EntityCache<T> factoryCache = getSessionFactory().getCacheManager().getCacheFor( persistentClass );
+		if (entry == null) {
+			final EntityCache<T> factoryCache = getSessionFactory()
+					.getCacheManager().getCacheFor(persistentClass);
 
-			if ( factoryCache != null )
-			{
-				entry = factoryCache.retrieve( dn );
+			if (factoryCache != null) {
+				entry = factoryCache.retrieve(dn);
 
-				if ( entry != null )
-				{
-					sessionCache.store( dn, entry );
+				if (entry != null) {
+					sessionCache.store(dn, entry);
 				}
 			}
 		}
@@ -432,15 +396,14 @@ public class SessionImpl implements Session
 		return entry;
 	}
 
-	<T> void removeFromCache( final Class<T> persistentClass, final Name dn )
-	{
-		getSessionFactory().getCacheManager().getCacheFor( persistentClass ).remove( dn );
+	<T> void removeFromCache(final Class<T> persistentClass, final Name dn) {
+		getSessionFactory().getCacheManager().getCacheFor(persistentClass)
+				.remove(dn);
 
-		getObjectCacheManager().getCacheFor( persistentClass ).remove( dn );
+		getObjectCacheManager().getCacheFor(persistentClass).remove(dn);
 	}
 
-	public CacheManager getObjectCacheManager()
-	{
+	public CacheManager getObjectCacheManager() {
 		return objectCacheManager;
 	}
 }

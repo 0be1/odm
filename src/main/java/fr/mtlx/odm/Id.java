@@ -41,8 +41,7 @@ import java.lang.annotation.Target;
  * @see Attribute
  * @see javax.naming.Name
  */
-@Target( ElementType.FIELD )
-@Retention( RetentionPolicy.RUNTIME )
-public @interface Id
-{
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Id {
 }

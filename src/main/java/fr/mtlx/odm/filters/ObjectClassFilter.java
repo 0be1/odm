@@ -26,11 +26,8 @@ import fr.mtlx.odm.SessionFactoryImpl;
  * #L%
  */
 
-
-public class ObjectClassFilter extends AttributeFilter
-{
-	ObjectClassFilter( SessionFactoryImpl sessionFactory , String objectClass )
-	{
-		super(Comparison.equals, "objectClass", objectClass );
+public class ObjectClassFilter extends AttributeFilter {
+	ObjectClassFilter(SessionFactoryImpl sessionFactory, String objectClass) {
+		super(Comparison.equals, "objectClass", objectClass);
 	}
 }

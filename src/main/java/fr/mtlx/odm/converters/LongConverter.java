@@ -24,29 +24,22 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class LongConverter extends SyntaxConverter<String, Long>
-{
-	public LongConverter()
-	{
-		super( String.class, Long.class);
+public class LongConverter extends SyntaxConverter<String, Long> {
+	public LongConverter() {
+		super(String.class, Long.class);
 	}
 
 	@Override
-	public String to( final Long object ) throws ConvertionException
-	{
+	public String to(final Long object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public Long from( final String value ) throws ConvertionException
-	{
-		try
-		{
-			return new Long( value );
-		}
-		catch ( NumberFormatException e )
-		{
-			throw new ConvertionException( e );
+	public Long from(final String value) throws ConvertionException {
+		try {
+			return new Long(value);
+		} catch (NumberFormatException e) {
+			throw new ConvertionException(e);
 		}
 	}
 }

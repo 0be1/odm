@@ -26,27 +26,24 @@ package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class RawCompareFilter extends FilterImpl
-{
+class RawCompareFilter extends FilterImpl {
 	private final Comparison op;
-	
+
 	private final String attribute;
 
 	private final Object value;
 
-	RawCompareFilter( Comparison op, final String attribute, final Object value )
-	{
-		this.attribute = checkNotNull( attribute );
+	RawCompareFilter(Comparison op, final String attribute, final Object value) {
+		this.attribute = checkNotNull(attribute);
 		this.value = value;
 		this.op = op;
 	}
 
 	@Override
-	public String encode()
-	{
-		StringBuilder sb = new StringBuilder( "(" );
+	public String encode() {
+		StringBuilder sb = new StringBuilder("(");
 
-		sb.append( attribute ).append( op.getOperator() ).append( value ).append( ")" );
+		sb.append(attribute).append(op.getOperator()).append(value).append(")");
 
 		return sb.toString();
 	}

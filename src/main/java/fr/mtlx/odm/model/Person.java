@@ -36,118 +36,98 @@ import com.google.common.collect.Iterables;
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
 
-@Entry(objectClasses =
-{ "person" } )
-public class Person extends Top
-{
+@Entry(objectClasses = { "person" })
+public class Person extends Top {
 	private static final long serialVersionUID = 7030104392521108718L;
 
-	@Attribute(aliases="sn")
+	@Attribute(aliases = "sn")
 	@NotNull
 	private String surname;
-	
-	@Attribute(aliases="cn")
+
+	@Attribute(aliases = "cn")
 	@NotNull
 	private String commonName;
-	
+
 	@Attribute
 	private Set<String> description;
-	
+
 	@Attribute
 	private String seeAlso;
-	
+
 	@Attribute(type = BINARY)
 	private byte[] userPassword;
-	
+
 	@Attribute
 	private List<String> telephoneNumber;
-	
-		
-	public String getSurname()
-	{
+
+	public String getSurname() {
 		return surname;
 	}
 
-	public void setSurname( String surname )
-	{
+	public void setSurname(String surname) {
 		this.surname = surname;
 	}
-	
-	public String getSn()
-	{
+
+	public String getSn() {
 		return surname;
 	}
 
-	public void setSn( String sn )
-	{
+	public void setSn(String sn) {
 		this.surname = sn;
 	}
 
-	public String getCommonName()
-	{
+	public String getCommonName() {
 		return commonName;
 	}
 
-	public void setCommonName( String commonName )
-	{
+	public void setCommonName(String commonName) {
 		this.commonName = commonName;
 	}
-	
-	public String getCn()
-	{
+
+	public String getCn() {
 		return commonName;
 	}
 
-	public void setCn( String cn )
-	{
+	public void setCn(String cn) {
 		this.commonName = cn;
 	}
 
-	public List<String> getTelephoneNumber()
-	{
+	public List<String> getTelephoneNumber() {
 		return telephoneNumber;
 	}
 
-	public String getFirstTelephoneNumber()
-	{
-		if ( telephoneNumber != null )
-			return Iterables.getFirst( telephoneNumber, null );
-		
+	public String getFirstTelephoneNumber() {
+		if (telephoneNumber != null)
+			return Iterables.getFirst(telephoneNumber, null);
+
 		return null;
 	}
-	
-	public void setTelephoneNumber( List<String> telephoneNumber )
-	{
+
+	public void setTelephoneNumber(List<String> telephoneNumber) {
 		this.telephoneNumber = telephoneNumber;
 	}
 
-	public Set<String> getDescription()
-	{
+	public Set<String> getDescription() {
 		return description;
 	}
 
-	public void setDescription( Set<String> description )
-	{
+	public void setDescription(Set<String> description) {
 		this.description = description;
 	}
 
-	public String getSeeAlso()
-	{
+	public String getSeeAlso() {
 		return seeAlso;
 	}
 
-	public void setSeeAlso( String seeAlso )
-	{
+	public void setSeeAlso(String seeAlso) {
 		this.seeAlso = seeAlso;
 	}
 
-	public byte[] getUserPassword()
-	{
+	public byte[] getUserPassword() {
 		return userPassword;
 	}
 
-	public void setUserPassword( byte[] userPassword )
-	{
+	public void setUserPassword(byte[] userPassword) {
 		this.userPassword = userPassword;
 	}
 }

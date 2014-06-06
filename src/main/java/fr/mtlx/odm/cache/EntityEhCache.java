@@ -31,58 +31,51 @@ import javax.naming.Name;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 
-public class EntityEhCache<T> implements EntityCache<T>
-{
+public class EntityEhCache<T> implements EntityCache<T> {
 	private final Ehcache cache;
 
-	public EntityEhCache( final Ehcache cache )
-	{
-		this.cache = checkNotNull( cache, "cache is null");
+	public EntityEhCache(final Ehcache cache) {
+		this.cache = checkNotNull(cache, "cache is null");
 	}
 
 	@Override
-	public T store( Name key, T context )
-	{
-		cache.put( new Element( checkNotNull( key, "key is null" ), checkNotNull( context, "context is null" ) ) );
-		
+	public T store(Name key, T context) {
+		cache.put(new Element(checkNotNull(key, "key is null"), checkNotNull(
+				context, "context is null")));
+
 		return context;
 	}
 
-	@SuppressWarnings( "unchecked" )
+	@SuppressWarnings("unchecked")
 	@Override
-	public T retrieve( Name key )
-	{
-		final Element element = cache.get( key );
-		
-		if (element != null) 
-		{
-			return (T)element.getObjectValue();
+	public T retrieve(Name key) {
+		final Element element = cache.get(key);
+
+		if (element != null) {
+			return (T) element.getObjectValue();
 		}
-		
+
 		return null;
 	}
 
 	@Override
-	public T remove( Name key )
-	{
-		@SuppressWarnings( "unchecked" )
-		T retval = (T)cache.get( key );
-		
-		if ( cache.remove( key ) )
+	public T remove(Name key) {
+		@SuppressWarnings("unchecked")
+		T retval = (T) cache.get(key);
+
+		if (cache.remove(key))
 			return retval;
 		else
 			return null;
 	}
 
 	@Override
-	public void clear()
-	{
+	public void clear() {
 		cache.flush();
 	}
 
 	@Override
-	public boolean contains( Name key )
-	{
-		return cache.isKeyInCache( key );
+	public boolean contains(Name key) {
+		return cache.isKeyInCache(key);
 	}
 }

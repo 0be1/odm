@@ -28,8 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassMetadata;
 
-class PropertyRawCompareFilter<T> extends FilterImpl
-{
+class PropertyRawCompareFilter<T> extends FilterImpl {
 	private final String property;
 
 	private final Object value;
@@ -38,30 +37,35 @@ class PropertyRawCompareFilter<T> extends FilterImpl
 
 	private final Class<T> persistentClass;
 
-	PropertyRawCompareFilter( final Class<T> persistentClass, final Comparison op, final String property, final Object value )
-	{
-		this.property = checkNotNull( property );
+	PropertyRawCompareFilter(final Class<T> persistentClass,
+			final Comparison op, final String property, final Object value) {
+		this.property = checkNotNull(property);
 		this.value = value;
 
 		this.op = op;
-		
-		this.persistentClass = checkNotNull( persistentClass );
+
+		this.persistentClass = checkNotNull(persistentClass);
 	}
 
 	@Override
-	public String encode()
-	{
-		ClassMetadata<?> metadata = getSessionFactory().getClassMetadata( persistentClass );
-		
-		if ( metadata == null )
-			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", persistentClass ) );
+	public String encode() {
+		ClassMetadata<?> metadata = getSessionFactory().getClassMetadata(
+				persistentClass);
 
-		AttributeMetadata attribute = metadata.getAttributeMetadataByPropertyName( property );
+		if (metadata == null)
+			throw new UnsupportedOperationException(String.format(
+					"%s is not a persistent class", persistentClass));
 
-		if ( attribute == null )
-			throw new UnsupportedOperationException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
+		AttributeMetadata attribute = metadata
+				.getAttributeMetadataByPropertyName(property);
 
-		Filter filter = new RawCompareFilter( op, attribute.getAttirbuteName(), value );
+		if (attribute == null)
+			throw new UnsupportedOperationException(String.format(
+					"property %s not found in %s", property,
+					checkNotNull(metadata).getEntryClass()));
+
+		Filter filter = new RawCompareFilter(op, attribute.getAttirbuteName(),
+				value);
 
 		return filter.encode();
 	}

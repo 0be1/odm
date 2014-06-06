@@ -30,60 +30,54 @@ import com.google.common.base.Joiner;
 
 import fr.mtlx.odm.SessionFactoryImpl;
 
-public class AttributeCriterion<T> implements CompareCriterion<T>
-{
+public class AttributeCriterion<T> implements CompareCriterion<T> {
 	private final String attributeName;
-	
-	AttributeCriterion( SessionFactoryImpl sessionFactory , final String propertyName )
-	{
-		this.attributeName = checkNotNull( propertyName );
-	}
-	
-	@Override
-	public Filter equalsTo( Object value )
-	{
-		return new AttributeFilter( Comparison.equals, attributeName, value );
+
+	AttributeCriterion(SessionFactoryImpl sessionFactory,
+			final String propertyName) {
+		this.attributeName = checkNotNull(propertyName);
 	}
 
 	@Override
-	public Filter approx( Object value )
-	{
-		return new AttributeFilter( Comparison.approx, attributeName, value );
+	public Filter equalsTo(Object value) {
+		return new AttributeFilter(Comparison.equals, attributeName, value);
 	}
 
 	@Override
-	public Filter greaterOrEquals( Object value )
-	{
-		return new AttributeFilter( Comparison.greater, attributeName, value );
+	public Filter approx(Object value) {
+		return new AttributeFilter(Comparison.approx, attributeName, value);
 	}
 
 	@Override
-	public Filter lessOrEquals( Object value )
-	{
-		return new AttributeFilter( Comparison.less, attributeName, value );
+	public Filter greaterOrEquals(Object value) {
+		return new AttributeFilter(Comparison.greater, attributeName, value);
 	}
 
 	@Override
-	public Filter present()
-	{
-		return new RawCompareFilter( Comparison.equals, attributeName, "*" );
+	public Filter lessOrEquals(Object value) {
+		return new AttributeFilter(Comparison.less, attributeName, value);
 	}
 
 	@Override
-	public Filter substrings( Object... values )
-	{
-		return new RawCompareFilter( Comparison.equals, attributeName, Joiner.on( '*' ).useForNull( "" ).join( values ) );
+	public Filter present() {
+		return new RawCompareFilter(Comparison.equals, attributeName, "*");
 	}
 
 	@Override
-	public Filter startsWith( Object value )
-	{
-		return new RawCompareFilter( Comparison.equals, attributeName, "*" + value );
+	public Filter substrings(Object... values) {
+		return new RawCompareFilter(Comparison.equals, attributeName, Joiner
+				.on('*').useForNull("").join(values));
 	}
 
 	@Override
-	public Filter endsWith( Object value )
-	{
-		return new RawCompareFilter( Comparison.equals, attributeName, value + "*" );
+	public Filter startsWith(Object value) {
+		return new RawCompareFilter(Comparison.equals, attributeName, "*"
+				+ value);
+	}
+
+	@Override
+	public Filter endsWith(Object value) {
+		return new RawCompareFilter(Comparison.equals, attributeName, value
+				+ "*");
 	}
 }

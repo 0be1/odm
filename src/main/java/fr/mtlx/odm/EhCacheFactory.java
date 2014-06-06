@@ -28,18 +28,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import net.sf.ehcache.CacheManager;
 import fr.mtlx.odm.cache.EhCacheManager;
 
-public class EhCacheFactory extends CacheFactory
-{
+public class EhCacheFactory extends CacheFactory {
 	private final CacheManager cacheManager;
 
-	public EhCacheFactory( final CacheManager cacheManager )
-	{
-		this.cacheManager = checkNotNull( cacheManager, "cacheManager is null" );
+	public EhCacheFactory(final CacheManager cacheManager) {
+		this.cacheManager = checkNotNull(cacheManager, "cacheManager is null");
 	}
 
 	@Override
-	fr.mtlx.odm.cache.CacheManager getCache( final SessionFactoryImpl sessionFactory, final String region )
-	{
-		return new EhCacheManager( sessionFactory, cacheManager, region );
+	fr.mtlx.odm.cache.CacheManager getCache(
+			final SessionFactoryImpl sessionFactory, final String region) {
+		return new EhCacheManager(sessionFactory, cacheManager, region);
 	}
 }

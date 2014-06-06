@@ -1,8 +1,7 @@
 package fr.mtlx.odm.attributes;
 
-public interface Attribute
-{
+public interface Attribute {
 	String getOID();
-	
+
 	String getSyntax();
 }

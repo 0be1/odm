@@ -33,91 +33,92 @@ import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.converters.ConvertionException;
 
-public class PropertyCompareFilter<T> extends FilterImpl
-{
+public class PropertyCompareFilter<T> extends FilterImpl {
 	protected final String property;
 
 	protected final Object value;
 
 	protected final Comparison op;
-	
+
 	protected final Class<T> persistentClass;
 
 	private final Filter filter;
 
-	PropertyCompareFilter( final Class<T> persistantClass, final Comparison op, final String property, final Object value )
-	{
-		this.property = checkNotNull( property );
+	PropertyCompareFilter(final Class<T> persistantClass, final Comparison op,
+			final String property, final Object value) {
+		this.property = checkNotNull(property);
 		this.value = value;
 		this.op = op;
-		
-		this.persistentClass = checkNotNull( persistantClass );
-		
+
+		this.persistentClass = checkNotNull(persistantClass);
+
 		filter = composeFilter();
 	}
 
 	@Override
-	public String encode()
-	{
+	public String encode() {
 		return filter.encode();
 	}
 
-	protected Filter composeFilter()
-	{
-		final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata( persistentClass );
+	protected Filter composeFilter() {
+		final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata(
+				persistentClass);
 
-		if ( metadata == null )
-			throw new UnsupportedOperationException( String.format( "%s is not a persistent class", persistentClass ) );
+		if (metadata == null)
+			throw new UnsupportedOperationException(String.format(
+					"%s is not a persistent class", persistentClass));
 
-		final AttributeMetadata attribute = metadata.getAttributeMetadataByPropertyName( property );
+		final AttributeMetadata attribute = metadata
+				.getAttributeMetadataByPropertyName(property);
 
-		if ( attribute == null )
-			throw new UnsupportedOperationException( String.format( "property %s not found in %s", property, checkNotNull( metadata ).getEntryClass() ) );
+		if (attribute == null)
+			throw new UnsupportedOperationException(String.format(
+					"property %s not found in %s", property,
+					checkNotNull(metadata).getEntryClass()));
 
-		return new RawCompareFilter( op, attribute.getAttirbuteName(), formatValue( encodeValue( value, attribute ) ) );
+		return new RawCompareFilter(op, attribute.getAttirbuteName(),
+				formatValue(encodeValue(value, attribute)));
 	}
-	
-	protected String formatValue( final String encodedValue )
-	{
-		return FilterEncoder.encode( encodedValue );
+
+	protected String formatValue(final String encodedValue) {
+		return FilterEncoder.encode(encodedValue);
 	}
-	
-	protected String encodeValue( final Object value, final AttributeMetadata attribute )
-	{
-		if ( value != null )
-		{
-			if ( attribute.getObjectType() instanceof Class<?> )
-			{
-				Class<?> clazz = (Class<?>)attribute.getObjectType();
 
-				if ( !clazz.isInstance( value ) )
-					throw new UnsupportedOperationException( String.format( "wrong type (%s) for property %s in %s, expecting %s", value.getClass(), property, attribute.getObjectType(), clazz ) );
+	protected String encodeValue(final Object value,
+			final AttributeMetadata attribute) {
+		if (value != null) {
+			if (attribute.getObjectType() instanceof Class<?>) {
+				Class<?> clazz = (Class<?>) attribute.getObjectType();
 
-				ClassMetadata<?> refmetadata = getSessionFactory().getClassMetadata( clazz );
+				if (!clazz.isInstance(value))
+					throw new UnsupportedOperationException(
+							String.format(
+									"wrong type (%s) for property %s in %s, expecting %s",
+									value.getClass(), property,
+									attribute.getObjectType(), clazz));
 
-				if ( refmetadata != null )
-				{
-					@SuppressWarnings(
-					{ "rawtypes", "unchecked" } )
-					ClassAssistant<?> assistant = new ClassAssistant( refmetadata );
+				ClassMetadata<?> refmetadata = getSessionFactory()
+						.getClassMetadata(clazz);
+
+				if (refmetadata != null) {
+					@SuppressWarnings({ "rawtypes", "unchecked" })
+					ClassAssistant<?> assistant = new ClassAssistant(
+							refmetadata);
 
 					Name refdn;
-					try
-					{
-						refdn = assistant.getIdentifier( value );
-					}
-					catch ( Exception e )
-					{
+					try {
+						refdn = assistant.getIdentifier(value);
+					} catch (Exception e) {
 						throw new ConvertionException(e);
 					}
 
 					return refdn.toString();
 				}
 			}
-			
+
 			return value.toString();
 		}
-		
+
 		return null;
 	}
 }

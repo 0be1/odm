@@ -47,100 +47,105 @@ import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.filters.FilterBuilderImpl;
 
-@SuppressWarnings( "serial" )
-public abstract class SessionFactoryImpl implements SessionFactory
-{
+@SuppressWarnings("serial")
+public abstract class SessionFactoryImpl implements SessionFactory {
 	public static final ThreadLocal<Session> session = new ThreadLocal<Session>();
 
 	private Session requestSession;
 
-	public final Set<String> operationalAttributes = Sets.newHashSet( "objectClass" );
-	
-	private final Map<String, PartialClassMetadata<?>> mappedClassesMetadata = Maps.newLinkedHashMap();
+	public final Set<String> operationalAttributes = Sets
+			.newHashSet("objectClass");
 
-	private final Map<Class<?>, BasicProxyFactory<?>> proxyFactories = Maps.newConcurrentMap();
+	private final Map<String, PartialClassMetadata<?>> mappedClassesMetadata = Maps
+			.newLinkedHashMap();
 
-	private final Map<String, Converter> syntaxConverters = Maps.newConcurrentMap();
-	
-	private final Map<Type, Converter> attributeConverters = Maps.newConcurrentMap();
+	private final Map<Class<?>, BasicProxyFactory<?>> proxyFactories = Maps
+			.newConcurrentMap();
+
+	private final Map<String, Converter> syntaxConverters = Maps
+			.newConcurrentMap();
+
+	private final Map<Type, Converter> attributeConverters = Maps
+			.newConcurrentMap();
 
 	private CacheManager cacheManager;
 
-	private final Logger log = LoggerFactory.getLogger( this.getClass() );
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	@SuppressWarnings( "unchecked" )
-	public <T> ClassMetadata<T> getClassMetadata( Class<T> entityClass )
-	{
-		return (ClassMetadata<T>)getClassMetadata( checkNotNull( entityClass ).getCanonicalName() );
+	@SuppressWarnings("unchecked")
+	public <T> ClassMetadata<T> getClassMetadata(Class<T> entityClass) {
+		return (ClassMetadata<T>) getClassMetadata(checkNotNull(entityClass)
+				.getCanonicalName());
 	}
 
-	public ClassMetadata<?> getClassMetadata( String entityName )
-	{
-		return mappedClassesMetadata.get( checkNotNull( entityName ) );
+	public ClassMetadata<?> getClassMetadata(String entityName) {
+		return mappedClassesMetadata.get(checkNotNull(entityName));
 	}
 
-	public void addSyntaxConverter( String syntax, Converter converter )
-	{
-		this.syntaxConverters.put( checkNotNull( syntax ), checkNotNull( converter ) );
-	}
-	
-	public void addAttributeConverter( Type type, Converter converter )
-	{
-		this.attributeConverters.put( checkNotNull( type ), checkNotNull( converter ) );
+	public void addSyntaxConverter(String syntax, Converter converter) {
+		this.syntaxConverters
+				.put(checkNotNull(syntax), checkNotNull(converter));
 	}
 
-	private <T> void addProxyFactory( Class<T> clazz )
-	{
-		proxyFactories.put( clazz, new BasicProxyFactory<T>( clazz, new Class[] {} ) );
+	public void addAttributeConverter(Type type, Converter converter) {
+		this.attributeConverters.put(checkNotNull(type),
+				checkNotNull(converter));
+	}
+
+	private <T> void addProxyFactory(Class<T> clazz) {
+		proxyFactories.put(clazz, new BasicProxyFactory<T>(clazz,
+				new Class[] {}));
 	}
 
 	@Override
-	public ClassMetadata<?> getClassMetadata( final String[] objectClasses ) throws IllegalAccessException, InvocationTargetException,
-			ClassNotFoundException
-	{
-		final Set<String> directoryObjectClasses = ImmutableSet.copyOf( objectClasses );
+	public ClassMetadata<?> getClassMetadata(final String[] objectClasses)
+			throws IllegalAccessException, InvocationTargetException,
+			ClassNotFoundException {
+		final Set<String> directoryObjectClasses = ImmutableSet
+				.copyOf(objectClasses);
 
 		ClassMetadata<?> metadata = null;
 		int Q = 0;
 
 		// filtre sur la classe structurelle
-		for ( String entryClass : mappedClassesMetadata.keySet() )
-		{
-			final ClassMetadata<?> candidateMetadata = mappedClassesMetadata.get( entryClass );
+		for (String entryClass : mappedClassesMetadata.keySet()) {
+			final ClassMetadata<?> candidateMetadata = mappedClassesMetadata
+					.get(entryClass);
 
 			final Set<String> oc = new ImmutableSet.Builder<String>()
-					.addAll( candidateMetadata.getAuxiliaryClasses() )
-					.add( candidateMetadata.getStructuralClass() )
-					.build();
+					.addAll(candidateMetadata.getAuxiliaryClasses())
+					.add(candidateMetadata.getStructuralClass()).build();
 
-			log.debug( "trying {} ( {}, {} )", new Object[]
-			{ entryClass, candidateMetadata.getStructuralClass(), Joiner.on( ", " ).skipNulls().join( candidateMetadata.getAuxiliaryClasses() ) } );
+			log.debug(
+					"trying {} ( {}, {} )",
+					new Object[] {
+							entryClass,
+							candidateMetadata.getStructuralClass(),
+							Joiner.on(", ")
+									.skipNulls()
+									.join(candidateMetadata
+											.getAuxiliaryClasses()) });
 
-			if ( directoryObjectClasses.containsAll( oc ) )
-			{
+			if (directoryObjectClasses.containsAll(oc)) {
 				final int q = oc.size();
 
-				log.debug( "match q = {}", q );
+				log.debug("match q = {}", q);
 
-				if ( q > Q )
-				{
+				if (q > Q) {
 					Q = q;
 
-					if ( metadata != null )
-					{
-						if ( metadata.getEntryClass().isAssignableFrom( candidateMetadata.getEntryClass() ) )
-						{
+					if (metadata != null) {
+						if (metadata.getEntryClass().isAssignableFrom(
+								candidateMetadata.getEntryClass())) {
 							metadata = candidateMetadata;
 						}
-					}
-					else
-					{
+					} else {
 						metadata = candidateMetadata;
 					}
 				}
 			}
 
-			if ( Q == directoryObjectClasses.size() )
+			if (Q == directoryObjectClasses.size())
 				break;
 		}
 
@@ -148,19 +153,16 @@ public abstract class SessionFactoryImpl implements SessionFactory
 	}
 
 	@Override
-	public boolean isPersistentClass( String className )
-	{
-		return mappedClassesMetadata.get( className ) != null;
+	public boolean isPersistentClass(String className) {
+		return mappedClassesMetadata.get(className) != null;
 	}
 
 	@Override
-	public boolean isPersistentClass( Class<?> clazz )
-	{
-		checkNotNull( clazz );
+	public boolean isPersistentClass(Class<?> clazz) {
+		checkNotNull(clazz);
 
-		for ( ClassMetadata<?> m : mappedClassesMetadata.values() )
-		{
-			if ( clazz.isAssignableFrom( m.getEntryClass() ) )
+		for (ClassMetadata<?> m : mappedClassesMetadata.values()) {
+			if (clazz.isAssignableFrom(m.getEntryClass()))
 				return true;
 		}
 
@@ -168,118 +170,105 @@ public abstract class SessionFactoryImpl implements SessionFactory
 	}
 
 	@Override
-	public Session getCurrentSession()
-	{
+	public Session getCurrentSession() {
 		Session s = session.get();
 
 		// Ouvre une nouvelle Session, si ce Thread n'en a aucune
-		if ( s == null )
-		{
+		if (s == null) {
 			s = openSession();
-			session.set( s );
+			session.set(s);
 		}
 
 		return s;
 	}
 
 	@Override
-	public void closeSession()
-	{
+	public void closeSession() {
 		Session s = session.get();
-		session.set( null );
-		if ( s != null )
+		session.set(null);
+		if (s != null)
 			s.close();
 	}
-	
+
 	@Override
-	public boolean isOperationalAttribute( String attributeId )
-	{
-		return operationalAttributes.contains( attributeId );
+	public boolean isOperationalAttribute(String attributeId) {
+		return operationalAttributes.contains(attributeId);
 	}
 
-	public Converter getConverter( final String syntax )
-	{
-		return syntaxConverters.get( syntax );
-	}
-	
-	public Converter getConverter( final Type objectType )
-	{
-		return attributeConverters.get( objectType );
+	public Converter getConverter(final String syntax) {
+		return syntaxConverters.get(syntax);
 	}
 
-	public <T> Rdn composeName( T object, String propertyName ) throws InvalidNameException, MappingException
-	{
-		@SuppressWarnings( "unchecked" )
-		ClassMetadata<T> cm = getClassMetadata( (Class<T>)object.getClass() );
-
-		if ( cm == null )
-			throw new MappingException( "not a persistent class" );
-
-		ClassAssistant<T> assistant = new ClassAssistant<T>( cm );
-		AttributeMetadata meta = cm.getAttributeMetadataByPropertyName( propertyName );
-
-		if ( meta == null )
-			throw new MappingException( "unknow attribute" );
-
-		return new Rdn( meta.getAttirbuteName(), assistant.getValue( object, propertyName ) );
+	public Converter getConverter(final Type objectType) {
+		return attributeConverters.get(objectType);
 	}
 
-	public Session getRequestSession()
-	{
+	public <T> Rdn composeName(T object, String propertyName)
+			throws InvalidNameException, MappingException {
+		@SuppressWarnings("unchecked")
+		ClassMetadata<T> cm = getClassMetadata((Class<T>) object.getClass());
+
+		if (cm == null)
+			throw new MappingException("not a persistent class");
+
+		ClassAssistant<T> assistant = new ClassAssistant<T>(cm);
+		AttributeMetadata meta = cm
+				.getAttributeMetadataByPropertyName(propertyName);
+
+		if (meta == null)
+			throw new MappingException("unknow attribute");
+
+		return new Rdn(meta.getAttirbuteName(), assistant.getValue(object,
+				propertyName));
+	}
+
+	public Session getRequestSession() {
 		return requestSession;
 	}
 
-	public void setRequestSession( Session requestSession )
-	{
+	public void setRequestSession(Session requestSession) {
 		this.requestSession = requestSession;
 	}
 
-	public CacheManager getCacheManager()
-	{
+	public CacheManager getCacheManager() {
 		return cacheManager;
 	}
 
-	@SuppressWarnings( "unchecked" )
-	public <T> BasicProxyFactory<T> getProxyFactory( Class<T> clazz, Class<?>[] interfaces )
-	{
-		return (BasicProxyFactory<T>)proxyFactories.get( clazz );
+	@SuppressWarnings("unchecked")
+	public <T> BasicProxyFactory<T> getProxyFactory(Class<T> clazz,
+			Class<?>[] interfaces) {
+		return (BasicProxyFactory<T>) proxyFactories.get(clazz);
 	}
 
 	@Override
-	public <T> FilterBuilder<T> filterBuilder( Class<T> persistentClass )
-	{
-		return new FilterBuilderImpl<T>( persistentClass, this );
+	public <T> FilterBuilder<T> filterBuilder(Class<T> persistentClass) {
+		return new FilterBuilderImpl<T>(persistentClass, this);
 	}
 
-	protected <T> void mapClass( String className ) throws MappingException
-	{
-		checkNotNull( className );
+	protected <T> void mapClass(String className) throws MappingException {
+		checkNotNull(className);
 
-		if ( mappedClassesMetadata.containsKey( className ) )
-		{
-			log.warn( "class {} already mapped", className );
+		if (mappedClassesMetadata.containsKey(className)) {
+			log.warn("class {} already mapped", className);
 			return;
 		}
 
-		try
-		{
-			Class<T> persistentClass = (Class<T>)Class.forName( className );
-			
-			mappedClassesMetadata.put( className, new ClassMetadataBuilder<T>( persistentClass ).build() );
+		try {
+			Class<T> persistentClass = (Class<T>) Class.forName(className);
 
-			addProxyFactory( persistentClass );
-		}
-		catch ( Exception e )
-		{
-			throw new MappingException( e );
+			mappedClassesMetadata.put(className, new ClassMetadataBuilder<T>(
+					persistentClass).build());
+
+			addProxyFactory(persistentClass);
+		} catch (Exception e) {
+			throw new MappingException(e);
 		}
 	}
-	
-	protected void init()
-	{
-		for( final PartialClassMetadata<?> metadata : mappedClassesMetadata.values() )
-		{
-			metadata.init( this );
+
+	protected void init() {
+		for (final PartialClassMetadata<?> metadata : mappedClassesMetadata
+				.values()) {
+			metadata.init(this);
 		}
 	}
 }

@@ -24,7 +24,6 @@ package fr.mtlx.odm.model;
  * #L%
  */
 
-
 import java.io.Serializable;
 
 import javax.naming.Name;
@@ -33,31 +32,25 @@ import javax.validation.constraints.NotNull;
 import fr.mtlx.odm.Entry;
 import fr.mtlx.odm.Id;
 
-
-@Entry( objectClasses =
-{ "top" } )
-public class Top extends IdProvider<Name> implements Serializable
-{
+@Entry(objectClasses = { "top" })
+public class Top extends IdProvider<Name> implements Serializable {
 	private static final long serialVersionUID = -8268393254510637376L;
-	
+
 	@Id
 	@NotNull
 	private Name dn;
-	
-	public Top()
-	{
-		super( Name.class );
+
+	public Top() {
+		super(Name.class);
 	}
 
 	@Override
-	public Name getDn()
-	{
+	public Name getDn() {
 		return dn;
 	}
 
 	@Override
-	public void setDn( final Name dn )
-	{
+	public void setDn(final Name dn) {
 		this.dn = dn;
 	}
 }

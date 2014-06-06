@@ -26,56 +26,46 @@ package fr.mtlx.odm.cache;
 
 import javax.naming.Name;
 
-public class EntityMapCache<T> extends NameKeyCache<T> implements EntityCache<T>
-{
+public class EntityMapCache<T> extends NameKeyCache<T> implements
+		EntityCache<T> {
 	private final String region;
-	
-	public EntityMapCache( final String region )
-	{
+
+	public EntityMapCache(final String region) {
 		this.region = region;
 	}
 
 	@Override
-	public T store( Name key, T context )
-	{
-		T retval = super.store( key, context );
-		
-		if ( log.isDebugEnabled() )
-		{
-			log.debug( "storing {} in {}", key, region );
+	public T store(Name key, T context) {
+		T retval = super.store(key, context);
+
+		if (log.isDebugEnabled()) {
+			log.debug("storing {} in {}", key, region);
 		}
-		
+
 		return retval;
 	}
 
 	@Override
-	public T retrieve( Name key )
-	{
-		T retval = super.retrieve( key );
-		
-		if ( log.isDebugEnabled() )
-		{
-			if ( retval != null )
-			{
-				log.debug( "cache hit for {} in {}", key, region );
-			}
-			else
-			{
-				log.debug( "cache miss for {} in {}", key, region );
+	public T retrieve(Name key) {
+		T retval = super.retrieve(key);
+
+		if (log.isDebugEnabled()) {
+			if (retval != null) {
+				log.debug("cache hit for {} in {}", key, region);
+			} else {
+				log.debug("cache miss for {} in {}", key, region);
 			}
 		}
-		
+
 		return retval;
 	}
 
 	@Override
-	public T remove( Name key )
-	{
-		if ( log.isDebugEnabled() )
-		{
-			log.debug( "removing {} from {}", key, region );
+	public T remove(Name key) {
+		if (log.isDebugEnabled()) {
+			log.debug("removing {} from {}", key, region);
 		}
-		
-		return super.remove( key );
+
+		return super.remove(key);
 	}
 }

@@ -26,16 +26,14 @@ package fr.mtlx.odm.cache;
 
 import org.springframework.ldap.core.DirContextOperations;
 
-public class ContextMapCache extends NameKeyCache<DirContextOperations> implements ContextCache
-{
-	public ContextMapCache( )
-	{
+public class ContextMapCache extends NameKeyCache<DirContextOperations>
+		implements ContextCache {
+	public ContextMapCache() {
 		super();
 	}
-	
+
 	@Override
-	public DirContextOperations store( DirContextOperations context )
-	{
-		return this.store( context.getDn(), context );
+	public DirContextOperations store(DirContextOperations context) {
+		return this.store(context.getDn(), context);
 	}
 }

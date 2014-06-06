@@ -32,9 +32,8 @@ import java.util.HashSet;
 
 import fr.mtlx.odm.converters.Converter;
 
-@SuppressWarnings( "serial" )
-public class AttributeMetadata implements Serializable
-{
+@SuppressWarnings("serial")
+public class AttributeMetadata implements Serializable {
 	private String propertyName;
 
 	private String attributeName;
@@ -48,133 +47,110 @@ public class AttributeMetadata implements Serializable
 	private String syntax;
 
 	private Converter syntaxConverter;
-	
+
 	private Converter attributeConverter;
 
 	private Class<?> persistentClass;
 
 	private Class<? extends Collection<?>> collectionType;
 
-	public String getAttributeName()
-	{
+	public String getAttributeName() {
 		return attributeName;
 	}
 
-	public void setAttributeName( String attributeName )
-	{
+	public void setAttributeName(String attributeName) {
 		this.attributeName = attributeName;
 	}
 
-	public void setPropertyName( String propertyName )
-	{
+	public void setPropertyName(String propertyName) {
 		this.propertyName = propertyName;
 	}
 
-	public void setAttributeAliases( String[] attributeAliases )
-	{
+	public void setAttributeAliases(String[] attributeAliases) {
 		this.attributeAliases = attributeAliases;
 	}
 
-	public void setObjectType( Type objectType )
-	{
+	public void setObjectType(Type objectType) {
 		this.objectType = objectType;
 	}
 
-	public void setDirectoryType( Type directoryType )
-	{
+	public void setDirectoryType(Type directoryType) {
 		this.directoryType = directoryType;
 	}
 
-	public void setSyntax( String syntax )
-	{
+	public void setSyntax(String syntax) {
 		this.syntax = syntax;
 	}
 
-	public void setSyntaxConverter( Converter syntaxConverter )
-	{
+	public void setSyntaxConverter(Converter syntaxConverter) {
 		this.syntaxConverter = syntaxConverter;
 	}
 
-	public void setAttributeConverter( Converter attributeConverter )
-	{
+	public void setAttributeConverter(Converter attributeConverter) {
 		this.attributeConverter = attributeConverter;
 	}
 
-	public void setPersistentClass( Class<?> persistentClass )
-	{
+	public void setPersistentClass(Class<?> persistentClass) {
 		this.persistentClass = persistentClass;
 	}
 
-	public void setCollectionType( Class<? extends Collection<?>> collectionType )
-	{
+	public void setCollectionType(Class<? extends Collection<?>> collectionType) {
 		this.collectionType = collectionType;
 	}
 
-	public String getAttirbuteName()
-	{
+	public String getAttirbuteName() {
 		return attributeName;
 	}
 
-	public String getPropertyName()
-	{
+	public String getPropertyName() {
 		return propertyName;
 	}
 
-	public Type getObjectType()
-	{
+	public Type getObjectType() {
 		return objectType;
 	}
 
-	public Type getDirectoryType()
-	{
+	public Type getDirectoryType() {
 		return directoryType;
 	}
 
-	public String getSyntax()
-	{
+	public String getSyntax() {
 		return syntax;
 	}
 
-	public boolean isMultivalued()
-	{
+	public boolean isMultivalued() {
 		return collectionType != null;
 	}
 
-	public Class<? extends Collection<?>> getCollectionType()
-	{
+	public Class<? extends Collection<?>> getCollectionType() {
 		return collectionType;
 	}
 
-	public String[] getAttributeAliases()
-	{
+	public String[] getAttributeAliases() {
 		return attributeAliases;
 	}
 
-	public Collection<?> newCollectionInstance()
-	{
+	public Collection<?> newCollectionInstance() {
 		final Class<? extends Collection<?>> ctype = getCollectionType();
 
-		if ( ctype.isAssignableFrom( ArrayList.class ) )
-		{
+		if (ctype.isAssignableFrom(ArrayList.class)) {
 			return new ArrayList<Object>();
+		} else if (ctype.isAssignableFrom(HashSet.class)) {
+			return new HashSet<Object>();
 		}
-		else if ( ctype.isAssignableFrom( HashSet.class ) ) { return new HashSet<Object>(); }
 
 		return null;
 	}
 
-	public Converter getSyntaxConverter()
-	{
+	public Converter getSyntaxConverter() {
 		return syntaxConverter;
 	}
 
-	public Class<?> getPersistentClass()
-	{
+	public Class<?> getPersistentClass() {
 		return persistentClass;
 	}
 
-	public Converter getAttributeConverter()
-	{
+	public Converter getAttributeConverter() {
 		return attributeConverter;
 	}
 }

@@ -24,22 +24,16 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public enum Comparison
-{
-	equals( "=" ),
-	approx( "~=" ),
-	greater( ">=" ),
-	less( "<=" );
+public enum Comparison {
+	equals("="), approx("~="), greater(">="), less("<=");
 
 	protected final String op;
 
-	Comparison( String op )
-	{
+	Comparison(String op) {
 		this.op = op;
 	}
 
-	public String getOperator()
-	{
+	public String getOperator() {
 		return this.op;
 	}
 }

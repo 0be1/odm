@@ -24,18 +24,16 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
+public interface FilterBuilder<T> {
+	OrFilter or(Filter... filters);
 
-public interface FilterBuilder<T>
-{
-	OrFilter or( Filter... filters );
+	AndFilter and(Filter... filters);
 
-	AndFilter and( Filter... filters );
-	
-	CompareCriterion<T> property( String propertyName );
-	
-	Filter objectClass( final String objectClass );
-	
-	Filter not( final Filter filter );
-	
-	CompareCriterion<T> attribute( final String attributeName );
+	CompareCriterion<T> property(String propertyName);
+
+	Filter objectClass(final String objectClass);
+
+	Filter not(final Filter filter);
+
+	CompareCriterion<T> attribute(final String attributeName);
 }

@@ -24,117 +24,98 @@ package fr.mtlx.odm.model;
  * #L%
  */
 
-
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
 
-@Entry(objectClasses =
-{ "organizationalPerson" } )
-public class OrganizationalPerson extends Person
-{
+@Entry(objectClasses = { "organizationalPerson" })
+public class OrganizationalPerson extends Person {
 	private static final long serialVersionUID = 497283357577415187L;
 
 	@Attribute
 	private String facsimileTelephoneNumber;
-	
-	@Attribute(aliases={"l"})
+
+	@Attribute(aliases = { "l" })
 	private String localityName;
-	
+
 	@Attribute
 	private String personalTitle;
-	
+
 	@Attribute
 	private String postalAddress;
-	
+
 	@Attribute
 	private String postalCode;
-	
+
 	@Attribute
 	private String postOfficeBox;
 
-	@Attribute(aliases="streetAddress")
+	@Attribute(aliases = "streetAddress")
 	private String street;
-	
+
 	@Attribute
 	private String title;
 
-	public String getFacsimileTelephoneNumber()
-	{
+	public String getFacsimileTelephoneNumber() {
 		return facsimileTelephoneNumber;
 	}
 
-	public void setFacsimileTelephoneNumber( String facsimileTelephoneNumber )
-	{
+	public void setFacsimileTelephoneNumber(String facsimileTelephoneNumber) {
 		this.facsimileTelephoneNumber = facsimileTelephoneNumber;
 	}
 
-	public String getLocalityName()
-	{
+	public String getLocalityName() {
 		return localityName;
 	}
 
-	public void setLocalityName( String localityName )
-	{
+	public void setLocalityName(String localityName) {
 		this.localityName = localityName;
 	}
 
-	public String getPersonalTitle()
-	{
+	public String getPersonalTitle() {
 		return personalTitle;
 	}
 
-	public void setPersonalTitle( String personalTitle )
-	{
+	public void setPersonalTitle(String personalTitle) {
 		this.personalTitle = personalTitle;
 	}
 
-	public String getPostalAddress()
-	{
+	public String getPostalAddress() {
 		return postalAddress;
 	}
 
-	public void setPostalAddress( String postalAddress )
-	{
+	public void setPostalAddress(String postalAddress) {
 		this.postalAddress = postalAddress;
 	}
 
-	public String getPostalCode()
-	{
+	public String getPostalCode() {
 		return postalCode;
 	}
 
-	public void setPostalCode( String postalCode )
-	{
+	public void setPostalCode(String postalCode) {
 		this.postalCode = postalCode;
 	}
 
-	public String getPostOfficeBox()
-	{
+	public String getPostOfficeBox() {
 		return postOfficeBox;
 	}
 
-	public void setPostOfficeBox( String postOfficeBox )
-	{
+	public void setPostOfficeBox(String postOfficeBox) {
 		this.postOfficeBox = postOfficeBox;
 	}
 
-	public String getStreet()
-	{
+	public String getStreet() {
 		return street;
 	}
 
-	public void setStreet( String street )
-	{
+	public void setStreet(String street) {
 		this.street = street;
 	}
 
-	public String getTitle()
-	{
+	public String getTitle() {
 		return title;
 	}
 
-	public void setTitle( String title )
-	{
+	public void setTitle(String title) {
 		this.title = title;
 	}
 }

@@ -33,48 +33,39 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-
-public abstract class NameKeyCache<T> implements Cache<T, Name>
-{
+public abstract class NameKeyCache<T> implements Cache<T, Name> {
 	private final Map<String, T> cacheMap;
 
-	protected final Logger log = LoggerFactory.getLogger( getClass() );
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	public NameKeyCache( )
-	{
+	public NameKeyCache() {
 		cacheMap = Maps.newConcurrentMap();
 	}
 
-	public T store( final Name key, final T context )
-	{
-		return cacheMap.put( getKey( key ), context );
+	public T store(final Name key, final T context) {
+		return cacheMap.put(getKey(key), context);
 	}
 
-	public T retrieve( final Name key )
-	{
-		return cacheMap.get( getKey( key ) );
-	}
-
-	@Override
-	public T remove( Name key )
-	{
-		return cacheMap.remove( getKey( key ) );
+	public T retrieve(final Name key) {
+		return cacheMap.get(getKey(key));
 	}
 
 	@Override
-	public void clear()
-	{
+	public T remove(Name key) {
+		return cacheMap.remove(getKey(key));
+	}
+
+	@Override
+	public void clear() {
 		cacheMap.clear();
 	}
 
 	@Override
-	public boolean contains( Name key )
-	{
-		return cacheMap.containsKey( getKey( key ) );
+	public boolean contains(Name key) {
+		return cacheMap.containsKey(getKey(key));
 	}
 
-	protected String getKey( final Name dn )
-	{
+	protected String getKey(final Name dn) {
 		return dn.toString().toLowerCase();
 	}
 }

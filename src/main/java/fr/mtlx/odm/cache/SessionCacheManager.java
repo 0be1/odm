@@ -30,40 +30,37 @@ import com.google.common.collect.Maps;
 
 import fr.mtlx.odm.Session;
 
-public class SessionCacheManager implements CacheManager
-{
-	private final Map<Class<?>, EntityCache<?>> caches = Maps.newConcurrentMap();
+public class SessionCacheManager implements CacheManager {
+	private final Map<Class<?>, EntityCache<?>> caches = Maps
+			.newConcurrentMap();
 
 	public final Session session;
 
-	public SessionCacheManager( final Session session )
-	{
+	public SessionCacheManager(final Session session) {
 		this.session = session;
 	}
 
 	@Override
-	public <T> EntityCache<T> getCacheFor( Class<T> persistentClass )
-	{
-		if ( !session.getSessionFactory().isPersistentClass( persistentClass ) ) { return null; }
-		
-		@SuppressWarnings( "unchecked" )
-		EntityCache<T> cache = (EntityCache<T>)caches.get( persistentClass );
+	public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
+		if (!session.getSessionFactory().isPersistentClass(persistentClass)) {
+			return null;
+		}
 
-		if ( cache == null )
-		{
-			cache = new EntityMapCache<T>( "Session" );
+		@SuppressWarnings("unchecked")
+		EntityCache<T> cache = (EntityCache<T>) caches.get(persistentClass);
 
-			caches.put( persistentClass, cache );
+		if (cache == null) {
+			cache = new EntityMapCache<T>("Session");
+
+			caches.put(persistentClass, cache);
 		}
 
 		return cache;
 	}
 
 	@Override
-	public void clear( )
-	{
-		for (EntityCache<?> cache : caches.values() )
-		{
+	public void clear() {
+		for (EntityCache<?> cache : caches.values()) {
 			cache.clear();
 		}
 	}

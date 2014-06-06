@@ -26,6 +26,5 @@ package fr.mtlx.odm.cache;
 
 import javax.naming.Name;
 
-public interface CacheByName<T> extends Cache<T, Name>
-{
+public interface CacheByName<T> extends Cache<T, Name> {
 }

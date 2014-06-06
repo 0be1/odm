@@ -24,118 +24,98 @@ package fr.mtlx.odm.model;
  * #L%
  */
 
-
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
 
-@Entry(objectClasses =
-{ "inetOrgPerson" } )
-public class InetOrgPerson extends OrganizationalPerson
-{
+@Entry(objectClasses = { "inetOrgPerson" })
+public class InetOrgPerson extends OrganizationalPerson {
 	private static final long serialVersionUID = -3211460088704857345L;
 
 	@Attribute
 	private String displayName;
-	
+
 	@Attribute
 	private String employeeNumber;
-	
-	@Attribute(aliases="gn")
+
+	@Attribute(aliases = "gn")
 	private String givenName;
-	
+
 	@Attribute
 	private String homePhone;
-	
+
 	@Attribute
 	private String initials;
-	
-	@Attribute(aliases="rfc822Mailbox")
+
+	@Attribute(aliases = "rfc822Mailbox")
 	private String mail;
-	
+
 	@Attribute
 	private String mobile;
-	
-	
+
 	@Attribute
 	private String employeeType;
 
-	public String getDisplayName()
-	{
+	public String getDisplayName() {
 		return displayName;
 	}
 
-	public void setDisplayName( String displayName )
-	{
+	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
 	}
 
-	public String getEmployeeNumber()
-	{
+	public String getEmployeeNumber() {
 		return employeeNumber;
 	}
 
-	public void setEmployeeNumber( String employeeNumber )
-	{
+	public void setEmployeeNumber(String employeeNumber) {
 		this.employeeNumber = employeeNumber;
 	}
 
-	public String getGivenName()
-	{
+	public String getGivenName() {
 		return givenName;
 	}
 
-	public void setGivenName( String givenName )
-	{
+	public void setGivenName(String givenName) {
 		this.givenName = givenName;
 	}
 
-	public String getHomePhone()
-	{
+	public String getHomePhone() {
 		return homePhone;
 	}
 
-	public void setHomePhone( String homePhone )
-	{
+	public void setHomePhone(String homePhone) {
 		this.homePhone = homePhone;
 	}
 
-	public String getInitials()
-	{
+	public String getInitials() {
 		return initials;
 	}
 
-	public void setInitials( String initials )
-	{
+	public void setInitials(String initials) {
 		this.initials = initials;
 	}
 
-	public String getMail()
-	{
+	public String getMail() {
 		return mail;
 	}
 
-	public void setMail( String mail )
-	{
+	public void setMail(String mail) {
 		this.mail = mail;
 	}
 
-	public String getMobile()
-	{
+	public String getMobile() {
 		return mobile;
 	}
 
-	public void setMobile( String mobile )
-	{
+	public void setMobile(String mobile) {
 		this.mobile = mobile;
 	}
-	
-	public String getEmployeeType()
-	{
+
+	public String getEmployeeType() {
 		return employeeType;
 	}
 
-	public void setEmployeeType( String employeeType )
-	{
+	public void setEmployeeType(String employeeType) {
 		this.employeeType = employeeType;
 	}
 }

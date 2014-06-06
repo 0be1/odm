@@ -44,11 +44,9 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyObject;
 
-@SuppressWarnings( "rawtypes" )
-class BasicProxyFactory<T>
-{
-	private class DirContextHandler<S> implements MethodHandler
-	{
+@SuppressWarnings("rawtypes")
+class BasicProxyFactory<T> {
+	private class DirContextHandler<S> implements MethodHandler {
 		private final Map<String, Boolean> invoked = Maps.newHashMap();
 		private final ClassMetadata<S> metadata;
 		private final Class<S> proxiedClass;
@@ -56,116 +54,117 @@ class BasicProxyFactory<T>
 
 		private final ProxyResolver<S> resolver;
 
-		public DirContextHandler( ProxyObject proxiedObject, Class<S> proxiedClass, DirContextOperations context, Session session )
-		{
-			this.proxiedObject = checkNotNull( proxiedObject, "proxiedObject is null" );
-			this.proxiedClass = checkNotNull( proxiedClass, "proxiedClass is null" );
+		public DirContextHandler(ProxyObject proxiedObject,
+				Class<S> proxiedClass, DirContextOperations context,
+				Session session) {
+			this.proxiedObject = checkNotNull(proxiedObject,
+					"proxiedObject is null");
+			this.proxiedClass = checkNotNull(proxiedClass,
+					"proxiedClass is null");
 
-			this.metadata = ((SessionFactoryImpl)session.getSessionFactory()).getClassMetadata( proxiedClass );
+			this.metadata = ((SessionFactoryImpl) session.getSessionFactory())
+					.getClassMetadata(proxiedClass);
 
-			resolver = new ProxyResolver<S>( context, metadata, session );
+			resolver = new ProxyResolver<S>(context, metadata, session);
 		}
 
-		private String capitalizeFirstLetter( String original )
-		{
-			if ( original.length() == 0 )
+		private String capitalizeFirstLetter(String original) {
+			if (original.length() == 0)
 				return original;
 
-			return original.substring( 0, 1 ).toUpperCase() + original.substring( 1 );
+			return original.substring(0, 1).toUpperCase()
+					+ original.substring(1);
 		}
 
-		private String getPropertyName( final Method method )
-		{
+		private String getPropertyName(final Method method) {
 			final String name = method.getName();
 
-			if ( name.startsWith( "get" ) || name.startsWith( "set" ) )
-			{
-				return name.substring( 3 );
+			if (name.startsWith("get") || name.startsWith("set")) {
+				return name.substring(3);
+			} else if (name.startsWith("is")) {
+				return name.substring(2);
 			}
-			else if ( name.startsWith( "is" ) ) { return name.substring( 2 ); }
 
 			return null;
 		}
 
-		private Method getSetter( final String property ) throws SecurityException, NoSuchMethodException
-		{
-			final AttributeMetadata att = metadata.getAttributeMetadataByPropertyName( property );
-			if ( att.isMultivalued() )
-			{
-				return proxiedClass.getMethod( getSetterName( property ), att.getCollectionType() );
+		private Method getSetter(final String property)
+				throws SecurityException, NoSuchMethodException {
+			final AttributeMetadata att = metadata
+					.getAttributeMetadataByPropertyName(property);
+			if (att.isMultivalued()) {
+				return proxiedClass.getMethod(getSetterName(property),
+						att.getCollectionType());
+			} else {
+				return proxiedClass.getMethod(getSetterName(property),
+						(Class) att.getObjectType());
 			}
-			else
-			{
-				return proxiedClass.getMethod( getSetterName( property ), (Class)att.getObjectType() );
-			}
 		}
 
-		private String getSetterName( final String property )
-		{
-			return "set" + capitalizeFirstLetter( property );
+		private String getSetterName(final String property) {
+			return "set" + capitalizeFirstLetter(property);
 		}
 
-		private boolean hasGetterSignature( Method method )
-		{
-			return method.getParameterTypes().length == 0 && method.getReturnType() != null;
+		private boolean hasGetterSignature(Method method) {
+			return method.getParameterTypes().length == 0
+					&& method.getReturnType() != null;
 		}
 
-		private boolean hasSetterSignature( Method method )
-		{
-			return method.getParameterTypes().length == 1 && ( method.getReturnType() == null || method.getReturnType() == void.class );
+		private boolean hasSetterSignature(Method method) {
+			return method.getParameterTypes().length == 1
+					&& (method.getReturnType() == null || method
+							.getReturnType() == void.class);
 		}
 
 		@Override
-		public Object invoke( Object object, final Method method, final Method method1, final Object[] args ) throws Exception
-		{
+		public Object invoke(Object object, final Method method,
+				final Method method1, final Object[] args) throws Exception {
 			final String name = method.getName();
 
-			if ( "toString".equals( name ) )
-			{
-				return proxiedClass.getName() + "@" + System.identityHashCode( object );
-			}
-			else if ( "equals".equals( name ) )
-			{
+			if ("toString".equals(name)) {
+				return proxiedClass.getName() + "@"
+						+ System.identityHashCode(object);
+			} else if ("equals".equals(name)) {
 				return proxiedObject == object;
+			} else if ("hashCode".equals(name)) {
+				return System.identityHashCode(object);
+			} else if (!isHandled(method)) {
+				return method1.invoke(object, args);
 			}
-			else if ( "hashCode".equals( name ) )
-			{
-				return System.identityHashCode( object );
-			}
-			else if ( !isHandled( method ) ) { return method1.invoke( object, args ); }
 
-			final String property = getPropertyName( method );
+			final String property = getPropertyName(method);
 
 			assert property != null;
 
-			if ( !invoked.containsKey( property ) )
-			{
-				setProperty( object, property );
+			if (!invoked.containsKey(property)) {
+				setProperty(object, property);
 
-				invoked.put( property, true );
+				invoked.put(property, true);
 			}
 
-			return method1.invoke( proxiedObject );
+			return method1.invoke(proxiedObject);
 		}
 
-		private void setProperty( final Object object, final String property ) throws NamingException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
-		{
-			final Object value = resolver.getProperty( property );
+		private void setProperty(final Object object, final String property)
+				throws NamingException, InstantiationException,
+				IllegalAccessException, InvocationTargetException,
+				NoSuchMethodException {
+			final Object value = resolver.getProperty(property);
 
-			getSetter( property ).invoke( object, value );
+			getSetter(property).invoke(object, value);
 		}
 
-		private boolean isHandled( Method method )
-		{
-			if ( hasGetterSignature( method ) )
-			{
-				final String property = getPropertyName( method );
+		private boolean isHandled(Method method) {
+			if (hasGetterSignature(method)) {
+				final String property = getPropertyName(method);
 
-				if ( property != null )
-				{
-					if ( property.equals( metadata.getIdentifierPropertyName() ) ) { return false; }
+				if (property != null) {
+					if (property.equals(metadata.getIdentifierPropertyName())) {
+						return false;
+					}
 
-					return metadata.getAttributeMetadataByPropertyName( property ) != null;
+					return metadata
+							.getAttributeMetadataByPropertyName(property) != null;
 				}
 			}
 
@@ -173,13 +172,12 @@ class BasicProxyFactory<T>
 		}
 	}
 
-	private static final MethodFilter FINALIZE_FILTER = new MethodFilter()
-	{
+	private static final MethodFilter FINALIZE_FILTER = new MethodFilter() {
 		@Override
-		public boolean isHandled( Method m )
-		{
+		public boolean isHandled(Method m) {
 			// skip finalize methods
-			return ! ( m.getParameterTypes().length == 0 && m.getName().equals( "finalize" ) );
+			return !(m.getParameterTypes().length == 0 && m.getName().equals(
+					"finalize"));
 		}
 	};
 
@@ -189,57 +187,56 @@ class BasicProxyFactory<T>
 
 	private final Class<T> superClass;
 
-	public BasicProxyFactory( final Class<T> superClass, @Nullable final Class[] interfaces )
-	{
-		this.superClass = checkNotNull( superClass );
+	public BasicProxyFactory(final Class<T> superClass,
+			@Nullable final Class[] interfaces) {
+		this.superClass = checkNotNull(superClass);
 
-		this.interfaces = Sets.newHashSet( interfaces );
+		this.interfaces = Sets.newHashSet(interfaces);
 
 		javassist.util.proxy.ProxyFactory factory = new javassist.util.proxy.ProxyFactory();
 
-		factory.setFilter( FINALIZE_FILTER );
+		factory.setFilter(FINALIZE_FILTER);
 
-		factory.setSuperclass( this.superClass );
+		factory.setSuperclass(this.superClass);
 
-		if ( interfaces != null && interfaces.length > 0 )
-		{
-			factory.setInterfaces( interfaces );
+		if (interfaces != null && interfaces.length > 0) {
+			factory.setInterfaces(interfaces);
 		}
 
 		proxyClass = factory.createClass();
 	}
 
-	public Class[] getInterfaces()
-	{
-		return interfaces.toArray( new Class[] {} );
+	public Class[] getInterfaces() {
+		return interfaces.toArray(new Class[] {});
 	}
 
-	public T getProxy( final Session session, final DirContextOperations dirContext ) throws InstantiationException, IllegalAccessException, InvalidNameException
-	{
-		ProxyObject proxy = (ProxyObject)proxyClass.newInstance();
-		proxy.setHandler( new DirContextHandler<T>( proxy, superClass, dirContext, session ) );
+	public T getProxy(final Session session,
+			final DirContextOperations dirContext)
+			throws InstantiationException, IllegalAccessException,
+			InvalidNameException {
+		ProxyObject proxy = (ProxyObject) proxyClass.newInstance();
+		proxy.setHandler(new DirContextHandler<T>(proxy, superClass,
+				dirContext, session));
 
-		@SuppressWarnings( "unchecked" )
-		T retval = (T)proxy;
+		@SuppressWarnings("unchecked")
+		T retval = (T) proxy;
 
 		return retval;
 	}
 
-	public Class getProxyClass()
-	{
+	public Class getProxyClass() {
 		return proxyClass;
 	}
 
-	public Class<T> getSuperClass()
-	{
+	public Class<T> getSuperClass() {
 		return superClass;
 	}
 
-	public boolean isImplementing( final Class<?> clazz )
-	{
-		for ( Class iClazz : interfaces )
-		{
-			if ( clazz.isAssignableFrom( iClazz ) ) { return true; }
+	public boolean isImplementing(final Class<?> clazz) {
+		for (Class iClazz : interfaces) {
+			if (clazz.isAssignableFrom(iClazz)) {
+				return true;
+			}
 		}
 
 		return false;

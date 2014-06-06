@@ -29,38 +29,30 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.SimpleTimeZone;
 
-public class TimeConverter extends SyntaxConverter<String, Date>
-{
-	public TimeConverter()
-	{
-		super( String.class, Date.class );
+public class TimeConverter extends SyntaxConverter<String, Date> {
+	public TimeConverter() {
+		super(String.class, Date.class);
 	}
 
 	public final static SimpleDateFormat generalizedTime;
 
 	@Override
-	public String to( final Date object ) throws ConvertionException
-	{
-		return generalizedTime.format( object );
+	public String to(final Date object) throws ConvertionException {
+		return generalizedTime.format(object);
 	}
 
 	@Override
-	public Date from( String value ) throws ConvertionException
-	{
-		try
-		{
-			return (Date)generalizedTime.parseObject( value );
-		}
-		catch ( ParseException e )
-		{
-			throw new ConvertionException( e );
+	public Date from(String value) throws ConvertionException {
+		try {
+			return (Date) generalizedTime.parseObject(value);
+		} catch (ParseException e) {
+			throw new ConvertionException(e);
 		}
 	}
 
-	static
-	{
-		generalizedTime = new SimpleDateFormat( "yyyyMMddHHmmss'Z'" );
+	static {
+		generalizedTime = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
 
-		generalizedTime.setTimeZone( new SimpleTimeZone( 0, "Z" ) );
+		generalizedTime.setTimeZone(new SimpleTimeZone(0, "Z"));
 	}
 }

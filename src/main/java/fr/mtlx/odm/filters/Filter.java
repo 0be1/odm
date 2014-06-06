@@ -1,7 +1,5 @@
 package fr.mtlx.odm.filters;
 
-
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -26,7 +24,6 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public interface Filter
-{
+public interface Filter {
 	String encode();
 }

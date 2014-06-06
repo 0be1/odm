@@ -28,21 +28,20 @@ import javax.naming.Name;
 import javax.naming.NameNotFoundException;
 import javax.naming.directory.SearchControls;
 
-public interface Operations<T>
-{
-	T lookup( Name dn ) throws NameNotFoundException;
-	
-	T lookupByExample( T example ) throws NameNotFoundException;
-	
-	SearchCriteria<T> search( Name base,  SearchControls controls );
-	
-	SearchCriteria<T> search( Name base );
-	
-	void bind( T transientObject );
+public interface Operations<T> {
+	T lookup(Name dn) throws NameNotFoundException;
 
-	void modify( T persistentObject );
+	T lookupByExample(T example) throws NameNotFoundException;
 
-	void unbind( T persistentObject );
-	
-	void purge( Name base );
+	SearchCriteria<T> search(Name base, SearchControls controls);
+
+	SearchCriteria<T> search(Name base);
+
+	void bind(T transientObject);
+
+	void modify(T persistentObject);
+
+	void unbind(T persistentObject);
+
+	void purge(Name base);
 }

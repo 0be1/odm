@@ -26,34 +26,28 @@ package fr.mtlx.odm.cache;
 
 import javax.naming.Name;
 
-public class NoCache<T> implements EntityCache<T>
-{
+public class NoCache<T> implements EntityCache<T> {
 	@Override
-	public T store( Name key, T object )
-	{
+	public T store(Name key, T object) {
 		return null;
 	}
 
 	@Override
-	public T retrieve( Name key )
-	{
+	public T retrieve(Name key) {
 		return null;
 	}
 
 	@Override
-	public T remove( Name key )
-	{
+	public T remove(Name key) {
 		return null;
 	}
 
 	@Override
-	public void clear()
-	{
+	public void clear() {
 	}
 
 	@Override
-	public boolean contains( Name key )
-	{
+	public boolean contains(Name key) {
 		return false;
 	}
 }

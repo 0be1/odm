@@ -26,43 +26,35 @@ package fr.mtlx.odm.filters;
 
 import fr.mtlx.odm.SessionFactoryImpl;
 
-public class OrFilter extends CompositeFilter
-{
-	OrFilter( SessionFactoryImpl sessionFactory, Filter... filters )
-	{
-		super( filters );
+public class OrFilter extends CompositeFilter {
+	OrFilter(SessionFactoryImpl sessionFactory, Filter... filters) {
+		super(filters);
 	}
 
 	@Override
-	public OrFilter add( final Filter filter )
-	{
-		if (filter instanceof OrFilter )
-		{
-			filters.addAll( ((OrFilter)filter).filters );
+	public OrFilter add(final Filter filter) {
+		if (filter instanceof OrFilter) {
+			filters.addAll(((OrFilter) filter).filters);
+		} else {
+			super.add(filter);
 		}
-		else
-		{
-			super.add( filter );
-		}
-		
+
 		return this;
 	}
-	
-	@Override
-	public String encode()
-	{
-		final StringBuilder sb = new StringBuilder( "(" ).append( '|' );
 
-		for ( Filter filter : filters )
-		{
-			sb.append( filter.encode() );
+	@Override
+	public String encode() {
+		final StringBuilder sb = new StringBuilder("(").append('|');
+
+		for (Filter filter : filters) {
+			sb.append(filter.encode());
 		}
 
-		sb.append( ")" );
+		sb.append(")");
 
 		String retval = sb.toString();
 
-		assert retval != null && retval.startsWith( "(" ) && retval.endsWith( ")" );
+		assert retval != null && retval.startsWith("(") && retval.endsWith(")");
 
 		return retval;
 	}

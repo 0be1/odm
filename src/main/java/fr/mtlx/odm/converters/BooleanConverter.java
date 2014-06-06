@@ -1,6 +1,5 @@
 package fr.mtlx.odm.converters;
 
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,23 +24,19 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class BooleanConverter extends SyntaxConverter<String, Boolean>
-{
-	
-	public BooleanConverter()
-	{
-		super( String.class, Boolean.class);
+public class BooleanConverter extends SyntaxConverter<String, Boolean> {
+
+	public BooleanConverter() {
+		super(String.class, Boolean.class);
 	}
 
 	@Override
-	public String to( Boolean object ) throws ConvertionException
-	{
+	public String to(Boolean object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public Boolean from( String value ) throws ConvertionException
-	{
-		return new Boolean( value );
+	public Boolean from(String value) throws ConvertionException {
+		return new Boolean(value);
 	}
 }

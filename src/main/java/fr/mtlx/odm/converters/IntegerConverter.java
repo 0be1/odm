@@ -24,29 +24,22 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class IntegerConverter extends SyntaxConverter<String, Integer>
-{
-	public IntegerConverter()
-	{
-		super( String.class, Integer.class);
+public class IntegerConverter extends SyntaxConverter<String, Integer> {
+	public IntegerConverter() {
+		super(String.class, Integer.class);
 	}
 
 	@Override
-	public String to( final Integer object ) throws ConvertionException
-	{
+	public String to(final Integer object) throws ConvertionException {
 		return object.toString();
 	}
 
 	@Override
-	public Integer from( final String value ) throws ConvertionException
-	{
-		try
-		{
-			return new Integer( value );
-		}
-		catch ( NumberFormatException e )
-		{
-			throw new ConvertionException( e );
+	public Integer from(final String value) throws ConvertionException {
+		try {
+			return new Integer(value);
+		} catch (NumberFormatException e) {
+			throw new ConvertionException(e);
 		}
 	}
 }

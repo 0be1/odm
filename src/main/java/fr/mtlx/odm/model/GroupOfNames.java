@@ -24,68 +24,56 @@ package fr.mtlx.odm.model;
  * #L%
  */
 
-
 import java.util.List;
 
 import javax.naming.Name;
 
-
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
 
-@Entry( objectClasses =
-{ "groupOfNames" } )
-public class GroupOfNames extends Top
-{
+@Entry(objectClasses = { "groupOfNames" })
+public class GroupOfNames extends Top {
 	private static final long serialVersionUID = -2162664003364505740L;
 
-	@Attribute( name="cn" )
+	@Attribute(name = "cn")
 	private String commonName;
 
 	private Name owner;
 
 	private String description;
 
-	@Attribute( name="member")
+	@Attribute(name = "member")
 	private List<Name> members;
 
-	public String getDescription()
-	{
+	public String getDescription() {
 		return description;
 	}
 
-	public void setDescription( String description )
-	{
+	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getCommonName()
-	{
+	public String getCommonName() {
 		return commonName;
 	}
 
-	public void setCommonName( String commonName )
-	{
+	public void setCommonName(String commonName) {
 		this.commonName = commonName;
 	}
 
-	public List<Name> getMembers()
-	{
+	public List<Name> getMembers() {
 		return members;
 	}
 
-	public void setMembers( List<Name> members )
-	{
+	public void setMembers(List<Name> members) {
 		this.members = members;
 	}
 
-	public Name getOwner()
-	{
+	public Name getOwner() {
 		return owner;
 	}
 
-	public void setOwner( Name owner )
-	{
+	public void setOwner(Name owner) {
 		this.owner = owner;
 	}
 }

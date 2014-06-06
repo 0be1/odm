@@ -24,27 +24,22 @@ package fr.mtlx.odm.converters;
  * #L%
  */
 
-public class ConvertionException extends RuntimeException
-{
+public class ConvertionException extends RuntimeException {
 	private static final long serialVersionUID = -9198276091230198492L;
 
-	public ConvertionException()
-	{
+	public ConvertionException() {
 		super();
 	}
 
-	public ConvertionException( String message, Throwable cause )
-	{
-		super( message, cause );
+	public ConvertionException(String message, Throwable cause) {
+		super(message, cause);
 	}
 
-	public ConvertionException( String message )
-	{
-		super( message );
+	public ConvertionException(String message) {
+		super(message);
 	}
 
-	public ConvertionException( Throwable cause )
-	{
-		super( cause );
+	public ConvertionException(Throwable cause) {
+		super(cause);
 	}
 }
