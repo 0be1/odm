@@ -23,252 +23,249 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
+import fr.mtlx.odm.filters.FilterBuilderImpl;
+import com.google.common.base.Joiner;
 import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import fr.mtlx.odm.cache.CacheManager;
+import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.filters.FilterBuilder;
+import fr.mtlx.odm.spring.SpringProxyFactory;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Set;
-
+import javax.naming.Context;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.Rdn;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import fr.mtlx.odm.cache.CacheManager;
-import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.filters.FilterBuilder;
-import fr.mtlx.odm.filters.FilterBuilderImpl;
-
 @SuppressWarnings("serial")
-public abstract class SessionFactoryImpl implements SessionFactory {
-	public static final ThreadLocal<Session> session = new ThreadLocal<Session>();
+public abstract class SessionFactoryImpl implements SessionFactory, CacheManager {
 
-	private Session requestSession;
+    public static final ThreadLocal<Session> session = new ThreadLocal<>();
 
-	public final Set<String> operationalAttributes = Sets
-			.newHashSet("objectClass");
+    public final Set<String> operationalAttributes = Sets.newHashSet("objectClass");
 
-	private final Map<String, PartialClassMetadata<?>> mappedClassesMetadata = Maps
-			.newLinkedHashMap();
+    private final Map<Class<?>, PartialClassMetadata<?>> persistentMetadata = Maps.newLinkedHashMap();
 
-	private final Map<Class<?>, BasicProxyFactory<?>> proxyFactories = Maps
-			.newConcurrentMap();
+    private final Map<Class<?>, SpringProxyFactory<?>> proxyFactories = Maps.newConcurrentMap();
 
-	private final Map<String, Converter> syntaxConverters = Maps
-			.newConcurrentMap();
+    private final Map<String, Converter> syntaxConverters = Maps.newConcurrentMap();
 
-	private final Map<Type, Converter> attributeConverters = Maps
-			.newConcurrentMap();
+    private final Map<Type, Converter> attributeConverters = Maps.newConcurrentMap();
 
-	private CacheManager cacheManager;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> ClassMetadata<T> getClassMetadata(Class<T> entityClass) {
+        return (ClassMetadata<T>) persistentMetadata.get(checkNotNull(entityClass));
+    }
 
-	@SuppressWarnings("unchecked")
-	public <T> ClassMetadata<T> getClassMetadata(Class<T> entityClass) {
-		return (ClassMetadata<T>) getClassMetadata(checkNotNull(entityClass)
-				.getCanonicalName());
-	}
+    @Override
+    public ClassMetadata<?> getClassMetadata(String persistentClassName) {
+        checkNotNull(persistentClassName);
+        try {
+            final Class<?> searchKey = Class.forName(persistentClassName);
 
-	public ClassMetadata<?> getClassMetadata(String entityName) {
-		return mappedClassesMetadata.get(checkNotNull(entityName));
-	}
+            return getClassMetadata(searchKey);
+        } catch (ClassNotFoundException ex) {
+            return null;
+        }
+    }
 
-	public void addSyntaxConverter(String syntax, Converter converter) {
-		this.syntaxConverters
-				.put(checkNotNull(syntax), checkNotNull(converter));
-	}
+    @Override
+    public <T> void addClass(Class<T> persistentClass) throws MappingException {
+        checkNotNull(persistentClass, "persistentClass is null");
 
-	public void addAttributeConverter(Type type, Converter converter) {
-		this.attributeConverters.put(checkNotNull(type),
-				checkNotNull(converter));
-	}
+        if (persistentMetadata.containsKey(persistentClass)) {
+            log.warn("class {} already mapped", persistentClass);
+            return;
+        }
 
-	private <T> void addProxyFactory(Class<T> clazz) {
-		proxyFactories.put(clazz, new BasicProxyFactory<T>(clazz,
-				new Class[] {}));
-	}
+        persistentMetadata.put(persistentClass, ClassMetadataBuilder.build(persistentClass));
 
-	@Override
-	public ClassMetadata<?> getClassMetadata(final String[] objectClasses)
-			throws IllegalAccessException, InvocationTargetException,
-			ClassNotFoundException {
-		final Set<String> directoryObjectClasses = ImmutableSet
-				.copyOf(objectClasses);
+        addProxyFactory(persistentClass);
+    }
 
-		ClassMetadata<?> metadata = null;
-		int Q = 0;
+    @Override
+    public void addClass(String persistentClassName) throws ClassNotFoundException, MappingException {
 
-		// filtre sur la classe structurelle
-		for (String entryClass : mappedClassesMetadata.keySet()) {
-			final ClassMetadata<?> candidateMetadata = mappedClassesMetadata
-					.get(entryClass);
+        final Class<?> persistentClass = Class.forName(checkNotNull(persistentClassName, "persistentClassName is null"));
 
-			final Set<String> oc = new ImmutableSet.Builder<String>()
-					.addAll(candidateMetadata.getAuxiliaryClasses())
-					.add(candidateMetadata.getStructuralClass()).build();
+        addClass(persistentClass);
+    }
 
-			log.debug(
-					"trying {} ( {}, {} )",
-					new Object[] {
-							entryClass,
-							candidateMetadata.getStructuralClass(),
-							Joiner.on(", ")
-									.skipNulls()
-									.join(candidateMetadata
-											.getAuxiliaryClasses()) });
+    @Override
+    public ClassMetadata<?> getClassMetadata(final String[] objectClasses)
+            throws IllegalAccessException, InvocationTargetException,
+            ClassNotFoundException {
+        final Set<String> directoryObjectClasses = ImmutableSet.copyOf(objectClasses);
 
-			if (directoryObjectClasses.containsAll(oc)) {
-				final int q = oc.size();
+        ClassMetadata<?> metadata = null;
+        int Q = 0;
 
-				log.debug("match q = {}", q);
+        // filtre sur la classe structurelle
+        for (Type entryClass : persistentMetadata.keySet()) {
+            final ClassMetadata<?> candidateMetadata = persistentMetadata
+                    .get(entryClass);
 
-				if (q > Q) {
-					Q = q;
+            final Set<String> oc = new ImmutableSet.Builder<String>()
+                    .addAll(candidateMetadata.getAuxiliaryClasses())
+                    .add(candidateMetadata.getStructuralClass()).build();
 
-					if (metadata != null) {
-						if (metadata.getEntryClass().isAssignableFrom(
-								candidateMetadata.getEntryClass())) {
-							metadata = candidateMetadata;
-						}
-					} else {
-						metadata = candidateMetadata;
-					}
-				}
-			}
+            log.debug(
+                    "trying {} ( {}, {} )",
+                    new Object[]{
+                        entryClass,
+                        candidateMetadata.getStructuralClass(),
+                        Joiner.on(", ")
+                        .skipNulls()
+                        .join(candidateMetadata
+                                .getAuxiliaryClasses())});
 
-			if (Q == directoryObjectClasses.size())
-				break;
-		}
+            if (directoryObjectClasses.containsAll(oc)) {
+                final int q = oc.size();
 
-		return metadata;
-	}
+                log.debug("match q = {}", q);
 
-	@Override
-	public boolean isPersistentClass(String className) {
-		return mappedClassesMetadata.get(className) != null;
-	}
+                if (q > Q) {
+                    Q = q;
 
-	@Override
-	public boolean isPersistentClass(Class<?> clazz) {
-		checkNotNull(clazz);
+                    if (metadata != null) {
+                        if (metadata.getPersistentClass().isAssignableFrom(
+                                candidateMetadata.getPersistentClass())) {
+                            metadata = candidateMetadata;
+                        }
+                    } else {
+                        metadata = candidateMetadata;
+                    }
+                }
+            }
 
-		for (ClassMetadata<?> m : mappedClassesMetadata.values()) {
-			if (clazz.isAssignableFrom(m.getEntryClass()))
-				return true;
-		}
+            if (Q == directoryObjectClasses.size()) {
+                break;
+            }
+        }
+        return metadata;
+    }
 
-		return false;
-	}
+    @Override
+    public boolean isPersistentClass(String className) {
+        try {
+            return isPersistentClass(Class.forName(className));
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
+    }
 
-	@Override
-	public Session getCurrentSession() {
-		Session s = session.get();
+    @Override
+    public boolean isPersistentClass(Class<?> clazz) {
+        checkNotNull(clazz);
 
-		// Ouvre une nouvelle Session, si ce Thread n'en a aucune
-		if (s == null) {
-			s = openSession();
-			session.set(s);
-		}
+        return persistentMetadata.keySet().stream().anyMatch(t -> t.isAssignableFrom(clazz));
+    }
 
-		return s;
-	}
+    @Override
+    public Session getCurrentSession() {
+        Session s = session.get();
 
-	@Override
-	public void closeSession() {
-		Session s = session.get();
-		session.set(null);
-		if (s != null)
-			s.close();
-	}
+        // Ouvre une nouvelle Session, si ce Thread n'en a aucune
+        if (s == null) {
+            s = openSession();
+            session.set(s);
+        }
 
-	@Override
-	public boolean isOperationalAttribute(String attributeId) {
-		return operationalAttributes.contains(attributeId);
-	}
+        return s;
+    }
 
-	public Converter getConverter(final String syntax) {
-		return syntaxConverters.get(syntax);
-	}
+    @Override
+    public void closeSession() {
+        final Session s = session.get();
 
-	public Converter getConverter(final Type objectType) {
-		return attributeConverters.get(objectType);
-	}
+        session.set(null);
 
-	public <T> Rdn composeName(T object, String propertyName)
-			throws InvalidNameException, MappingException {
-		@SuppressWarnings("unchecked")
-		ClassMetadata<T> cm = getClassMetadata((Class<T>) object.getClass());
+        if (s != null) {
+            try {
+                s.close();
+            } catch (IOException ex) {
+                log.error("error while closing session", ex);
+            }
+        }
+    }
 
-		if (cm == null)
-			throw new MappingException("not a persistent class");
+    @Override
+    public boolean isOperationalAttribute(String attributeId
+    ) {
+        return operationalAttributes.contains(attributeId);
+    }
 
-		ClassAssistant<T> assistant = new ClassAssistant<T>(cm);
-		AttributeMetadata meta = cm
-				.getAttributeMetadataByPropertyName(propertyName);
+    @Override
+    public <T> FilterBuilder<T> filterBuilder(Class<T> persistentClass) throws MappingException {
+        
+      
+        
+        return new FilterBuilderImpl<>(persistentClass, this);
+    }
 
-		if (meta == null)
-			throw new MappingException("unknow attribute");
+    public void addConverter(String syntax, Converter converter) {
+        this.syntaxConverters
+                .put(checkNotNull(syntax), checkNotNull(converter));
+    }
 
-		return new Rdn(meta.getAttirbuteName(), assistant.getValue(object,
-				propertyName));
-	}
+    public void addConverter(Type type, Converter converter) {
+        this.attributeConverters.put(checkNotNull(type),
+                checkNotNull(converter));
+    }
 
-	public Session getRequestSession() {
-		return requestSession;
-	}
+    public Converter getConverter(final String syntax) {
+        return syntaxConverters.get(syntax);
+    }
 
-	public void setRequestSession(Session requestSession) {
-		this.requestSession = requestSession;
-	}
+    public Converter getConverter(final Type objectType) {
+        return attributeConverters.get(objectType);
+    }
 
-	public CacheManager getCacheManager() {
-		return cacheManager;
-	}
+    public <T> Rdn composeName(T object, String propertyName)
+            throws InvalidNameException, MappingException {
+        @SuppressWarnings("unchecked")
+        ClassMetadata<T> cm = getClassMetadata((Class<T>) object.getClass());
 
-	@SuppressWarnings("unchecked")
-	public <T> BasicProxyFactory<T> getProxyFactory(Class<T> clazz,
-			Class<?>[] interfaces) {
-		return (BasicProxyFactory<T>) proxyFactories.get(clazz);
-	}
+        if (cm == null) {
+            throw new MappingException("not a persistent class");
+        }
 
-	@Override
-	public <T> FilterBuilder<T> filterBuilder(Class<T> persistentClass) {
-		return new FilterBuilderImpl<T>(persistentClass, this);
-	}
+        ClassAssistant<T> assistant = new ClassAssistant<>(cm);
+        AttributeMetadata meta = cm
+                .getAttributeMetadata(propertyName);
 
-	protected <T> void mapClass(String className) throws MappingException {
-		checkNotNull(className);
+        if (meta == null) {
+            throw new MappingException("unknow attribute");
+        }
 
-		if (mappedClassesMetadata.containsKey(className)) {
-			log.warn("class {} already mapped", className);
-			return;
-		}
+        return new Rdn(meta.getAttirbuteName(), assistant.getValue(object,
+                propertyName));
+    }
 
-		try {
-			Class<T> persistentClass = (Class<T>) Class.forName(className);
+    @SuppressWarnings("unchecked")
+    public <T, CTX extends Context> ProxyFactory<T, CTX> getProxyFactory(Class<T> clazz,
+            Class<?>[] interfaces) {
+        return (ProxyFactory<T, CTX>) proxyFactories.get(clazz);
+    }
 
-			mappedClassesMetadata.put(className, new ClassMetadataBuilder<T>(
-					persistentClass).build());
+    protected void initialize() {
+        persistentMetadata
+                .values().stream().forEach((metadata) -> {
+                    metadata.init(this);
+                });
+    }
 
-			addProxyFactory(persistentClass);
-		} catch (Exception e) {
-			throw new MappingException(e);
-		}
-	}
-
-	protected void init() {
-		for (final PartialClassMetadata<?> metadata : mappedClassesMetadata
-				.values()) {
-			metadata.init(this);
-		}
-	}
+    private <T> void addProxyFactory(Class<T> clazz) {
+        proxyFactories.put(clazz, new SpringProxyFactory<>(clazz, new Class<?>[]{}));
+    }
 }

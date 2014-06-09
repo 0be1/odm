@@ -4,13 +4,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.SessionFactoryImpl;
 
 public abstract class FilterImpl implements Filter {
-	private SessionFactoryImpl sessionFactory;
+	private final SessionFactoryImpl sessionFactory;
 
+        public FilterImpl(SessionFactoryImpl sessionFactory) {
+            this.sessionFactory = checkNotNull(sessionFactory);
+        }
+        
 	protected SessionFactoryImpl getSessionFactory() {
 		return checkNotNull(sessionFactory);
-	}
-
-	protected void setSessionFactory(SessionFactoryImpl sessionFactory) {
-		this.sessionFactory = sessionFactory;
 	}
 }

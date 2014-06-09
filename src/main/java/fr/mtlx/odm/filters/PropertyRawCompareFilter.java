@@ -23,50 +23,56 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassMetadata;
+import fr.mtlx.odm.SessionFactoryImpl;
 
 class PropertyRawCompareFilter<T> extends FilterImpl {
-	private final String property;
 
-	private final Object value;
+    private final String property;
 
-	private final Comparison op;
+    private final Object value;
 
-	private final Class<T> persistentClass;
+    private final Comparison op;
 
-	PropertyRawCompareFilter(final Class<T> persistentClass,
-			final Comparison op, final String property, final Object value) {
-		this.property = checkNotNull(property);
-		this.value = value;
+    private final Class<T> persistentClass;
 
-		this.op = op;
+    PropertyRawCompareFilter(SessionFactoryImpl sessionFactory, final Class<T> persistentClass,
+            final Comparison op, final String property, final Object value) {
 
-		this.persistentClass = checkNotNull(persistentClass);
-	}
+        super(sessionFactory);
 
-	@Override
-	public String encode() {
-		ClassMetadata<?> metadata = getSessionFactory().getClassMetadata(
-				persistentClass);
+        this.property = checkNotNull(property);
+        this.value = value;
 
-		if (metadata == null)
-			throw new UnsupportedOperationException(String.format(
-					"%s is not a persistent class", persistentClass));
+        this.op = op;
 
-		AttributeMetadata attribute = metadata
-				.getAttributeMetadataByPropertyName(property);
+        this.persistentClass = checkNotNull(persistentClass);
+    }
 
-		if (attribute == null)
-			throw new UnsupportedOperationException(String.format(
-					"property %s not found in %s", property,
-					checkNotNull(metadata).getEntryClass()));
+    @Override
+    public String encode() {
+        ClassMetadata<?> metadata = getSessionFactory().getClassMetadata(
+                persistentClass);
 
-		Filter filter = new RawCompareFilter(op, attribute.getAttirbuteName(),
-				value);
+        if (metadata == null) {
+            throw new UnsupportedOperationException(String.format(
+                    "%s is not a persistent class", persistentClass));
+        }
 
-		return filter.encode();
-	}
+        AttributeMetadata attribute = metadata
+                .getAttributeMetadata(property);
+
+        if (attribute == null) {
+            throw new UnsupportedOperationException(String.format(
+                    "property %s not found in %s", property,
+                    checkNotNull(metadata).getPersistentClass()));
+        }
+
+        Filter filter = new RawCompareFilter(getSessionFactory(), op, attribute.getAttirbuteName(),
+                value);
+
+        return filter.encode();
+    }
 }

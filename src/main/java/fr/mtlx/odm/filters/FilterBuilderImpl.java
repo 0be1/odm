@@ -1,48 +1,54 @@
 package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactoryImpl;
 
 public class FilterBuilderImpl<T> implements FilterBuilder<T> {
-	private final Class<T> persistentClass;
 
-	private SessionFactoryImpl sessionFactory;
+    private final Class<T> persistentClass;
 
-	public FilterBuilderImpl(final Class<T> persistentClass,
-			final SessionFactoryImpl sessionFactory) {
-		this.sessionFactory = checkNotNull(sessionFactory);
+    private final SessionFactoryImpl sessionFactory;
 
-		this.persistentClass = checkNotNull(persistentClass);
-	}
+    public FilterBuilderImpl(final Class<T> persistentClass,
+            final SessionFactoryImpl sessionFactory) throws MappingException {
 
-	@Override
-	public OrFilter or(Filter... filters) {
-		return new OrFilter(sessionFactory, filters);
-	}
+        this.sessionFactory = checkNotNull(sessionFactory);
 
-	@Override
-	public AndFilter and(Filter... filters) {
-		return new AndFilter(sessionFactory, filters);
-	}
+        if (!sessionFactory.isPersistentClass(persistentClass)) {
+            throw new MappingException(persistentClass + " is not a persistent class.");
+        }
+        
+        this.persistentClass = checkNotNull(persistentClass);
+    }
 
-	@Override
-	public CompareCriterion<T> property(String propertyName) {
-		return new PropertyCriterion<T>(persistentClass, sessionFactory,
-				propertyName);
-	}
+    @Override
+    public OrFilter or(Filter... filters) {
+        return new OrFilter(sessionFactory, filters);
+    }
 
-	@Override
-	public Filter objectClass(String objectClass) {
-		return new ObjectClassFilter(sessionFactory, objectClass);
-	}
+    @Override
+    public AndFilter and(Filter... filters) {
+        return new AndFilter(sessionFactory, filters);
+    }
 
-	@Override
-	public Filter not(Filter filter) {
-		return new NotFilter(sessionFactory, filter);
-	}
+    @Override
+    public CompareCriterion<T> property(String propertyName) {
+        return new PropertyCriterion<>(sessionFactory, persistentClass, propertyName);
+    }
 
-	@Override
-	public CompareCriterion<T> attribute(String attributeName) {
-		return new AttributeCriterion<T>(sessionFactory, attributeName);
-	}
+    @Override
+    public Filter objectClass(String objectClass) {
+        return new ObjectClassFilter(sessionFactory, objectClass);
+    }
+
+    @Override
+    public Filter not(Filter filter) {
+        return new NotFilter(sessionFactory, filter);
+    }
+
+    @Override
+    public CompareCriterion<T> attribute(String attributeName) {
+        return new AttributeCriterion<>(sessionFactory, attributeName);
+    }
 }

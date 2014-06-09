@@ -24,14 +24,17 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 
-public class PropertyStartsWithFilter<T> extends PropertyCompareFilter<T> {
-	PropertyStartsWithFilter(final Class<T> persistentClass,
-			final String property, final Object value) {
-		super(persistentClass, Comparison.equals, property, value);
-	}
+import fr.mtlx.odm.SessionFactoryImpl;
 
-	@Override
-	protected String formatValue(final String encodedValue) {
-		return encodedValue + '*';
-	}
+public class PropertyStartsWithFilter<T> extends PropertyCompareFilter<T> {
+
+    PropertyStartsWithFilter(SessionFactoryImpl sessionFactory, final Class<T> persistentClass,
+            final String property, final Object value) {
+        super(sessionFactory, persistentClass, Comparison.equals, property, value);
+    }
+
+    @Override
+    protected String formatValue(final String encodedValue) {
+        return encodedValue + '*';
+    }
 }

@@ -23,16 +23,12 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-
-import javax.management.openmbean.InvalidOpenTypeException;
 import javax.naming.directory.DirContext;
 
 import org.junit.Before;
@@ -41,69 +37,51 @@ import org.springframework.ldap.core.ContextSource;
 
 import fr.mtlx.odm.model.Person;
 
+public class TestSessionFactory {
 
-public class TestSessionFactory
-{
-	final String[] mappedClasses = new String[]
-	{ "fr.mtlx.odm.model.OrganizationalPerson", };
+    final Class<?>[] mappedClasses = new Class<?>[]{fr.mtlx.odm.model.OrganizationalPerson.class,};
 
-	private SessionFactoryImpl sessionFactory;
+    private SessionFactoryImpl sessionFactory;
 
-	@Before
-	public void init() throws Exception
-	{
-		ContextSource contextSource = mock( ContextSource.class );
+    @Before
+    public void init() throws Exception {
+        ContextSource contextSource = mock(ContextSource.class);
 
-		when( contextSource.getReadWriteContext() ).thenReturn( mock(DirContext.class) );
-		
-		SessionFactoryImpl sessionFactory = new SessionFactoryImpl()
-		{
-			@Override
-			public Session openSession()
-			{
-				throw new InvalidOpenTypeException("not implemented");
-			}
+        when(contextSource.getReadWriteContext()).thenReturn(
+                mock(DirContext.class));
 
-			@Override
-			public void addClass( Class<?> persistentClass )
-			{
-			}
+        this.sessionFactory = new SessionFactory2(mappedClasses);
+    }
 
-			@Override
-			public void addClass( String persistentClassName )
-			{
-			}
-		};
+    @Test
+    public void isPersistentClass() {
+        for (Class<?> clazz : mappedClasses) {
+            assertTrue(sessionFactory.isPersistentClass(clazz));
+        }
+    }
 
-		this.sessionFactory = sessionFactory;
-	}
+    @Test
+    public void isPersistentSuperClasses() {
+        assertTrue(sessionFactory.isPersistentClass(Person.class));
+    }
 
-	@Test
-	public void isPersistentClass()
-	{
-		assertFalse( sessionFactory.isPersistentClass( "foo" ) );
+    @Test
+    public void isNotPersistentClasses() {
+        assertFalse(sessionFactory.isPersistentClass(Integer.class));
+    }
 
-		for ( String className : mappedClasses )
-		{
-			assertTrue( sessionFactory.isPersistentClass( className ) );
-		}
-		
-		assertTrue(  sessionFactory.isPersistentClass( Person.class ) );
-	}
-	
-	@Test
-	public void isPersistentInheritedNotPersistent()
-	{
-		@SuppressWarnings( "serial" )
-		class ExtPerson extends Person
-		{ }
-		
-		assertFalse( sessionFactory.isPersistentClass( ExtPerson.class ) );
-	}
-	
-	@Test
-	public void defaultConverters() throws MappingException
-	{
-		assertNotNull( sessionFactory.getConverter( "1.3.6.1.4.1.1466.115.121.1.15" ) );
-	}
+    @Test
+    public void isPersistentInheritedNotPersistent() {
+        @SuppressWarnings("serial")
+        class ExtPerson extends Person {
+        }
+
+        assertFalse(sessionFactory.isPersistentClass(ExtPerson.class));
+    }
+
+    @Test
+    public void defaultConverters() throws MappingException {
+        assertNotNull(sessionFactory
+                .getConverter("1.3.6.1.4.1.1466.115.121.1.15"));
+    }
 }

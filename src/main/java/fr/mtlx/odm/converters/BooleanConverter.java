@@ -37,6 +37,6 @@ public class BooleanConverter extends SyntaxConverter<String, Boolean> {
 
 	@Override
 	public Boolean from(String value) throws ConvertionException {
-		return new Boolean(value);
+		return Boolean.valueOf(value);
 	}
 }

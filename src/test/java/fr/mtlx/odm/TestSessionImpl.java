@@ -24,18 +24,19 @@ package fr.mtlx.odm;
  * #L%
  */
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import fr.mtlx.odm.filters.FilterBuilder;
+import fr.mtlx.odm.model.GroupOfNames;
+import fr.mtlx.odm.model.GroupOfPersons;
+import fr.mtlx.odm.model.OrganizationalPerson;
+import fr.mtlx.odm.model.Person;
+import fr.mtlx.odm.spring.SpringSessionFactoryImpl;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.NameNotFoundException;
@@ -47,24 +48,20 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-
+import static org.hamcrest.CoreMatchers.is;
 import org.junit.After;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import org.springframework.ldap.core.support.SingleContextSource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
-import fr.mtlx.odm.filters.FilterBuilder;
-import fr.mtlx.odm.model.GroupOfNames;
-import fr.mtlx.odm.model.GroupOfPersons;
-import fr.mtlx.odm.model.OrganizationalPerson;
-import fr.mtlx.odm.model.Person;
 
 @RunWith( SpringJUnit4ClassRunner.class )
 // @ContextConfiguration( locations =
@@ -91,7 +88,7 @@ public class TestSessionImpl
 	}
 
 	@After
-	public void closeSession()
+	public void closeSession() throws IOException
 	{
 		if ( session != null )
 			session.close();
@@ -226,7 +223,7 @@ public class TestSessionImpl
 	}
 
 	@Test
-	public void testSearch() throws InvalidNameException, SizeLimitExceededException
+	public void testSearch() throws InvalidNameException, SizeLimitExceededException, MappingException
 	{
 		Name dn = new LdapName( "ou=personnes" );
 
@@ -248,7 +245,7 @@ public class TestSessionImpl
 	}
 
 	@Test
-	public void testPagedSearch() throws InvalidNameException
+	public void testPagedSearch() throws InvalidNameException, MappingException
 	{
 		Name dn = new LdapName( "ou=personnes" );
 		int n = 0;

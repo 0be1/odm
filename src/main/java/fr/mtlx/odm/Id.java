@@ -23,7 +23,6 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,9 +34,9 @@ import java.lang.annotation.Target;
  * <p>
  * The marked field must be of type {@link javax.naming.Name} and must
  * <em>not</em> be annotated {@link Attribute}.
- * 
+ *
  * @author Paul Harvey &lt;paul.at.pauls-place.me.uk>
- * 
+ *
  * @see Attribute
  * @see javax.naming.Name
  */

@@ -23,7 +23,6 @@ package fr.mtlx.odm.cache;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import java.util.Map;
 
 import javax.naming.Name;
@@ -34,38 +33,41 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 public abstract class NameKeyCache<T> implements Cache<T, Name> {
-	private final Map<String, T> cacheMap;
 
-	protected final Logger log = LoggerFactory.getLogger(getClass());
+    private final Map<String, T> cacheMap;
 
-	public NameKeyCache() {
-		cacheMap = Maps.newConcurrentMap();
-	}
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	public T store(final Name key, final T context) {
-		return cacheMap.put(getKey(key), context);
-	}
+    public NameKeyCache() {
+        cacheMap = Maps.newConcurrentMap();
+    }
 
-	public T retrieve(final Name key) {
-		return cacheMap.get(getKey(key));
-	}
+    @Override
+    public T store(final Name key, final T context) {
+        return cacheMap.put(getKey(key), context);
+    }
 
-	@Override
-	public T remove(Name key) {
-		return cacheMap.remove(getKey(key));
-	}
+    @Override
+    public T retrieve(final Name key) {
+        return cacheMap.get(getKey(key));
+    }
 
-	@Override
-	public void clear() {
-		cacheMap.clear();
-	}
+    @Override
+    public T remove(Name key) {
+        return cacheMap.remove(getKey(key));
+    }
 
-	@Override
-	public boolean contains(Name key) {
-		return cacheMap.containsKey(getKey(key));
-	}
+    @Override
+    public void clear() {
+        cacheMap.clear();
+    }
 
-	protected String getKey(final Name dn) {
-		return dn.toString().toLowerCase();
-	}
+    @Override
+    public boolean contains(Name key) {
+        return cacheMap.containsKey(getKey(key));
+    }
+
+    protected String getKey(final Name dn) {
+        return dn.toString().toLowerCase();
+    }
 }

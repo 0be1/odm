@@ -23,7 +23,6 @@ package fr.mtlx.odm.model;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import java.io.Serializable;
 
 import javax.naming.Name;
@@ -32,25 +31,26 @@ import javax.validation.constraints.NotNull;
 import fr.mtlx.odm.Entry;
 import fr.mtlx.odm.Id;
 
-@Entry(objectClasses = { "top" })
+@Entry(objectClasses = {"top"})
 public class Top extends IdProvider<Name> implements Serializable {
-	private static final long serialVersionUID = -8268393254510637376L;
 
-	@Id
-	@NotNull
-	private Name dn;
+    private static final long serialVersionUID = -8268393254510637376L;
 
-	public Top() {
-		super(Name.class);
-	}
+    @Id
+    @NotNull
+    private Name dn;
 
-	@Override
-	public Name getDn() {
-		return dn;
-	}
+    public Top() {
+        super(Name.class);
+    }
 
-	@Override
-	public void setDn(final Name dn) {
-		this.dn = dn;
-	}
+    @Override
+    public Name getDn() {
+        return dn;
+    }
+
+    @Override
+    public void setDn(final Name dn) {
+        this.dn = dn;
+    }
 }

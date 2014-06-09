@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+import fr.mtlx.odm.SessionFactoryImpl;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,9 +27,9 @@ package fr.mtlx.odm.filters;
  */
 
 public class PropertyEndsWithFilter<T> extends PropertyCompareFilter<T> {
-	PropertyEndsWithFilter(final Class<T> persistentClass,
+	PropertyEndsWithFilter(SessionFactoryImpl sessionFactory, final Class<T> persistentClass,
 			final String property, final Object value) {
-		super(persistentClass, Comparison.equals, property, value);
+		super(sessionFactory, persistentClass, Comparison.equals, property, value);
 	}
 
 	@Override

@@ -23,115 +23,118 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringEndsWith.endsWith;
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 import com.google.common.base.CharMatcher;
-
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactory;
+import fr.mtlx.odm.SessionFactory2;
+import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.model.Person;
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.hamcrest.core.StringStartsWith.startsWith;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
-@RunWith( SpringJUnit4ClassRunner.class )
-// @ContextConfiguration( locations =
-// { "classpath:testContext.xml", "classpath:ldapContext.xml" } )
-public class TestFilterBuilder
-{
-	@Autowired
-	private SessionFactory sessionFactory;
+public class TestFilterBuilder {
 
-	private <T> CompositeFilter buildFilterForClass( Class<T> persistentClass ) throws MappingException
-	{
-		ClassMetadata<T> metadata = sessionFactory.getClassMetadata( persistentClass );
+    private SessionFactory sessionFactory;
 
-		if ( metadata == null )
-			throw new MappingException( String.format( "%s is not a persistent class", persistentClass ) );
+    
+    @Before
+    public void init() throws MappingException
+    {
+        sessionFactory = new SessionFactory2(new Class<?>[] { Person.class, });
+    }
+    
+    private <T> CompositeFilter buildFilterForClass(Class<T> persistentClass) throws MappingException {
+        
+        ClassMetadata<T> metadata = sessionFactory.getClassMetadata(persistentClass);
 
-		FilterBuilder<T> fb = sessionFactory.filterBuilder( persistentClass );
+        if (metadata == null) {
+            throw new MappingException(String.format("%s is not a persistent class", persistentClass));
+        }
 
-		CompositeFilter filter = fb.and();
+        FilterBuilder<T> fb = sessionFactory.filterBuilder(persistentClass);
 
-		for ( String oc : metadata.getObjectClassHierarchy() )
-		{
-			filter.add( fb.objectClass( oc ) );
-		}
+        CompositeFilter filter = fb.and();
 
-		for ( String oc : metadata.getAuxiliaryClasses() )
-		{
-			filter.add( fb.objectClass( oc ) );
-		}
+        for (String oc : metadata.getObjectClassHierarchy()) {
+            filter.add(fb.objectClass(oc));
+        }
 
-		return filter;
-	}
+        for (String oc : metadata.getAuxiliaryClasses()) {
+            filter.add(fb.objectClass(oc));
+        }
 
-	@Test
-	public void test()
-	{
-		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+        return filter;
+    }
 
-		CompositeFilter filter = fb.and();
+    @Test
+    public void persistentFilterNotNull() throws MappingException {
+        assertNotNull(sessionFactory.filterBuilder(Person.class));
+    }
 
-		filter.add( fb.or( fb.property( "commonName" ).equalsTo( "alex" ), fb.property( "surname" ).equalsTo( "mathieu" ) ) );
+    @Test(expected = MappingException.class)
+    public void transientFilter() throws MappingException {
+        assertNull(sessionFactory.filterBuilder(Integer.class));
+    }
 
-		String encodedFilter = filter.encode();
+    @Test
+    public void test() throws MappingException {
+        FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-		assertNotNull( encodedFilter );
+        CompositeFilter filter = fb.and();
 
-		assertThat( encodedFilter, startsWith( "(" ) );
+        filter.add(fb.or(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu")));
 
-		assertThat( encodedFilter, endsWith( ")" ) );
+        String encodedFilter = filter.encode();
 
-		String expected = "(&(objectClass=top)(objectClass=person)(|(cn=alex)(sn=mathieu)))";
+        assertNotNull(encodedFilter);
 
-		assertThat( encodedFilter, is( expected ) );
-	}
+        assertThat(encodedFilter, startsWith("("));
 
-	@Test
-	public void testCombineAndFilters() throws MappingException
-	{
-		CompositeFilter filter = buildFilterForClass( Person.class );
+        assertThat(encodedFilter, endsWith(")"));
 
-		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
-		
-		filter.add( fb.and( fb.property( "commonName" ).equalsTo( "alex" ), fb.property( "surname" ).equalsTo( "mathieu" ) ) );
+        String expected = "(&(objectClass=top)(objectClass=person)(|(cn=alex)(sn=mathieu)))";
 
-		String encodedFilter = filter.encode();
+        assertThat(encodedFilter, is(expected));
+    }
 
-		assertNotNull( encodedFilter );
+    @Test
+    public void testCombineAndFilters() throws MappingException {
+        CompositeFilter filter = buildFilterForClass(Person.class);
 
-		assertThat( CharMatcher.is( '&' ).countIn( encodedFilter ), is( 1 ) );
-	}
+        FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-	@Test( expected = MappingException.class )
-	public void testPropertyFilterWrongType() throws InvalidNameException, MappingException
-	{
-		Person p = new Person();
+        filter.add(fb.and(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu")));
 
-		p.setDn( new LdapName( "uid=test,dc=foo,dc=bar" ) );
+        String encodedFilter = filter.encode();
 
-		CompositeFilter filter = buildFilterForClass( Person.class );
+        assertNotNull(encodedFilter);
 
-		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
-		
-		filter.add( fb.property( "commonName" ).equalsTo( 1 ) ).add( fb.property( "surname" ).equalsTo( "mathieu" ) );
+        assertThat(CharMatcher.is('&').countIn(encodedFilter), is(1));
+    }
 
-		String encodedFilter = filter.encode();
+    @Test(expected = ConvertionException.class)
+    public void testPropertyFilterWrongType() throws InvalidNameException, MappingException {
+        Person p = new Person();
 
-		assertNotNull( encodedFilter );
+        p.setDn(new LdapName("uid=test,dc=foo,dc=bar"));
 
-		assertThat( CharMatcher.is( '&' ).countIn( encodedFilter ), is( 1 ) );
-	}
+        CompositeFilter filter = buildFilterForClass(Person.class);
+
+        FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
+
+        filter.add(fb.property("commonName").equalsTo(1)).add(fb.property("surname").equalsTo("mathieu"));
+
+        String encodedFilter = filter.encode();
+
+        assertNotNull(encodedFilter);
+
+        assertThat(CharMatcher.is('&').countIn(encodedFilter), is(1));
+    }
 }

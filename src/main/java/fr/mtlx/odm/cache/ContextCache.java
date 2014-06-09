@@ -23,13 +23,18 @@ package fr.mtlx.odm.cache;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import javax.naming.Name;
-
 import org.springframework.ldap.core.DirContextOperations;
 
-public interface ContextCache extends Cache<DirContextOperations, Name> {
+public interface ContextCache {
 
-	DirContextOperations store(DirContextOperations context);
+    DirContextOperations store(DirContextOperations object);
 
+    DirContextOperations retrieve(Name key);
+
+    DirContextOperations remove(Name key);
+
+    void clear();
+
+    boolean contains(Name key);
 }

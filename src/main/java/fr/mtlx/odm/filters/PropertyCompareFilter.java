@@ -23,102 +23,107 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import javax.naming.Name;
-
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
+import fr.mtlx.odm.SessionFactoryImpl;
 import fr.mtlx.odm.converters.ConvertionException;
+import java.lang.reflect.InvocationTargetException;
+import javax.naming.InvalidNameException;
+import javax.naming.Name;
 
 public class PropertyCompareFilter<T> extends FilterImpl {
-	protected final String property;
 
-	protected final Object value;
+    protected final String property;
 
-	protected final Comparison op;
+    protected final Object value;
 
-	protected final Class<T> persistentClass;
+    protected final Comparison op;
 
-	private final Filter filter;
+    protected final Class<T> persistentClass;
 
-	PropertyCompareFilter(final Class<T> persistantClass, final Comparison op,
-			final String property, final Object value) {
-		this.property = checkNotNull(property);
-		this.value = value;
-		this.op = op;
+    private final Filter filter;
 
-		this.persistentClass = checkNotNull(persistantClass);
+    PropertyCompareFilter(SessionFactoryImpl sessionFactory, final Class<T> persistantClass, final Comparison op,
+            final String property, final Object value) {
+        super(sessionFactory);
+        this.property = checkNotNull(property);
+        this.value = value;
+        this.op = op;
 
-		filter = composeFilter();
-	}
+        this.persistentClass = checkNotNull(persistantClass);
 
-	@Override
-	public String encode() {
-		return filter.encode();
-	}
+        filter = composeFilter();
+    }
 
-	protected Filter composeFilter() {
-		final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata(
-				persistentClass);
+    @Override
+    public String encode() {
+        return filter.encode();
+    }
 
-		if (metadata == null)
-			throw new UnsupportedOperationException(String.format(
-					"%s is not a persistent class", persistentClass));
+    protected final Filter composeFilter() {
+        final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata(
+                persistentClass);
 
-		final AttributeMetadata attribute = metadata
-				.getAttributeMetadataByPropertyName(property);
+        if (metadata == null) {
+            throw new UnsupportedOperationException(String.format(
+                    "%s is not a persistent class", persistentClass));
+        }
 
-		if (attribute == null)
-			throw new UnsupportedOperationException(String.format(
-					"property %s not found in %s", property,
-					checkNotNull(metadata).getEntryClass()));
+        final AttributeMetadata attribute = metadata
+                .getAttributeMetadata(property);
 
-		return new RawCompareFilter(op, attribute.getAttirbuteName(),
-				formatValue(encodeValue(value, attribute)));
-	}
+        if (attribute == null) {
+            throw new UnsupportedOperationException(String.format(
+                    "property %s not found in %s", property,
+                    checkNotNull(metadata).getPersistentClass()));
+        }
 
-	protected String formatValue(final String encodedValue) {
-		return FilterEncoder.encode(encodedValue);
-	}
+        return new RawCompareFilter(getSessionFactory(), op, attribute.getAttirbuteName(),
+                formatValue(encodeValue(value, attribute)));
+    }
 
-	protected String encodeValue(final Object value,
-			final AttributeMetadata attribute) {
-		if (value != null) {
-			if (attribute.getObjectType() instanceof Class<?>) {
-				Class<?> clazz = (Class<?>) attribute.getObjectType();
+    protected String formatValue(final String encodedValue) {
+        return FilterEncoder.encode(encodedValue);
+    }
 
-				if (!clazz.isInstance(value))
-					throw new UnsupportedOperationException(
-							String.format(
-									"wrong type (%s) for property %s in %s, expecting %s",
-									value.getClass(), property,
-									attribute.getObjectType(), clazz));
+    protected String encodeValue(final Object value,
+            final AttributeMetadata attribute) {
+        if (value != null) {
+            if (attribute.getObjectType() instanceof Class<?>) {
+                Class<?> clazz = (Class<?>) attribute.getObjectType();
 
-				ClassMetadata<?> refmetadata = getSessionFactory()
-						.getClassMetadata(clazz);
+                if (!clazz.isInstance(value)) {
+                    throw new ConvertionException(
+                            String.format(
+                                    "wrong type (%s) for property %s in %s, expecting %s",
+                                    value.getClass(), property,
+                                    attribute.getObjectType(), clazz));
+                }
 
-				if (refmetadata != null) {
-					@SuppressWarnings({ "rawtypes", "unchecked" })
-					ClassAssistant<?> assistant = new ClassAssistant(
-							refmetadata);
+                ClassMetadata<?> refmetadata = getSessionFactory()
+                        .getClassMetadata(clazz);
 
-					Name refdn;
-					try {
-						refdn = assistant.getIdentifier(value);
-					} catch (Exception e) {
-						throw new ConvertionException(e);
-					}
+                if (refmetadata != null) {
+                    @SuppressWarnings({"rawtypes", "unchecked"})
+                    ClassAssistant<?> assistant = new ClassAssistant(
+                            refmetadata);
 
-					return refdn.toString();
-				}
-			}
+                    Name refdn;
+                    try {
+                        refdn = assistant.getIdentifier(value);
+                    } catch (InvalidNameException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                        throw new ConvertionException(e);
+                    }
 
-			return value.toString();
-		}
+                    return refdn.toString();
+                }
+            }
 
-		return null;
-	}
+            return value.toString();
+        }
+
+        return null;
+    }
 }

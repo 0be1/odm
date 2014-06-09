@@ -23,246 +23,120 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
-
+import fr.mtlx.odm.cache.EntityCache;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-
-import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.stream.Stream;
 import javax.naming.Name;
 import javax.naming.directory.SearchControls;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ldap.SizeLimitExceededException;
-import org.springframework.ldap.core.DirContextAdapter;
-import org.springframework.ldap.core.DirContextOperations;
-import org.springframework.ldap.core.DirContextProcessor;
-import org.springframework.ldap.core.support.AbstractContextMapper;
 
-import com.google.common.collect.Lists;
+public abstract class OperationsImpl<T> implements Operations<T> {
 
-import fr.mtlx.odm.SessionImpl.CachingContextMapper;
-import fr.mtlx.odm.SessionImpl.MappingContextMapper;
+    private static final Logger log = LoggerFactory.getLogger(OperationsImpl.class);
 
-public class OperationsImpl<T> implements Operations<T> {
-	private static Logger log = LoggerFactory.getLogger(OperationsImpl.class);
+    protected final Class<T> persistentClass;
 
-	Class<T> persistentClass;
+    protected final ClassMetadata<T> metadata;
 
-	SessionImpl session;
+    private final SessionImpl session;
 
-	ClassMetadata<T> metadata;
+    public OperationsImpl(final SessionImpl session, final Class<T> persistentClass) {
+        this.persistentClass = checkNotNull(persistentClass);
 
-	ClassAssistant<T> assistant;
+        this.session = checkNotNull(session);
 
-	OperationsImpl(final SessionImpl session, final Class<T> persistentClass) {
-		this.persistentClass = checkNotNull(persistentClass);
+        this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
+    }
 
-		this.session = checkNotNull(session);
+    @Override
+    public T lookup(Name dn) throws javax.naming.NameNotFoundException {
+        if (log.isDebugEnabled()) {
+            log.debug("lookup for {}", dn);
+        }
 
-		this.metadata = ((SessionFactoryImpl) session.getSessionFactory())
-				.getClassMetadata(persistentClass);
+        return getFromCache(persistentClass, dn).orElse(store2nd(dn, realLookup(dn)));
+    }
 
-		if (metadata == null)
-			throw new UnsupportedOperationException(String.format(
-					"%s is not a persistent class", persistentClass));
+    @Override
+    public T lookupByExample(T example) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-		this.assistant = new ClassAssistant<T>(metadata);
-	}
+    @Override
+    public SearchCriteriaImpl<T> search(Name base, SearchControls controls) {
+        return new SearchCriteriaImpl<>(this, base, controls);
+    }
 
-	/**
-	 * @throws javax.naming.NameNotFoundException
-	 */
-	@Override
-	public T lookup(Name dn) throws javax.naming.NameNotFoundException {
-		if (log.isDebugEnabled())
-			log.debug("lookup for {}", dn);
+    @Override
+    public SearchCriteriaImpl<T> search(Name base) {
+        return new SearchCriteriaImpl<>(this, base);
+    }
 
-		T entry = session.getFromCache(persistentClass, dn);
+    public abstract Stream<T> search(final Name base, final SearchControls controls, final String filter)
+            throws javax.naming.SizeLimitExceededException;
 
-		if (entry == null) {
-			DirContextOperations context;
-			final MappingContextMapper<T> mapper = session.new MappingContextMapper<T>(
-					persistentClass, assistant);
+    public abstract long count(final Name base, final SearchControls controls, final String filter)
+            throws javax.naming.SizeLimitExceededException;
 
-			context = session.getContextCache().retrieve(dn);
+    public abstract Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls);
 
-			if (context == null) {
-				context = session.doLookup(dn);
-			}
+    public SessionImpl getSession() {
+        return session;
+    }
 
-			entry = mapper.doMapFromContext(context);
+    protected final ClassMetadata<T> getMetadata() {
+        return metadata;
+    }
 
-			((SessionFactoryImpl) session.getSessionFactory())
-					.getCacheManager().getCacheFor(persistentClass)
-					.store(dn, entry);
-		}
+    // hook
+    protected abstract T realLookup(Name dn);
 
-		return entry;
-	}
+    protected final T store2nd(final Name dn, final T entry) {
+        getSession().getSessionFactory().getCacheFor(persistentClass).store(dn, entry);
 
-	@Override
-	public T lookupByExample(T example) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return entry;
+    }
 
-	@Override
-	public SearchCriteria<T> search(final Name base) {
-		return new SearchCriteria<T>(persistentClass, this, base);
-	}
+    protected final Optional<T> getFromCache(final Name dn) {
+        return getFromCache(persistentClass, dn);
+    }
 
-	List<T> search(final Class<T> persistentClass, final Name base,
-			final SearchControls controls, final String filter,
-			@Nullable final DirContextProcessor processor)
-			throws javax.naming.SizeLimitExceededException {
-		final List<T> results = Lists.newArrayList();
+    protected final <P> Optional<P> getFromCache(final Class<P> persistentClass, final Name dn) {
+        final EntityCache<P> sessionCache = getSession().getCacheFor(persistentClass);
 
-		CachingContextMapper<T> cm = session.new CachingContextMapper<T>();
+        if (sessionCache == null) {
+            throw new UnsupportedOperationException(String.format("%s is not a persistent class.", persistentClass));
+        }
 
-		try {
-			session.getLdapOperations().search(
-					base,
-					filter,
-					controls,
-					cm,
-					processor == null ? SessionImpl.nullDirContextProcessor
-							: processor);
-		} catch (SizeLimitExceededException ex) {
-			throw new javax.naming.SizeLimitExceededException(
-					ex.getExplanation());
-		}
+        if (sessionCache.contains(dn)) {
+            return Optional.ofNullable(sessionCache.retrieve(dn));
+        }
 
-		for (DirContextOperations ctx : cm.getContextQueue()) {
-			T entry = session.getFromCache(persistentClass, ctx.getDn());
+        final EntityCache<P> secondLevelcache = getSession().getSessionFactory().getCacheFor(persistentClass);
 
-			if (entry == null) {
-				final MappingContextMapper<T> mapper = session.new MappingContextMapper<T>(
-						persistentClass, assistant);
+        if (secondLevelcache != null) {
 
-				entry = mapper.doMapFromContext(ctx);
+            final P entry = secondLevelcache.retrieve(dn); // may be null;
 
-				((SessionFactoryImpl) session.getSessionFactory())
-						.getCacheManager().getCacheFor(persistentClass)
-						.store(ctx.getDn(), entry);
-			}
-			results.add(entry);
-		}
+            sessionCache.store(dn, entry);
 
-		return results;
-	}
+            return Optional.ofNullable(entry);
+        }
 
-	List<T> search(final Class<T> persistentClass, final Name base,
-			final SearchControls controls, final String filter)
-			throws javax.naming.SizeLimitExceededException {
-		return search(persistentClass, base, controls, filter, null);
-	}
+        return Optional.empty();
+    }
 
-	@Override
-	public void bind(T transientObject) {
-		Name dn;
-
-		prepersist(transientObject);
-
-		try {
-			dn = assistant.getIdentifier(transientObject);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		DirContextOperations context = new DirContextAdapter(dn);
-
-		session.mapToContext(checkNotNull(transientObject), context);
-
-		session.getLdapOperations().bind(context);
-
-		session.getContextCache().store(context);
-	}
-
-	private void prepersist(T transientObject) {
-		for (Method method : metadata.prepersistMethods()) {
-			try {
-				method.invoke(transientObject);
-			} catch (IllegalArgumentException e) {
-			} catch (IllegalAccessException e) {
-			} catch (InvocationTargetException e) {
-			}
-		}
-	}
-
-	@Override
-	public void modify(T persistentObject) {
-		Name dn;
-
-		try {
-			dn = assistant.getIdentifier(persistentObject);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		DirContextOperations modifedContext = session.getContextCache()
-				.retrieve(dn);
-
-		if (modifedContext == null)
-			throw new IllegalArgumentException("not a persistent object");
-
-		session.mapToContext(checkNotNull(persistentObject), modifedContext);
-
-		session.getLdapOperations().modifyAttributes(modifedContext);
-
-		assert dn.equals(modifedContext.getDn());
-
-		session.getContextCache().store(modifedContext);
-	}
-
-	@Override
-	public void unbind(final T persistentObject) {
-		Name dn;
-
-		try {
-			dn = assistant.getIdentifier(persistentObject);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		if (!session.getContextCache().contains(dn))
-			throw new IllegalArgumentException("not a persistent object");
-
-		session.getLdapOperations().unbind(dn);
-
-		session.getContextCache().remove(dn);
-
-		session.getObjectCacheManager().getCacheFor(persistentClass).remove(dn);
-	}
-
-	@Override
-	public void purge(final Name base) {
-		SearchControls controls = new SearchControls();
-		controls.setReturningAttributes(new String[] {});
-		controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-		for (Object dn : session.getLdapOperations().search(base, "", controls,
-				new AbstractContextMapper<Name>() {
-					@Override
-					protected Name doMapFromContext(DirContextOperations ctx) {
-						return ctx.getDn();
-					}
-				}, SessionImpl.nullDirContextProcessor)) {
-			session.getLdapOperations().unbind((Name) dn);
-
-			session.getContextCache().remove((Name) dn);
-
-			session.getObjectCacheManager().getCacheFor(persistentClass)
-					.remove((Name) dn);
-		}
-	}
-
-	@Override
-	public SearchCriteria<T> search(Name base, SearchControls controls) {
-		return new SearchCriteria<T>(persistentClass, this, base, controls);
-	}
-
+    protected final void prePersist(final T transientObject) {
+        for (final Method method : getMetadata().prepersistMethods()) {
+            try {
+                method.invoke(transientObject);
+            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+            }
+        }
+    }
 }

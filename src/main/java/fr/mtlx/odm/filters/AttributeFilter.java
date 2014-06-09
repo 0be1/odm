@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+import fr.mtlx.odm.SessionFactoryImpl;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,8 +27,8 @@ package fr.mtlx.odm.filters;
  */
 
 public class AttributeFilter extends RawCompareFilter {
-	public AttributeFilter(Comparison op, final String attribute,
+	public AttributeFilter(SessionFactoryImpl sessionFactory, Comparison op, final String attribute,
 			final Object value) {
-		super(op, attribute, FilterEncoder.encode(value));
+		super(sessionFactory, op, attribute, FilterEncoder.encode(value));
 	}
 }

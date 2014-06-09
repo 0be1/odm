@@ -7,6 +7,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 
 import fr.mtlx.odm.attributes.LabeledURI;
+import java.net.URISyntaxException;
 
 /*
  * #%L
@@ -55,7 +56,7 @@ public class LabeledURIConverter extends AttributeConverter<String, LabeledURI> 
 		URI uri;
 		try {
 			uri = new URI(iterator.next());
-		} catch (Exception e) {
+		} catch (URISyntaxException e) {
 			throw new ConvertionException(e);
 		}
 

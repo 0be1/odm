@@ -23,22 +23,22 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 @SuppressWarnings("serial")
 public class MappingException extends Exception {
-	public MappingException() {
-		super();
-	}
 
-	public MappingException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public MappingException() {
+        super();
+    }
 
-	public MappingException(Throwable cause) {
-		super(cause);
-	}
+    public MappingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public MappingException(String message) {
-		super(message);
-	}
+    public MappingException(Throwable cause) {
+        super(cause);
+    }
+
+    public MappingException(String message) {
+        super(message);
+    }
 }

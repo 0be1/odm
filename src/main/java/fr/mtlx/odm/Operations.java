@@ -23,25 +23,25 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import javax.naming.Name;
 import javax.naming.NameNotFoundException;
 import javax.naming.directory.SearchControls;
 
 public interface Operations<T> {
-	T lookup(Name dn) throws NameNotFoundException;
 
-	T lookupByExample(T example) throws NameNotFoundException;
+    T lookup(Name dn) throws NameNotFoundException;
 
-	SearchCriteria<T> search(Name base, SearchControls controls);
+    T lookupByExample(T example) throws NameNotFoundException;
 
-	SearchCriteria<T> search(Name base);
+    SearchCriteriaImpl<T> search(Name base, SearchControls controls);
 
-	void bind(T transientObject);
+    SearchCriteriaImpl<T> search(Name base);
 
-	void modify(T persistentObject);
+    void bind(T transientObject);
 
-	void unbind(T persistentObject);
+    void modify(T persistentObject);
 
-	void purge(Name base);
+    void unbind(T persistentObject);
+
+    void purge(Name base);
 }

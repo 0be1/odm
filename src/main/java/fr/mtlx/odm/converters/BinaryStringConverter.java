@@ -1,5 +1,8 @@
 package fr.mtlx.odm.converters;
 
+import com.google.common.base.Charsets;
+import java.nio.charset.Charset;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -23,19 +26,19 @@ package fr.mtlx.odm.converters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 public class BinaryStringConverter extends SyntaxConverter<byte[], String> {
-	public BinaryStringConverter() {
-		super(byte[].class, String.class);
-	}
 
-	@Override
-	public String from(byte[] object) throws ConvertionException {
-		return object.toString();
-	}
+    public BinaryStringConverter() {
+        super(byte[].class, String.class);
+    }
 
-	@Override
-	public byte[] to(String value) throws ConvertionException {
-		return value.getBytes();
-	}
+    @Override
+    public String from(byte[] object) throws ConvertionException {
+        return new String(object, Charsets.UTF_8);
+    }
+
+    @Override
+    public byte[] to(String value) throws ConvertionException {
+        return value.getBytes();
+    }
 }

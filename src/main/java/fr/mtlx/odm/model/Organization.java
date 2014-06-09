@@ -23,36 +23,35 @@ package fr.mtlx.odm.model;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
-import javax.persistence.Cacheable;
-
 import fr.mtlx.odm.Attribute;
 import fr.mtlx.odm.Entry;
+import javax.persistence.Cacheable;
 
-@Entry(objectClasses = { "organization" }, ignoreNonMatched = true)
+@Entry(objectClasses = {"organization"}, ignoreNonMatched = true)
 @Cacheable
 public class Organization extends Top {
-	private static final long serialVersionUID = -1709060834240017575L;
 
-	@Attribute(aliases = "o")
-	private String organizationName;
+    private static final long serialVersionUID = -1709060834240017575L;
 
-	@Attribute
-	private String description;
+    @Attribute(aliases = "o")
+    private String organizationName;
 
-	public String getOrganizationName() {
-		return organizationName;
-	}
+    @Attribute
+    private String description;
 
-	public void setOrganizationName(final String organizationName) {
-		this.organizationName = organizationName;
-	}
+    public String getOrganizationName() {
+        return organizationName;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public void setOrganizationName(final String organizationName) {
+        this.organizationName = organizationName;
+    }
 
-	public void setDescription(final String description) {
-		this.description = description;
-	}
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
 }

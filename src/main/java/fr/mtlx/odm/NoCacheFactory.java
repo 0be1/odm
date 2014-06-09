@@ -23,26 +23,27 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import fr.mtlx.odm.cache.CacheManager;
 import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.cache.NoCache;
 
 public class NoCacheFactory extends CacheFactory {
-	public static class NoCacheManager implements CacheManager {
-		@Override
-		public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-			return new NoCache<T>();
-		}
 
-		@Override
-		public void clear() {
-		}
-	}
+    @Override
+    CacheManager getCache(final SessionFactoryImpl sessionFactory,
+            final String name) {
+        return new NoCacheManager();
+    }
 
-	@Override
-	CacheManager getCache(final SessionFactoryImpl sessionFactory,
-			final String name) {
-		return new NoCacheManager();
-	}
+    public static class NoCacheManager implements CacheManager {
+
+        @Override
+        public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
+            return new NoCache<>();
+        }
+
+        @Override
+        public void clear() {
+        }
+    }
 }

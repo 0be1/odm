@@ -23,21 +23,20 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
-import net.sf.ehcache.CacheManager;
 import fr.mtlx.odm.cache.EhCacheManager;
+import net.sf.ehcache.CacheManager;
 
 public class EhCacheFactory extends CacheFactory {
-	private final CacheManager cacheManager;
 
-	public EhCacheFactory(final CacheManager cacheManager) {
-		this.cacheManager = checkNotNull(cacheManager, "cacheManager is null");
-	}
+    private final CacheManager cacheManager;
 
-	@Override
-	fr.mtlx.odm.cache.CacheManager getCache(
-			final SessionFactoryImpl sessionFactory, final String region) {
-		return new EhCacheManager(sessionFactory, cacheManager, region);
-	}
+    public EhCacheFactory(final CacheManager cacheManager) {
+        this.cacheManager = checkNotNull(cacheManager, "cacheManager is null");
+    }
+
+    @Override
+    fr.mtlx.odm.cache.CacheManager getCache(final SessionFactoryImpl sessionFactory, final String region) {
+        return new EhCacheManager(sessionFactory, cacheManager, region);
+    }
 }

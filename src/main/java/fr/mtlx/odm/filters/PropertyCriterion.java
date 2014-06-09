@@ -23,66 +23,68 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.SessionFactoryImpl;
 
 public class PropertyCriterion<T> implements CompareCriterion<T> {
-	private final String propertyName;
-	private final Class<T> persistentClass;
 
-	PropertyCriterion(final Class<T> persistentClass,
-			SessionFactoryImpl sessionFactory, final String propertyName) {
-		this.propertyName = checkNotNull(propertyName);
+    private final String propertyName;
+    private final Class<T> persistentClass;
+    private final SessionFactoryImpl sessionFactory;
 
-		this.persistentClass = checkNotNull(persistentClass);
-	}
+    PropertyCriterion(SessionFactoryImpl sessionFactory, final Class<T> persistentClass, final String propertyName) {
+        this.propertyName = checkNotNull(propertyName);
 
-	@Override
-	public Filter equalsTo(final Object value) {
-		return new PropertyCompareFilter<T>(persistentClass, Comparison.equals,
-				propertyName, value);
-	}
+        this.persistentClass = checkNotNull(persistentClass);
 
-	@Override
-	public Filter approx(final Object value) {
-		return new PropertyCompareFilter<T>(persistentClass, Comparison.approx,
-				propertyName, value);
-	}
+        this.sessionFactory = checkNotNull(sessionFactory);
+    }
 
-	@Override
-	public Filter greaterOrEquals(final Object value) {
-		return new PropertyCompareFilter<T>(persistentClass,
-				Comparison.greater, propertyName, value);
-	}
+    @Override
+    public Filter equalsTo(final Object value) {
+        return new PropertyCompareFilter<>(sessionFactory, persistentClass, Comparison.equals,
+                propertyName, value);
+    }
 
-	@Override
-	public Filter lessOrEquals(final Object value) {
-		return new PropertyCompareFilter<T>(persistentClass, Comparison.less,
-				propertyName, value);
-	}
+    @Override
+    public Filter approx(final Object value) {
+        return new PropertyCompareFilter<>(sessionFactory, persistentClass, Comparison.approx,
+                propertyName, value);
+    }
 
-	@Override
-	public Filter present() {
-		return new PropertyRawCompareFilter<T>(persistentClass,
-				Comparison.equals, propertyName, "*");
-	}
+    @Override
+    public Filter greaterOrEquals(final Object value) {
+        return new PropertyCompareFilter<>(sessionFactory, persistentClass,
+                Comparison.greater, propertyName, value);
+    }
 
-	@Override
-	public Filter substrings(final Object... values) {
-		return new PropertySubstringsWithFilter<T>(persistentClass,
-				propertyName, values);
-	}
+    @Override
+    public Filter lessOrEquals(final Object value) {
+        return new PropertyCompareFilter<>(sessionFactory, persistentClass, Comparison.less,
+                propertyName, value);
+    }
 
-	@Override
-	public Filter startsWith(final Object value) {
-		return new PropertyStartsWithFilter<T>(persistentClass, propertyName,
-				value);
-	}
+    @Override
+    public Filter present() {
+        return new PropertyRawCompareFilter<>(sessionFactory, persistentClass,
+                Comparison.equals, propertyName, "*");
+    }
 
-	@Override
-	public Filter endsWith(final Object value) {
-		return new PropertyEndsWithFilter<T>(persistentClass, propertyName,
-				value);
-	}
+    @Override
+    public Filter substrings(final Object... values) {
+        return new PropertySubstringsWithFilter<>(sessionFactory, persistentClass,
+                propertyName, values);
+    }
+
+    @Override
+    public Filter startsWith(final Object value) {
+        return new PropertyStartsWithFilter<>(sessionFactory, persistentClass, propertyName,
+                value);
+    }
+
+    @Override
+    public Filter endsWith(final Object value) {
+        return new PropertyEndsWithFilter<>(sessionFactory, persistentClass, propertyName,
+                value);
+    }
 }

@@ -32,6 +32,8 @@ import javax.naming.ldap.LdapName;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.Session;
+import java.lang.reflect.InvocationTargetException;
+import javax.naming.InvalidNameException;
 
 public class EntryResolverConverter<T extends Object> extends
 		AttributeConverter<LdapName, T> {
@@ -55,11 +57,11 @@ public class EntryResolverConverter<T extends Object> extends
 
 	@Override
 	public LdapName to(final T object) throws ConvertionException {
-		final ClassAssistant<T> assistant = new ClassAssistant<T>(metadata);
+		final ClassAssistant<T> assistant = new ClassAssistant<>(metadata);
 
 		try {
 			return assistant.getIdentifier(object);
-		} catch (Exception e) {
+		} catch (InvalidNameException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
 			throw new ConvertionException(e);
 		}
 	}

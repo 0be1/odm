@@ -23,10 +23,10 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import fr.mtlx.odm.cache.CacheManager;
 
 abstract class CacheFactory {
-	abstract CacheManager getCache(final SessionFactoryImpl sessionFactory,
-			final String name);
+
+    abstract CacheManager getCache(final SessionFactoryImpl sessionFactory,
+            final String name);
 }

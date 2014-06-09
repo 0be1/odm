@@ -1,21 +1,23 @@
 package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.google.common.collect.Lists;
+import fr.mtlx.odm.SessionFactoryImpl;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-
 public abstract class CompositeFilter extends FilterImpl {
-	protected final List<Filter> filters;
 
-	public CompositeFilter(final Filter... filters) {
-		this.filters = Lists.newArrayList(filters);
-	}
+    protected final List<Filter> filters;
 
-	public CompositeFilter add(Filter filter) {
-		filters.add(checkNotNull(filter));
+    public CompositeFilter(SessionFactoryImpl sessionFactory, final Filter... filters) {
+        super(sessionFactory);
 
-		return this;
-	}
+        this.filters = Lists.newArrayList(filters);
+    }
+
+    public CompositeFilter add(Filter filter) {
+        filters.add(checkNotNull(filter));
+
+        return this;
+    }
 }

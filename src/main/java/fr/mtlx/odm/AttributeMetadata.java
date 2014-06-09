@@ -23,134 +23,124 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
+import fr.mtlx.odm.converters.Converter;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-
-import fr.mtlx.odm.converters.Converter;
+import javax.annotation.Nonnull;
 
 @SuppressWarnings("serial")
 public class AttributeMetadata implements Serializable {
-	private String propertyName;
 
-	private String attributeName;
+    private String propertyName;
 
-	private String[] attributeAliases;
+    private String attributeName;
 
-	private Type objectType;
+    private String[] attributeAliases;
 
-	private Type directoryType;
+    private Class<?> objectType;
 
-	private String syntax;
+    private Class<?> directoryType;
 
-	private Converter syntaxConverter;
+    private String syntax;
 
-	private Converter attributeConverter;
+    private Converter syntaxConverter;
 
-	private Class<?> persistentClass;
+    private Converter attributeConverter;
 
-	private Class<? extends Collection<?>> collectionType;
+    private Class<? extends Collection<?>> collectionType;
 
-	public String getAttributeName() {
-		return attributeName;
-	}
+    public String getAttributeName() {
+        return attributeName;
+    }
 
-	public void setAttributeName(String attributeName) {
-		this.attributeName = attributeName;
-	}
+    public void setAttributeName(@Nonnull String attributeName) {
+        this.attributeName = attributeName;
+    }
 
-	public void setPropertyName(String propertyName) {
-		this.propertyName = propertyName;
-	}
+    public void setPropertyName(@Nonnull String propertyName) {
+        this.propertyName = propertyName;
+    }
 
-	public void setAttributeAliases(String[] attributeAliases) {
-		this.attributeAliases = attributeAliases;
-	}
+    public void setAttributeAliases(String[] attributeAliases) {
+        this.attributeAliases = attributeAliases;
+    }
 
-	public void setObjectType(Type objectType) {
-		this.objectType = objectType;
-	}
+    public void setObjectType(Class<?> objectType) {
+        this.objectType = objectType;
+    }
 
-	public void setDirectoryType(Type directoryType) {
-		this.directoryType = directoryType;
-	}
+    public void setDirectoryType(Class<?> directoryType) {
+        this.directoryType = directoryType;
+    }
 
-	public void setSyntax(String syntax) {
-		this.syntax = syntax;
-	}
+    public void setSyntax(String syntax) {
+        this.syntax = syntax;
+    }
 
-	public void setSyntaxConverter(Converter syntaxConverter) {
-		this.syntaxConverter = syntaxConverter;
-	}
+    public void setSyntaxConverter(Converter syntaxConverter) {
+        this.syntaxConverter = syntaxConverter;
+    }
 
-	public void setAttributeConverter(Converter attributeConverter) {
-		this.attributeConverter = attributeConverter;
-	}
+    public void setAttributeConverter(Converter attributeConverter) {
+        this.attributeConverter = attributeConverter;
+    }
 
-	public void setPersistentClass(Class<?> persistentClass) {
-		this.persistentClass = persistentClass;
-	}
+    public void setCollectionType(Class<? extends Collection<?>> collectionType) {
+        this.collectionType = collectionType;
+    }
 
-	public void setCollectionType(Class<? extends Collection<?>> collectionType) {
-		this.collectionType = collectionType;
-	}
+    public String getAttirbuteName() {
+        return attributeName;
+    }
 
-	public String getAttirbuteName() {
-		return attributeName;
-	}
+    public String getPropertyName() {
+        return propertyName;
+    }
 
-	public String getPropertyName() {
-		return propertyName;
-	}
+    public Type getObjectType() {
+        return objectType;
+    }
 
-	public Type getObjectType() {
-		return objectType;
-	}
+    public Type getDirectoryType() {
+        return directoryType;
+    }
 
-	public Type getDirectoryType() {
-		return directoryType;
-	}
+    public String getSyntax() {
+        return syntax;
+    }
 
-	public String getSyntax() {
-		return syntax;
-	}
+    public boolean isMultivalued() {
+        return collectionType != null;
+    }
 
-	public boolean isMultivalued() {
-		return collectionType != null;
-	}
+    public Class<? extends Collection<?>> getCollectionType() {
+        return collectionType;
+    }
 
-	public Class<? extends Collection<?>> getCollectionType() {
-		return collectionType;
-	}
+    public String[] getAttributeAliases() {
+        return attributeAliases;
+    }
 
-	public String[] getAttributeAliases() {
-		return attributeAliases;
-	}
+    public Collection<?> newCollectionInstance() {
+        final Class<? extends Collection<?>> ctype = getCollectionType();
 
-	public Collection<?> newCollectionInstance() {
-		final Class<? extends Collection<?>> ctype = getCollectionType();
+        if (ctype.isAssignableFrom(ArrayList.class)) {
+            return new ArrayList<>();
+        } else if (ctype.isAssignableFrom(HashSet.class)) {
+            return new HashSet<>();
+        }
 
-		if (ctype.isAssignableFrom(ArrayList.class)) {
-			return new ArrayList<Object>();
-		} else if (ctype.isAssignableFrom(HashSet.class)) {
-			return new HashSet<Object>();
-		}
+        return null;
+    }
 
-		return null;
-	}
+    public Converter getSyntaxConverter() {
+        return syntaxConverter;
+    }
 
-	public Converter getSyntaxConverter() {
-		return syntaxConverter;
-	}
-
-	public Class<?> getPersistentClass() {
-		return persistentClass;
-	}
-
-	public Converter getAttributeConverter() {
-		return attributeConverter;
-	}
+    public Converter getAttributeConverter() {
+        return attributeConverter;
+    }
 }

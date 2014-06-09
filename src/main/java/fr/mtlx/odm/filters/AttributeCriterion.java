@@ -27,57 +27,59 @@ package fr.mtlx.odm.filters;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Joiner;
-
 import fr.mtlx.odm.SessionFactoryImpl;
 
 public class AttributeCriterion<T> implements CompareCriterion<T> {
 	private final String attributeName;
+        
+        private final SessionFactoryImpl sessionFactory;
 
-	AttributeCriterion(SessionFactoryImpl sessionFactory,
-			final String propertyName) {
+	AttributeCriterion(SessionFactoryImpl sessionFactory, final String propertyName) {
 		this.attributeName = checkNotNull(propertyName);
+                
+                this.sessionFactory = checkNotNull(sessionFactory);
 	}
 
 	@Override
 	public Filter equalsTo(Object value) {
-		return new AttributeFilter(Comparison.equals, attributeName, value);
+		return new AttributeFilter(sessionFactory, Comparison.equals, attributeName, value);
 	}
 
 	@Override
 	public Filter approx(Object value) {
-		return new AttributeFilter(Comparison.approx, attributeName, value);
+		return new AttributeFilter(sessionFactory, Comparison.approx, attributeName, value);
 	}
 
 	@Override
 	public Filter greaterOrEquals(Object value) {
-		return new AttributeFilter(Comparison.greater, attributeName, value);
+		return new AttributeFilter(sessionFactory, Comparison.greater, attributeName, value);
 	}
 
 	@Override
 	public Filter lessOrEquals(Object value) {
-		return new AttributeFilter(Comparison.less, attributeName, value);
+		return new AttributeFilter(sessionFactory, Comparison.less, attributeName, value);
 	}
 
 	@Override
 	public Filter present() {
-		return new RawCompareFilter(Comparison.equals, attributeName, "*");
+		return new RawCompareFilter(sessionFactory, Comparison.equals, attributeName, "*");
 	}
 
 	@Override
 	public Filter substrings(Object... values) {
-		return new RawCompareFilter(Comparison.equals, attributeName, Joiner
+		return new RawCompareFilter(sessionFactory,Comparison.equals, attributeName, Joiner
 				.on('*').useForNull("").join(values));
 	}
 
 	@Override
 	public Filter startsWith(Object value) {
-		return new RawCompareFilter(Comparison.equals, attributeName, "*"
+		return new RawCompareFilter(sessionFactory, Comparison.equals, attributeName, "*"
 				+ value);
 	}
 
 	@Override
 	public Filter endsWith(Object value) {
-		return new RawCompareFilter(Comparison.equals, attributeName, value
+		return new RawCompareFilter(sessionFactory, Comparison.equals, attributeName, value
 				+ "*");
 	}
 }

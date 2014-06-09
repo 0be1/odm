@@ -23,62 +23,49 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import fr.mtlx.odm.filters.Filter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-
-import fr.mtlx.odm.filters.Filter;
 
 public interface ClassMetadata<T> {
-	Class<T> getEntryClass();
 
-	/**
-	 * Get the name of the identifier property (or return null)
-	 */
-	String getIdentifierPropertyName();
+    Class<T> getPersistentClass();
 
-	/**
-	 * Get the identifier type
-	 */
-	Type getIdentifierType();
+    /**
+     * Get the name of the identifier property (or return null)
+     */
+    String getIdentifierPropertyName();
 
-	/**
-	 * Get the identifier syntax
-	 */
-	String getIdentifierSyntax();
+    Constructor<T> getDefaultConstructor();
 
-	Constructor<T> getDefaultConstructor();
+    ImmutableList<String> getObjectClassHierarchy();
 
-	ImmutableList<String> getObjectClassHierarchy();
+    ImmutableSet<String> getAuxiliaryClasses();
 
-	ImmutableSet<String> getAuxiliaryClasses();
+    String getStructuralClass();
 
-	String getStructuralClass();
+    Field getIdentifier();
 
-	Field getIdentifier();
+    Filter getByExampleFilter();
 
-	Filter getByExampleFilter();
+    AttributeMetadata getAttributeMetadataByAttributeName(String attributeName);
 
-	AttributeMetadata getAttributeMetadataByAttributeName(String attributeName);
+    AttributeMetadata getAttributeMetadata(String propertyName);
 
-	AttributeMetadata getAttributeMetadataByPropertyName(String propertyName);
+    Method[] prepersistMethods();
 
-	Method[] prepersistMethods();
+    boolean isCacheable();
 
-	boolean isCacheable();
+    /**
+     * an exception will be raised if non-matched attributes are found in the
+     * entry
+     *
+     * @return
+     */
+    boolean isStrict();
 
-	/**
-	 * an exception will be raised if non-matched attributes are found in the
-	 * entry
-	 * 
-	 * @return
-	 */
-	boolean isStrict();
-
-	ImmutableSet<String> getProperties();
+    ImmutableSet<String> getProperties();
 }

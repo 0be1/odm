@@ -1,7 +1,5 @@
 package fr.mtlx.odm.filters;
 
-import fr.mtlx.odm.SessionFactoryImpl;
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -25,9 +23,11 @@ import fr.mtlx.odm.SessionFactoryImpl;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+import fr.mtlx.odm.SessionFactoryImpl;
 
 public class ObjectClassFilter extends AttributeFilter {
-	ObjectClassFilter(SessionFactoryImpl sessionFactory, String objectClass) {
-		super(Comparison.equals, "objectClass", objectClass);
-	}
+
+    ObjectClassFilter(SessionFactoryImpl sessionFactory, String objectClass) {
+        super(sessionFactory, Comparison.equals, "objectClass", objectClass);
+    }
 }

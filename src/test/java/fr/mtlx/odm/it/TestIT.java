@@ -40,8 +40,9 @@ import org.springframework.ldap.core.support.LdapContextSource;
 
 import fr.mtlx.odm.Session;
 import fr.mtlx.odm.SessionFactory;
-import fr.mtlx.odm.SpringSessionFactoryImpl;
+import fr.mtlx.odm.spring.SpringSessionFactoryImpl;
 import fr.mtlx.odm.model.Person;
+import java.io.IOException;
 
 
 @Ignore
@@ -98,7 +99,7 @@ public class TestIT
 	
 	
 	@After
-	public void closeSession()
+	public void closeSession() throws IOException
 	{
 		if (session != null)
 		{

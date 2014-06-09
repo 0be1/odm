@@ -23,39 +23,39 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import fr.mtlx.odm.SessionFactoryImpl;
 
 public class OrFilter extends CompositeFilter {
-	OrFilter(SessionFactoryImpl sessionFactory, Filter... filters) {
-		super(filters);
-	}
 
-	@Override
-	public OrFilter add(final Filter filter) {
-		if (filter instanceof OrFilter) {
-			filters.addAll(((OrFilter) filter).filters);
-		} else {
-			super.add(filter);
-		}
+    OrFilter(SessionFactoryImpl sessionFactory, Filter... filters) {
+        super(sessionFactory, filters);
+    }
 
-		return this;
-	}
+    @Override
+    public OrFilter add(final Filter filter) {
+        if (filter instanceof OrFilter) {
+            filters.addAll(((CompositeFilter) filter).filters);
+        } else {
+            super.add(filter);
+        }
 
-	@Override
-	public String encode() {
-		final StringBuilder sb = new StringBuilder("(").append('|');
+        return this;
+    }
 
-		for (Filter filter : filters) {
-			sb.append(filter.encode());
-		}
+    @Override
+    public String encode() {
+        final StringBuilder sb = new StringBuilder("(").append('|');
 
-		sb.append(")");
+        for (Filter filter : filters) {
+            sb.append(filter.encode());
+        }
 
-		String retval = sb.toString();
+        sb.append(")");
 
-		assert retval != null && retval.startsWith("(") && retval.endsWith(")");
+        String retval = sb.toString();
 
-		return retval;
-	}
+        assert retval != null && retval.startsWith("(") && retval.endsWith(")");
+
+        return retval;
+    }
 }

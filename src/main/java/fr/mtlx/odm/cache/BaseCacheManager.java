@@ -47,14 +47,14 @@ public class BaseCacheManager implements CacheManager {
 				.getClassMetadata(persistentClass);
 
 		if (metaData == null || !metaData.isCacheable()) {
-			return new NoCache<T>();
+			return new NoCache<>();
 		}
 
 		@SuppressWarnings("unchecked")
 		EntityCache<T> cache = (EntityCache<T>) caches.get(persistentClass);
 
 		if (cache == null) {
-			cache = new EntityMapCache<T>(persistentClass.getName());
+			cache = new EntityMapCache<>(persistentClass.getName());
 
 			caches.put(persistentClass, cache);
 		}
@@ -64,8 +64,6 @@ public class BaseCacheManager implements CacheManager {
 
 	@Override
 	public void clear() {
-		for (EntityCache<?> cache : caches.values()) {
-			cache.clear();
-		}
+            caches.values().stream().forEach(Cache::clear);
 	}
 }

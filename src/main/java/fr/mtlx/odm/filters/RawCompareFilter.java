@@ -23,28 +23,30 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
+import fr.mtlx.odm.SessionFactoryImpl;
 
 class RawCompareFilter extends FilterImpl {
-	private final Comparison op;
 
-	private final String attribute;
+    private final Comparison op;
 
-	private final Object value;
+    private final String attribute;
 
-	RawCompareFilter(Comparison op, final String attribute, final Object value) {
-		this.attribute = checkNotNull(attribute);
-		this.value = value;
-		this.op = op;
-	}
+    private final Object value;
 
-	@Override
-	public String encode() {
-		StringBuilder sb = new StringBuilder("(");
+    RawCompareFilter(SessionFactoryImpl sessionFactory, Comparison op, final String attribute, final Object value) {
+        super(sessionFactory);
+        this.attribute = checkNotNull(attribute);
+        this.value = value;
+        this.op = op;
+    }
 
-		sb.append(attribute).append(op.getOperator()).append(value).append(")");
+    @Override
+    public String encode() {
+        StringBuilder sb = new StringBuilder("(");
 
-		return sb.toString();
-	}
+        sb.append(attribute).append(op.getOperator()).append(value).append(")");
+
+        return sb.toString();
+    }
 }

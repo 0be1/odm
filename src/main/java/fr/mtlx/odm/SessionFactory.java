@@ -23,40 +23,41 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
+import fr.mtlx.odm.filters.FilterBuilder;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 
-import fr.mtlx.odm.filters.FilterBuilder;
-
 public interface SessionFactory extends Serializable {
-	boolean isPersistentClass(final String className);
 
-	/**
-	 * clazz est persistente si c'est une super classe d'une classe mappée
-	 * 
-	 * @param clazz
-	 * @return true if clazz is persistent
-	 */
-	boolean isPersistentClass(final Class<?> clazz);
+    boolean isPersistentClass(final String className);
 
-	Session openSession();
+    /**
+     * clazz est persistente si c'est une super classe d'une classe mappée
+     *
+     * @param clazz
+     * @return true if clazz is persistent
+     */
+    boolean isPersistentClass(final Class<?> clazz);
 
-	void closeSession();
+    Session openSession();
 
-	void addClass(final Class<?> persistentClass);
+    void closeSession();
 
-	void addClass(final String persistentClassName);
+    <T> void addClass(final Class<T> persistentClass) throws MappingException;
 
-	Session getCurrentSession();
+    void addClass(final String persistentClassName) throws MappingException, ClassNotFoundException;
 
-	<T> FilterBuilder<T> filterBuilder(Class<T> persistentClass);
+    Session getCurrentSession();
 
-	boolean isOperationalAttribute(String attributeId);
+    <T> FilterBuilder<T> filterBuilder(Class<T> persistentClass) throws MappingException;
+    
+    boolean isOperationalAttribute(String attributeId);
 
-	<T> ClassMetadata<T> getClassMetadata(Class<T> entityClass);
+    <T> ClassMetadata<T> getClassMetadata(Class<T> entityClass);
 
-	ClassMetadata<?> getClassMetadata(final String[] objectClasses)
-			throws IllegalAccessException, InvocationTargetException,
-			ClassNotFoundException;
+    ClassMetadata<?> getClassMetadata(String entityClassName);
+
+    ClassMetadata<?> getClassMetadata(final String[] objectClasses)
+            throws IllegalAccessException, InvocationTargetException,
+            ClassNotFoundException;
 }

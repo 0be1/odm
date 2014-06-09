@@ -23,38 +23,37 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-
 import fr.mtlx.odm.AttributeMetadata;
+import fr.mtlx.odm.SessionFactoryImpl;
+import java.util.List;
 
 public class PropertySubstringsWithFilter<T> extends PropertyCompareFilter<T> {
-	public final static char WILDCARD = '*';
 
-	PropertySubstringsWithFilter(final Class<T> persitentClass,
-			final String property, final Object... values) {
-		super(persitentClass, Comparison.equals, property, values);
-	}
+    public final static char WILDCARD = '*';
 
-	@Override
-	protected String formatValue(final String encodedValue) {
-		return WILDCARD + encodedValue + WILDCARD;
-	}
+    PropertySubstringsWithFilter(SessionFactoryImpl sessionFactory, final Class<T> persitentClass,
+            final String property, final Object... values) {
+        super(sessionFactory, persitentClass, Comparison.equals, property, values);
+    }
 
-	@Override
-	protected String encodeValue(final Object value,
-			final AttributeMetadata attribute) {
-		List<String> encodedValues = Lists.newArrayList();
+    @Override
+    protected String formatValue(final String encodedValue) {
+        return WILDCARD + encodedValue + WILDCARD;
+    }
 
-		Object[] values = (Object[]) value;
+    @Override
+    protected String encodeValue(final Object value,
+            final AttributeMetadata attribute) {
+        List<String> encodedValues = Lists.newArrayList();
 
-		for (Object val : values) {
-			encodedValues.add(super.encodeValue(val, attribute));
-		}
+        Object[] values = (Object[]) value;
 
-		return Joiner.on(WILDCARD).skipNulls().join(encodedValues);
-	}
+        for (Object val : values) {
+            encodedValues.add(super.encodeValue(val, attribute));
+        }
+
+        return Joiner.on(WILDCARD).skipNulls().join(encodedValues);
+    }
 }

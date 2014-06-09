@@ -23,26 +23,15 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+import java.io.Closeable;
+import javax.annotation.Nullable;
 
-import javax.naming.Name;
-import javax.naming.directory.ModificationItem;
+public interface Session extends Closeable {
 
-import org.springframework.ldap.core.LdapOperations;
+    SessionFactory getSessionFactory();
 
-import fr.mtlx.odm.converters.Converter;
+    boolean isPersistent(@Nullable final Object obj);
 
-public interface Session {
-	void close();
+    <T> Operations<T> getOperations(Class<T> persistentClass);
 
-	void modifyAttributes(Name dn, ModificationItem[] mods);
-
-	SessionFactory getSessionFactory();
-
-	boolean isPersistent(Object obj);
-
-	Converter getSyntaxConverter(String syntax) throws MappingException;
-
-	LdapOperations getLdapOperations();
-
-	<T> Operations<T> getOperations(Class<T> persistentClass);
 }

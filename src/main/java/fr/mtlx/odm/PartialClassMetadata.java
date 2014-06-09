@@ -1,294 +1,262 @@
 package fr.mtlx.odm;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.annotation.Nullable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.ReflectionUtils.FieldCallback;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import fr.mtlx.odm.filters.Filter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.springframework.util.ReflectionUtils.doWithFields;
 
 public class PartialClassMetadata<T> implements ClassMetadata<T> {
-	private final Class<T> persistentClass;
 
-	private ImmutableList<String> objectClassHierarchy;
+    private final Class<T> persistentClass;
 
-	private ImmutableSet<String> auxiliaryClasses;
+    private ImmutableList<String> objectClassHierarchy;
 
-	private Constructor<T> defaultConstructor;
+    private ImmutableSet<String> auxiliaryClasses;
 
-	private Field identifierField;
+    private Constructor<T> defaultConstructor;
 
-	private Map<String, AttributeMetadata> attributeMetadataByAttributeName = new TreeMap<String, AttributeMetadata>(
-			String.CASE_INSENSITIVE_ORDER);
+    private Field identifierField;
 
-	private Map<String, AttributeMetadata> attributeMetadataByPropertyName = new TreeMap<String, AttributeMetadata>(
-			String.CASE_INSENSITIVE_ORDER);
+    private Map<String, AttributeMetadata> attributeMetadataByAttributeName = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-	private List<Method> prepersistMethods = Lists.newArrayList();
+    private Map<String, AttributeMetadata> attributeMetadataByPropertyName = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-	private boolean cacheable;
+    private List<Method> prepersistMethods = Lists.newArrayList();
 
-	private boolean strict;
+    private boolean cacheable;
 
-	Boolean initState = true;
+    private boolean strict;
 
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private Boolean initState = true;
 
-	PartialClassMetadata(final Class<T> persistentClass) {
-		this.persistentClass = checkNotNull(persistentClass);
-	}
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	@Override
-	public Field getIdentifier() {
-		return identifierField;
-	}
+    PartialClassMetadata(final Class<T> persistentClass) {
+        this.persistentClass = checkNotNull(persistentClass);
+    }
 
-	public String getIdentifierPropertyName() {
-		return getIdentifier().getName();
-	}
+    @Override
+    public Field getIdentifier() {
+        return identifierField;
+    }
 
-	public Type getIdentifierType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getIdentifierPropertyName() {
+        return getIdentifier().getName();
+    }
 
-	public String getIdentifierSyntax() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public ImmutableList<String> getObjectClassHierarchy() {
+        return objectClassHierarchy;
+    }
 
-	public ImmutableList<String> getObjectClassHierarchy() {
-		return objectClassHierarchy;
-	}
+    @Override
+    public ImmutableSet<String> getAuxiliaryClasses() {
+        return auxiliaryClasses;
+    }
 
-	public ImmutableSet<String> getAuxiliaryClasses() {
-		return auxiliaryClasses;
-	}
+    @Override
+    public Constructor<T> getDefaultConstructor() {
+        return defaultConstructor;
+    }
 
-	public Constructor<T> getDefaultConstructor() {
-		return defaultConstructor;
-	}
+    @Override
+    public String getStructuralClass() {
+        return Iterables.getLast(objectClassHierarchy);
+    }
 
-	public String getStructuralClass() {
-		return Iterables.getLast(objectClassHierarchy);
-	}
+    @Override
+    public Class<T> getPersistentClass() {
+        return this.persistentClass;
+    }
 
-	@Override
-	public Class<T> getEntryClass() {
-		return this.persistentClass;
-	}
+    @Override
+    public Filter getByExampleFilter() {
+        return null;
+    }
 
-	@Override
-	public Filter getByExampleFilter() {
-		return null;
-	}
+    @Override
+    public AttributeMetadata getAttributeMetadataByAttributeName(
+            final String attributeId) {
+        return attributeMetadataByAttributeName.get(attributeId);
+    }
 
-	@Override
-	public AttributeMetadata getAttributeMetadataByAttributeName(
-			final String attributeId) {
-		return attributeMetadataByAttributeName.get(attributeId);
-	}
+    @Override
+    public AttributeMetadata getAttributeMetadata(
+            String propertyName) {
+        return attributeMetadataByPropertyName.get(propertyName);
+    }
 
-	@Override
-	public AttributeMetadata getAttributeMetadataByPropertyName(
-			String propertyName) {
-		return attributeMetadataByPropertyName.get(propertyName);
-	}
+    @Override
+    public ImmutableSet<String> getProperties() {
+        return ImmutableSet.copyOf(attributeMetadataByPropertyName.keySet());
+    }
 
-	@Override
-	public ImmutableSet<String> getProperties() {
-		return ImmutableSet.copyOf(attributeMetadataByPropertyName.keySet());
-	}
+    @Override
+    public Method[] prepersistMethods() {
+        return prepersistMethods.toArray(new Method[]{});
+    }
 
-	@Override
-	public Method[] prepersistMethods() {
-		return prepersistMethods.toArray(new Method[] {});
-	}
+    @Override
+    public boolean isCacheable() {
+        return cacheable;
+    }
 
-	@Override
-	public boolean isCacheable() {
-		return cacheable;
-	}
+    @Override
+    public boolean isStrict() {
+        return strict;
+    }
 
-	@Override
-	public boolean isStrict() {
-		return strict;
-	}
+    private void initPersistentAttributes(
+            final SessionFactoryImpl sessionFactory) {
+        final List<AttributeMetadata> attributes = Lists.newArrayList();
 
-	private void initPersistentAttributes(
-			final SessionFactoryImpl sessionFactory) {
-		final List<AttributeMetadata> attributes = Lists.newArrayList();
+        doWithFields(persistentClass, (@Nullable final Field f) -> {
+            if (f == null || identifierField.equals(f) || isTransient(f)) {
+                return;
+            }
+            if (attributeMetadataByPropertyName.containsKey(f.getName())) {
+                return;
+            }
+            try {
+                attributes.add(new AttributeMetadataFactory(persistentClass, sessionFactory).build(f));
+            } catch (MappingException e) {
+                throw new IllegalArgumentException(e);
+            }
+        });
 
-		ReflectionUtils.doWithFields(persistentClass, new FieldCallback() {
-			public void doWith(@Nullable final Field f)
-					throws IllegalArgumentException, IllegalAccessException {
-				if (f == null || identifierField.equals(f) || isTransient(f))
-					return;
+        attributes.stream().forEach((metadata) -> {
+            final String name = metadata.getAttirbuteName();
+            if (!(Strings.isNullOrEmpty(name))) {
+                if (attributeMetadataByAttributeName.containsKey(name)) {
+                    assert attributeMetadataByPropertyName.containsKey(metadata
+                            .getPropertyName());
 
-				// Allow fields to be redefined in subclasses,
-				// ignoring fields in super class with the same name
-				if (attributeMetadataByPropertyName.containsKey(f.getName()))
-					return;
+                    log.warn("Attribute {} already declared.",
+                            metadata.getAttirbuteName());
+                } else {
+                    attributeMetadataByAttributeName.put(
+                            metadata.getAttirbuteName(), metadata);
 
-				try {
-					attributes.add(new AttributeMetadataFactory<T>(
-							persistentClass, sessionFactory).build(f));
-				} catch (MappingException e) {
-					throw new IllegalArgumentException(e);
-				}
-			}
-		});
+                    assert !attributeMetadataByPropertyName.containsKey(metadata
+                            .getPropertyName());
 
-		for (final AttributeMetadata metadata : attributes) {
-			final String name = metadata.getAttirbuteName();
+                    attributeMetadataByPropertyName.put(metadata.getPropertyName(),
+                            metadata);
+                }
+                for (final String alias : metadata.getAttributeAliases()) {
+                    if (Strings.isNullOrEmpty(alias)) {
+                        continue;
+                    }
+                    if (attributeMetadataByAttributeName.containsKey(alias)) {
+                        log.warn("Attribute {} already declared.",
+                                metadata.getAttirbuteName());
+                    } else {
+                        attributeMetadataByAttributeName.put(alias, metadata);
+                    }
+                }
+            }
+        });
+    }
 
-			if (Strings.isNullOrEmpty(name))
-				continue;
+    private boolean isTransient(final Field field) {
+        int modifiers = checkNotNull(field).getModifiers();
 
-			if (attributeMetadataByAttributeName.containsKey(name)) {
-				assert attributeMetadataByPropertyName.containsKey(metadata
-						.getPropertyName());
+        return Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers);
+    }
 
-				log.warn("Attribute {} already declared.",
-						metadata.getAttirbuteName());
-			} else {
-				attributeMetadataByAttributeName.put(
-						metadata.getAttirbuteName(), metadata);
+    private void findIdentifier() {
+        doWithFields(persistentClass, (Field field) -> {
+            Id identifier;
 
-				assert !attributeMetadataByPropertyName.containsKey(metadata
-						.getPropertyName());
+            identifier = field.getAnnotation(Id.class);
 
-				attributeMetadataByPropertyName.put(metadata.getPropertyName(),
-						metadata);
-			}
+            if (identifier != null) {
+                identifierField = field;
+            }
+        });
+    }
 
-			for (final String alias : metadata.getAttributeAliases()) {
-				if (Strings.isNullOrEmpty(alias))
-					continue;
+    public Field getIdentifierField() {
+        return identifierField;
+    }
 
-				if (attributeMetadataByAttributeName.containsKey(alias)) {
-					log.warn("Attribute {} already declared.",
-							metadata.getAttirbuteName());
-				} else {
-					attributeMetadataByAttributeName.put(alias, metadata);
-				}
-			}
-		}
-	}
+    public void setIdentifierField(Field identifierField) {
+        this.identifierField = identifierField;
+    }
 
-	private boolean isTransient(final Field field) {
-		int modifiers = checkNotNull(field).getModifiers();
+    public Map<String, AttributeMetadata> getAttributeMetadataByAttributeName() {
+        return attributeMetadataByAttributeName;
+    }
 
-		if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers))
-			return true;
+    public void setAttributeMetadataByAttributeName(
+            Map<String, AttributeMetadata> attributeMetadataByAttributeName) {
+        this.attributeMetadataByAttributeName = attributeMetadataByAttributeName;
+    }
 
-		return false;
-	}
+    public Map<String, AttributeMetadata> getAttributeMetadataByPropertyName() {
+        return attributeMetadataByPropertyName;
+    }
 
-	private void findIdentifier() {
-		ReflectionUtils.doWithFields(persistentClass, new FieldCallback() {
-			@Override
-			public void doWith(Field field) throws IllegalArgumentException,
-					IllegalAccessException {
-				Id identifier;
+    public void setAttributeMetadataByPropertyName(
+            Map<String, AttributeMetadata> attributeMetadataByPropertyName) {
+        this.attributeMetadataByPropertyName = attributeMetadataByPropertyName;
+    }
 
-				identifier = field.getAnnotation(Id.class);
+    public List<Method> getPrepersistMethods() {
+        return prepersistMethods;
+    }
 
-				if (identifier != null)
-					identifierField = field;
-			}
-		});
-	}
+    public void setPrepersistMethods(List<Method> prepersistMethods) {
+        this.prepersistMethods = prepersistMethods;
+    }
 
-	public Field getIdentifierField() {
-		return identifierField;
-	}
+    public void setObjectClassHierarchy(
+            ImmutableList<String> objectClassHierarchy) {
+        this.objectClassHierarchy = objectClassHierarchy;
+    }
 
-	public void setIdentifierField(Field identifierField) {
-		this.identifierField = identifierField;
-	}
+    public void setAuxiliaryClasses(ImmutableSet<String> auxiliaryClasses) {
+        this.auxiliaryClasses = auxiliaryClasses;
+    }
 
-	public Map<String, AttributeMetadata> getAttributeMetadataByAttributeName() {
-		return attributeMetadataByAttributeName;
-	}
+    public void setDefaultConstructor(Constructor<T> defaultConstructor) {
+        this.defaultConstructor = defaultConstructor;
+    }
 
-	public void setAttributeMetadataByAttributeName(
-			Map<String, AttributeMetadata> attributeMetadataByAttributeName) {
-		this.attributeMetadataByAttributeName = attributeMetadataByAttributeName;
-	}
+    public void setCacheable(boolean cacheable) {
+        this.cacheable = cacheable;
+    }
 
-	public Map<String, AttributeMetadata> getAttributeMetadataByPropertyName() {
-		return attributeMetadataByPropertyName;
-	}
+    public void setStrict(boolean strict) {
+        this.strict = strict;
+    }
 
-	public void setAttributeMetadataByPropertyName(
-			Map<String, AttributeMetadata> attributeMetadataByPropertyName) {
-		this.attributeMetadataByPropertyName = attributeMetadataByPropertyName;
-	}
+    void init(final SessionFactoryImpl sessionFactory) {
+        if (initState) {
+            synchronized (initState) {
+                if (initState) {
+                    initState = false;
 
-	public List<Method> getPrepersistMethods() {
-		return prepersistMethods;
-	}
+                    findIdentifier();
 
-	public void setPrepersistMethods(List<Method> prepersistMethods) {
-		this.prepersistMethods = prepersistMethods;
-	}
-
-	public Class<T> getPersistentClass() {
-		return persistentClass;
-	}
-
-	public void setObjectClassHierarchy(
-			ImmutableList<String> objectClassHierarchy) {
-		this.objectClassHierarchy = objectClassHierarchy;
-	}
-
-	public void setAuxiliaryClasses(ImmutableSet<String> auxiliaryClasses) {
-		this.auxiliaryClasses = auxiliaryClasses;
-	}
-
-	public void setDefaultConstructor(Constructor<T> defaultConstructor) {
-		this.defaultConstructor = defaultConstructor;
-	}
-
-	public void setCacheable(boolean cacheable) {
-		this.cacheable = cacheable;
-	}
-
-	public void setStrict(boolean strict) {
-		this.strict = strict;
-	}
-
-	void init(final SessionFactoryImpl sessionFactory) {
-		if (initState) {
-			synchronized (initState) {
-				if (initState) {
-					initState = false;
-
-					findIdentifier();
-
-					initPersistentAttributes(sessionFactory);
-				}
-			}
-		}
-	}
+                    initPersistentAttributes(sessionFactory);
+                }
+            }
+        }
+    }
 }

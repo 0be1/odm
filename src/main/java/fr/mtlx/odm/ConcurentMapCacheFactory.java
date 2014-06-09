@@ -23,14 +23,14 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import fr.mtlx.odm.cache.BaseCacheManager;
 import fr.mtlx.odm.cache.CacheManager;
 
 public class ConcurentMapCacheFactory extends CacheFactory {
-	@Override
-	public CacheManager getCache(final SessionFactoryImpl sessionFactory,
-			final String name) {
-		return new BaseCacheManager(sessionFactory);
-	}
+
+    @Override
+    public CacheManager getCache(final SessionFactoryImpl sessionFactory,
+            final String name) {
+        return new BaseCacheManager(sessionFactory);
+    }
 }

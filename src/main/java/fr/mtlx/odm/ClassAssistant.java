@@ -23,164 +23,144 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import static com.google.common.base.Preconditions.checkNotNull;
-
+import static java.lang.String.format;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
+import static java.lang.reflect.Modifier.isStatic;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
+import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.ldap.LdapName;
-
-import org.apache.commons.beanutils.BeanUtils;
+import static org.apache.commons.beanutils.BeanUtils.getProperty;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.ReflectionUtils.FieldCallback;
-import org.springframework.util.ReflectionUtils.FieldFilter;
+import static org.apache.commons.beanutils.PropertyUtils.getSimpleProperty;
+import static org.springframework.util.ReflectionUtils.doWithFields;
 
 public class ClassAssistant<T> {
-	private final ClassMetadata<T> metadata;
 
-	public ClassAssistant(final ClassMetadata<T> metadata) {
-		this.metadata = checkNotNull(metadata);
-	}
+    private final ClassMetadata<T> metadata;
 
-	public void setIdentifier(Object object, Name value) {
-		String identifier = metadata.getIdentifierPropertyName();
+    public ClassAssistant(final ClassMetadata<T> metadata) {
+        this.metadata = checkNotNull(metadata);
+    }
 
-		try {
-			PropertyUtils.setSimpleProperty(object, identifier, value);
-		} catch (Exception e) {
-			throw new UnsupportedOperationException(e);
-		}
-	}
+    public void setIdentifier(Object object, Name value) {
+        String identifier = metadata.getIdentifierPropertyName();
 
-	public LdapName getIdentifier(Object object) throws InvalidNameException,
-			IllegalAccessException, InvocationTargetException,
-			NoSuchMethodException {
-		String identifier = metadata.getIdentifierPropertyName();
+        try {
+            PropertyUtils.setSimpleProperty(object, identifier, value);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
 
-		return new LdapName(BeanUtils.getProperty(object, identifier));
-	}
+    public LdapName getIdentifier(Object object) throws InvalidNameException,
+            IllegalAccessException, InvocationTargetException,
+            NoSuchMethodException {
+        String identifier = metadata.getIdentifierPropertyName();
 
-	public boolean isCollection(Type type) {
-		Class<?> c = type.getClass();
+        return new LdapName(getProperty(object, identifier));
+    }
 
-		return Arrays.asList(c.getInterfaces()).contains(Collection.class)
-				|| c.equals(Collection.class);
-	}
+    public boolean isCollection(Type type) {
+        Class<?> c = type.getClass();
 
-	public Object getValue(Object object, String propertyName) {
-		try {
-			return PropertyUtils.getSimpleProperty(object, propertyName);
-		} catch (Exception e) {
-			throw new UnsupportedOperationException(e);
-		}
-	}
+        return asList(c.getInterfaces()).contains(Collection.class)
+                || c.equals(Collection.class);
+    }
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private <V> Collection<V> buildCollection(
-			final Class<? extends Collection<?>> collectionType,
-			final Type componentType, final Collection<V> elements)
-			throws MappingException {
-		Collection values;
+    public Object getValue(Object object, String propertyName) {
+        try {
+            return getSimpleProperty(object, propertyName);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
 
-		if (collectionType.equals(List.class)) {
-			values = new ArrayList<V>(elements);
-		} else if (collectionType.equals(Set.class)) {
-			return new HashSet<V>(elements);
-		} else if (collectionType.equals(Collection.class)) {
-			values = new ArrayList<V>(elements);
-		} else {
-			throw new MappingException("unsupported collection");
-		}
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <V> Collection<V> buildCollection(
+            final Class<? extends Collection<?>> collectionType,
+            final Type componentType, final Collection<V> elements)
+            throws MappingException {
+        Collection values;
 
-		return values;
-	}
+        if (collectionType.equals(List.class)) {
+            values = new ArrayList<>(elements);
+        } else if (collectionType.equals(Set.class)) {
+            return new HashSet<>(elements);
+        } else if (collectionType.equals(Collection.class)) {
+            values = new ArrayList<>(elements);
+        } else {
+            throw new MappingException("unsupported collection");
+        }
 
-	public void setSimpleProperty(final String propertyName, T entry,
-			final Object singleValue) throws MappingException {
-		try {
-			PropertyUtils.setSimpleProperty(entry, propertyName, singleValue);
-		} catch (IllegalAccessException e) {
-			throw new MappingException(e);
-		} catch (InvocationTargetException e) {
-			throw new MappingException(e);
-		} catch (NoSuchMethodException e) {
-			throw new MappingException(e);
-		}
-	}
+        return values;
+    }
 
-	public <V> void setProperty(final String propertyName, final T entry,
-			final Collection<V> multipleValues) throws MappingException {
-		@SuppressWarnings("unchecked")
-		Class<T> c = (Class<T>) checkNotNull(entry).getClass();
+    public void setSimpleProperty(final String propertyName, T entry,
+            final Object singleValue) throws MappingException {
+        try {
+            PropertyUtils.setSimpleProperty(entry, propertyName, singleValue);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new MappingException(e);
+        }
+    }
 
-		final AttributeMetadata meta = metadata
-				.getAttributeMetadataByPropertyName(propertyName);
+    public <V> void setProperty(final String propertyName, final T entry,
+            final Collection<V> multipleValues) throws MappingException {
+        @SuppressWarnings("unchecked")
+        Class<T> c = (Class<T>) checkNotNull(entry).getClass();
 
-		if (meta == null)
-			throw new MappingException(String.format(
-					"propertyName: unknown property %s", propertyName));
+        final AttributeMetadata meta = metadata
+                .getAttributeMetadata(propertyName);
 
-		if (!meta.isMultivalued())
-			throw new MappingException(String.format(
-					"propertyName: single valued property %s", propertyName));
+        if (meta == null) {
+            throw new MappingException(format(
+                    "propertyName: unknown property %s", propertyName));
+        }
 
-		final Collection<?> targetValues;
+        if (!meta.isMultivalued()) {
+            throw new MappingException(format(
+                    "propertyName: single valued property %s", propertyName));
+        }
 
-		targetValues = buildCollection(meta.getCollectionType(),
-				meta.getObjectType(), multipleValues);
+        final Collection<?> targetValues;
 
-		try {
-			PropertyUtils.setProperty(entry, propertyName, targetValues);
-		} catch (IllegalAccessException e) {
-			throw new MappingException(e);
-		} catch (InvocationTargetException e) {
-			throw new MappingException(e);
-		} catch (NoSuchMethodException e) {
-			try {
-				ReflectionUtils.doWithFields(c, new FieldCallback() {
+        targetValues = buildCollection(meta.getCollectionType(),
+                meta.getObjectType(), multipleValues);
 
-					@Override
-					public void doWith(final Field f)
-							throws IllegalArgumentException,
-							IllegalAccessException {
-						boolean secured = !f.isAccessible();
+        try {
+            PropertyUtils.setProperty(entry, propertyName, targetValues);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new MappingException(e);
+        } catch (NoSuchMethodException e) {
+            try {
+                doWithFields(c, (final Field f) -> {
+                    boolean secured = !f.isAccessible();
 
-						if (secured)
-							f.setAccessible(true);
+                    if (secured) {
+                        f.setAccessible(true);
+                    }
 
-						f.set(entry, targetValues);
+                    f.set(entry, targetValues);
 
-						if (secured)
-							f.setAccessible(false);
-					}
-				}, new FieldFilter() {
-
-					@Override
-					public boolean matches(final Field field) {
-						final int modifiers = field.getModifiers();
-						// no static fields please
-						return !Modifier.isStatic(modifiers)
-								&& field.getName() == propertyName;
-					}
-				});
-
-			} catch (SecurityException e1) {
-				throw new MappingException(e1);
-			} catch (IllegalArgumentException e1) {
-				throw new MappingException(e1);
-			}
-		}
-	}
+                    if (secured) {
+                        f.setAccessible(false);
+                    }
+                }, (final Field field) -> {
+                    final int modifiers = field.getModifiers();
+                    return !isStatic(modifiers) && (field.getName() == null ? propertyName == null : field.getName().equals(propertyName));
+                });
+            } catch (SecurityException | IllegalArgumentException e1) {
+                throw new MappingException(e1);
+            }
+        }
+    }
 }
