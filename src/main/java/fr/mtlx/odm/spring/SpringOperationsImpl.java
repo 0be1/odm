@@ -42,7 +42,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
@@ -77,7 +76,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
         this.assistant = new ClassAssistant<>(metadata);
 
-        this.contextMapper = new MappingContextMapper(persistentClass, assistant);
+        this.contextMapper = new MappingContextMapper<>(persistentClass, assistant);
 
         this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
     }
@@ -180,8 +179,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     protected T realLookup(Name dn) {
         T entry;
         DirContextOperations context;
-        final MappingContextMapper<T> mapper = new MappingContextMapper(
-                persistentClass, assistant);
+        final MappingContextMapper<T> mapper = new MappingContextMapper<>(persistentClass, assistant);
         context = getSession().retrieve(dn);
         if (context == null) {
             context = doLookup(dn);
@@ -198,7 +196,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     public Stream<T> search(final Name base, final SearchControls controls, final String filter, final Optional<DirContextProcessor> processor)
             throws javax.naming.SizeLimitExceededException {
-        final CachingContextMapper<T> cm = new CachingContextMapper();
+        final CachingContextMapper<T> cm = new CachingContextMapper<>();
 
         try {
             operations.search(

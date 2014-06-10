@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+import fr.mtlx.odm.MappingException;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -29,7 +31,7 @@ public interface FilterBuilder<T> {
 
 	AndFilter and(Filter... filters);
 
-	CompareCriterion<T> property(String propertyName);
+	CompareCriterion<T> property(String propertyName) throws MappingException;
 
 	Filter objectClass(final String objectClass);
 

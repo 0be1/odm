@@ -43,7 +43,6 @@ public class TestFilterBuilder {
 
     private SessionFactory sessionFactory;
 
-    
     @Before
     public void init() throws MappingException
     {
@@ -119,7 +118,7 @@ public class TestFilterBuilder {
         assertThat(CharMatcher.is('&').countIn(encodedFilter), is(1));
     }
 
-    @Test(expected = ConvertionException.class)
+    @Test(expected = MappingException.class)
     public void testPropertyFilterWrongType() throws InvalidNameException, MappingException {
         Person p = new Person();
 

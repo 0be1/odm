@@ -25,19 +25,19 @@ package fr.mtlx.odm.filters;
  */
 
 public interface CompareCriterion<T> {
-	Filter equalsTo(Object value);
+    Filter equalsTo(Object value);
 
-	Filter approx(Object value);
+    Filter approx(Object value);
 
-	Filter greaterOrEquals(Object value);
+    Filter greaterOrEquals(Object value);
 
-	Filter lessOrEquals(Object value);
+    Filter lessOrEquals(Object value);
 
-	Filter present();
+    Filter present();
 
-	Filter substrings(Object... values);
+    Filter substrings(Object... values);
 
-	Filter startsWith(Object value);
+    Filter startsWith(Object value);
 
-	Filter endsWith(Object value);
+    Filter endsWith(Object value);
 }

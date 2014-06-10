@@ -23,12 +23,11 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import fr.mtlx.odm.SessionFactoryImpl;
 
 public class OrFilter extends CompositeFilter {
 
-    OrFilter(SessionFactoryImpl sessionFactory, Filter... filters) {
-        super(sessionFactory, filters);
+    OrFilter(Filter... filters) {
+        super(filters);
     }
 
     @Override

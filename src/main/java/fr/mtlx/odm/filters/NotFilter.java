@@ -25,22 +25,20 @@ package fr.mtlx.odm.filters;
  */
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import fr.mtlx.odm.SessionFactory;
 
 public class NotFilter implements Filter {
-	private final Filter filter;
+    private final Filter filter;
 
-	NotFilter(final SessionFactory sessionFactory, final Filter filter) {
-		this.filter = checkNotNull(filter);
-	}
+    NotFilter(final Filter filter) {
+	this.filter = checkNotNull(filter);
+    }
 
-	@Override
-	public String encode() {
-		String retval = new StringBuilder("(").append('!')
-				.append(filter.encode()).append(")").toString();
+    @Override
+    public String encode() {
+	String retval = new StringBuilder("(").append('!').append(filter.encode()).append(")").toString();
 
-		assert retval != null && retval.startsWith("(") && retval.endsWith(")");
+	assert retval != null && retval.startsWith("(") && retval.endsWith(")");
 
-		return retval;
-	}
+	return retval;
+    }
 }
