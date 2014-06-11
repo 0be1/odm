@@ -51,20 +51,11 @@ public class FilterBuilderImpl<T> implements FilterBuilder<T> {
         return this;
     }
 
-    @Override
-    public Filter objectClass(String objectClass) {
-        return SimpleFilterBuilder.objectClass(objectClass);
-    }
+    
 
-    @Override
-    public Filter not(Filter filter) {
-        return new NotFilter(filter);
-    }
+   
 
-    @Override
-    public CompareCriterion<T> attribute(String attributeName) {
-        return new SimpleFilterBuilder<>(attributeName);
-    }
+   
 
     @Override
     public Filter build() {

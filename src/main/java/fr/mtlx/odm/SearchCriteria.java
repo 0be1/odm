@@ -5,13 +5,14 @@
  */
 package fr.mtlx.odm;
 
-import fr.mtlx.odm.filters.Filter;
-import fr.mtlx.odm.filters.FilterBuilder;
 import java.util.Collection;
 import java.util.List;
-import javax.naming.Name;
+
 import javax.naming.SizeLimitExceededException;
 import javax.persistence.NonUniqueResultException;
+
+import fr.mtlx.odm.filters.Filter;
+import fr.mtlx.odm.filters.FilterBuilder;
 
 /**
  *

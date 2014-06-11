@@ -28,21 +28,15 @@ import java.util.stream.Stream;
 public class OrFilter extends CompositeFilter {
 
     OrFilter(final Stream<Filter> filters) {
-        super(filters.flatMap(f -> {
-            if (f instanceof OrFilter) {
-                return ((CompositeFilter) f).filters.stream();
-            } else {
-                return f;
-            }
-        }));
+	super(filters.flatMap(f -> f instanceof OrFilter ? ((CompositeFilter) f).filters.stream() : Stream.of(f)));
     }
 
     @Override
     public void encode(StringBuilder sb) {
-        sb.append("(|");
+	sb.append("(|");
 
-        super.encode(sb);
+	super.encode(sb);
 
-        sb.append(")");
+	sb.append(")");
     }
 }

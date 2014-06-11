@@ -207,9 +207,6 @@ public abstract class SessionFactoryImpl implements SessionFactory, CacheManager
 
     @Override
     public <T> FilterBuilder<T> filterBuilder(Class<T> persistentClass) throws MappingException {
-        
-      
-        
         return new FilterBuilderImpl<>(persistentClass, this);
     }
 

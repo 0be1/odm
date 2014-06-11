@@ -24,24 +24,25 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Strings;
+
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactoryImpl;
 import fr.mtlx.odm.converters.ConvertionException;
+import fr.mtlx.odm.filters.SimpleFilterBuilder.Encoder;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+
+import javax.annotation.Nullable;
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 
 class PropertyFilterBuilder<T, A> extends SimpleFilterBuilder<T> {
-
-    interface Encoder {
-
-        String encode(Object value);
-    }
 
     private final AttributeMetadata attributeMetadata;
 
@@ -67,6 +68,9 @@ class PropertyFilterBuilder<T, A> extends SimpleFilterBuilder<T> {
             if (sessionFactory.isPersistentClass(clazz)) {
                 return dnEncoder(sessionFactory.getClassMetadata(clazz));
             }
+            else {
+        	return checkTypeEncoder(clazz);
+            }
         }
 
         return PropertyFilterBuilder::escapeSpecialChars;
@@ -89,11 +93,31 @@ class PropertyFilterBuilder<T, A> extends SimpleFilterBuilder<T> {
         return retval;
     }
 
+    //hook
     @Override
-    protected Filter filterType(Comparison op, final Object value) {
-        return super.filterType(op, encoder.encode(value));
+    protected Encoder valueEncoder() {
+	return encoder;
     }
 
+    private Encoder checkTypeEncoder(final Class<A> attributeClass) {
+        return (final Object value) -> {
+
+            if (value == null) {
+                return null;
+            }
+            
+            Class<?> c = attributeClass;
+
+            if (!c.isInstance(value)) {
+                throw new ConvertionException(String.format("wrong type (%s) for property %s in %s, expecting %s",
+                        value.getClass(), attributeMetadata.getPropertyName(), attributeMetadata.getObjectType(),
+                        attributeClass));
+            }
+
+            return escapeSpecialChars(value) ;
+        };
+    }
+    
     private Encoder dnEncoder(final ClassMetadata<A> attributeClassMetadata) {
         return (final Object value) -> {
 

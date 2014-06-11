@@ -24,7 +24,7 @@ package fr.mtlx.odm;
  * #L%
  */
 @SuppressWarnings("serial")
-public class MappingException extends Exception {
+public class MappingException extends RuntimeException {
 
     public MappingException() {
         super();

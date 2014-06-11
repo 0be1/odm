@@ -28,21 +28,15 @@ import java.util.stream.Stream;
 public class AndFilter extends CompositeFilter {
 
     AndFilter(final Stream<Filter> filters) {
-        super(filters.flatMap(f -> {
-            if (f instanceof AndFilter) {
-                return ((CompositeFilter) f).filters.stream();
-            } else {
-                return f;
-            }
-        }));
+	super(filters.flatMap(f -> f instanceof AndFilter ? ((CompositeFilter) f).filters.stream() : Stream.of(f)));
     }
 
     @Override
     public void encode(final StringBuilder sb) {
-        sb.append("(&");
+	sb.append("(&");
 
-        super.encode(sb);
+	super.encode(sb);
 
-        sb.append(')');
+	sb.append(')');
     }
 }

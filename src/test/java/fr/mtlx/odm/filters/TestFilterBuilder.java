@@ -24,20 +24,20 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 import com.google.common.base.CharMatcher;
+
 import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactory;
 import fr.mtlx.odm.SessionFactory2;
+import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.model.Person;
+
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringEndsWith.endsWith;
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+
+import org.junit.*;
 
 public class TestFilterBuilder {
 
@@ -64,8 +64,6 @@ public class TestFilterBuilder {
 
         fb.or(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu"));
 
-        StringBuilder sb = new StringBuilder();
-
         String encodedFilter = fb.toString();
 
         assertNotNull(encodedFilter);
@@ -74,10 +72,23 @@ public class TestFilterBuilder {
 
         assertThat(encodedFilter, endsWith(")"));
 
-        String expected = "(&(objectClass=top)(objectClass=person)(|(cn=alex)(sn=mathieu)))";
+        String expected = "(&(objectClass=top)(objectClass=person)(|(commonName=alex)(surname=mathieu)))";
 
-        assertThat(encodedFilter, is(expected));
+        assertThat(encodedFilter, equalToIgnoringCase(expected));
     }
+    
+    @Test
+    public void isInstance() throws MappingException {
+	
+	Class<?> c = String.class;
+	
+	Object value = 1;
+	
+	assertFalse(c.isInstance(value));
+	
+	assertFalse(value.getClass().isInstance(c));
+    }
+    
 
     @Test
     public void testCombineAndFilters() throws MappingException {
@@ -92,7 +103,7 @@ public class TestFilterBuilder {
         assertThat(CharMatcher.is('&').countIn(encodedFilter), is(1));
     }
 
-    @Test(expected = MappingException.class)
+    @Test(expected = ConvertionException.class)
     public void testPropertyFilterWrongType() throws InvalidNameException, MappingException {
         Person p = new Person();
 
@@ -104,6 +115,7 @@ public class TestFilterBuilder {
 
         String encodedFilter = fb.toString();
 
+        System.out.println(encodedFilter);
         assertNotNull(encodedFilter);
 
         assertThat(CharMatcher.is('&').countIn(encodedFilter), is(1));

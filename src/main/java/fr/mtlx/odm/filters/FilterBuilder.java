@@ -1,6 +1,7 @@
 package fr.mtlx.odm.filters;
 
 import fr.mtlx.odm.MappingException;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -50,11 +51,17 @@ public interface FilterBuilder<T> {
         return and(Arrays.asList(filters));
     }
 
-    Filter objectClass(String objectClass);
+    default Filter objectClass(String objectClass) {
+        return SimpleFilterBuilder.objectClass(objectClass);
+    }
 
-    Filter not(Filter filter);
+    default Filter not(Filter filter) {
+        return new NotFilter(filter);
+    }
     
-    CompareCriterion<T> attribute(String attributeName);
+    default CompareCriterion<T> attribute(String attributeName) {
+        return new SimpleFilterBuilder<>(attributeName);
+    }
 
     CompareCriterion<T> property(String propertyName) throws MappingException;
 

@@ -1,22 +1,34 @@
 package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import com.google.common.collect.ImmutableList;
 
-public abstract class CompositeFilter implements Filter {
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-    protected final ImmutableList<Filter> filters;
 
-    public CompositeFilter(Iterable<Filter> filters) {
-        this.filters = ImmutableList.copyOf(checkNotNull(filters));
+public class CompositeFilter implements Filter {
+
+    protected final List<Filter> filters;
+
+    CompositeFilter(Stream<Filter> filters) {
+        this.filters = filters.collect(Collectors.toList());
+    }
+    
+    CompositeFilter(Collection<Filter> filters) {
+	this(filters.stream());
+    }
+    
+    CompositeFilter(Filter... filters) {
+        this(Arrays.asList(filters));
     }
 
     @Override
     public void encode(final StringBuilder sb) {
         for(final Filter filter : filters) {
-            sb.append('(');
             filter.encode(sb);
-            sb.append(')');
         }
     }
 }
