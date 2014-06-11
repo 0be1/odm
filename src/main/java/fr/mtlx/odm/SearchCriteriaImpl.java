@@ -32,13 +32,11 @@ import static fr.mtlx.odm.SessionImpl.getDefaultSearchControls;
 import fr.mtlx.odm.filters.Filter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.filters.FilterBuilderImpl;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.naming.Name;
 import javax.naming.SizeLimitExceededException;
 import javax.naming.directory.SearchControls;
@@ -57,184 +55,182 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
     private final Map<String, Collection> projections = Maps.newHashMap();
 
     public SearchCriteriaImpl(final OperationsImpl<T> ops, final Name root) {
-        this(ops, root, getDefaultSearchControls());
+	this(ops, root, getDefaultSearchControls());
     }
 
     public SearchCriteriaImpl(final OperationsImpl<T> ops, final Name root, final SearchControls controls) {
-        this.controls = checkNotNull(controls);
+	this.controls = checkNotNull(controls);
 
-        this.ops = checkNotNull(ops);
+	this.ops = checkNotNull(ops);
 
-        this.base = checkNotNull(root);
+	this.base = checkNotNull(root);
     }
 
     @Override
     public SearchCriteriaImpl<T> scope(int scope) {
-        controls.setSearchScope(scope);
+	controls.setSearchScope(scope);
 
-        return this;
+	return this;
     }
 
     @Override
     public SearchCriteriaImpl<T> add(Filter filter) {
-        filterStack.add(checkNotNull(filter));
+	filterStack.add(checkNotNull(filter));
 
-        return this;
+	return this;
+    }
+
+    @Override
+    public SearchCriteriaImpl<T> add(FilterBuilder<T> builder) {
+	return add(builder.build());
     }
 
     @Override
     public long count() throws SizeLimitExceededException {
-        return ops.count(base, controls, encodeFilter());
+	return ops.count(base, controls, encodeFilter());
     }
 
     @Override
     public SearchCriteriaImpl<T> countLimit(long limit) {
-        controls.setCountLimit(limit);
+	controls.setCountLimit(limit);
 
-        return this;
+	return this;
     }
 
     @Override
     public SearchCriteriaImpl<T> timeLimit(int ms) {
-        controls.setTimeLimit(ms);
+	controls.setTimeLimit(ms);
 
-        return this;
+	return this;
     }
 
     @Override
     public SearchCriteriaImpl<T> properties(String... properties) {
-        final List<String> attrs = Lists.newArrayList();
+	final List<String> attrs = Lists.newArrayList();
 
-        for (String propertyName : properties) {
-            AttributeMetadata attr = ops.metadata
-                    .getAttributeMetadata(propertyName);
+	for (String propertyName : properties) {
+	    AttributeMetadata attr = ops.metadata.getAttributeMetadata(propertyName);
 
-            if (attr == null) {
-                throw new UnsupportedOperationException(String.format(
-                        "property %s not found in %s", propertyName,
-                        ops.metadata.getPersistentClass()));
-            }
+	    if (attr == null) {
+		throw new UnsupportedOperationException(String.format("property %s not found in %s", propertyName,
+			ops.metadata.getPersistentClass()));
+	    }
 
-            attrs.add(attr.getAttirbuteName());
-        }
+	    attrs.add(attr.getAttirbuteName());
+	}
 
-        controls.setReturningAttributes(attrs.toArray(new String[]{}));
+	controls.setReturningAttributes(attrs.toArray(new String[] {}));
 
-        normalizeControls(controls);
+	normalizeControls(controls);
 
-        return this;
+	return this;
     }
 
     @Override
     public Iterable<List<T>> pages(final int pageSize) {
-        return ops.pages(pageSize, encodeFilter(), base, controls);
+	return ops.pages(pageSize, encodeFilter(), base, controls);
     }
 
     protected String encodeFilter() {
-        final FilterBuilder<T> fb;
+	final FilterBuilder<T> fb;
 
-        try {
-            fb = new FilterBuilderImpl<>(ops.persistentClass,
-                    ops.getSession().getSessionFactory());
-        } catch (MappingException ex) {
-            return null;
-        }
-        
-        filterStack.stream().forEach((f) -> {
-            fb.and(f);
-        });
+	try {
+	    fb = new FilterBuilderImpl<>(ops.persistentClass, ops.getSession().getSessionFactory());
+	} catch (MappingException ex) {
+	    return null;
+	}
 
-        return fb.toString();
+	for (Filter f : filterStack) {
+	    fb.and(f);
+	}
+
+	return fb.toString();
 
     }
 
     private void normalizeControls(SearchControls controls) {
-        Set<String> attributes = Sets.newLinkedHashSet(Arrays.asList(controls
-                .getReturningAttributes()));
+	Set<String> attributes = Sets.newLinkedHashSet(Arrays.asList(controls.getReturningAttributes()));
 
-        attributes.add("objectClass");
+	attributes.add("objectClass");
 
-        controls.setReturningAttributes(attributes.toArray(new String[]{}));
+	controls.setReturningAttributes(attributes.toArray(new String[] {}));
     }
 
     @Override
     public List<T> list() throws javax.naming.SizeLimitExceededException {
-        List<T> results = ops.search(base, controls, encodeFilter()).collect(Collectors.toCollection(ArrayList::new));
+	List<T> results = Lists.newArrayList(ops.search(base, controls, encodeFilter()));
 
-        projections(results);
+	projections(results);
 
-        return results;
+	return results;
     }
 
     @Override
     public void nop() throws javax.naming.SizeLimitExceededException {
-        projections(ops.search(base, controls, encodeFilter()).collect(Collectors.toCollection(ArrayList::new)));
+	projections(ops.search(base, controls, encodeFilter()));
     }
 
     @SuppressWarnings("unchecked")
-    private void projections(List<T> results) {
-        for (String property : projections.keySet()) {
-            final AttributeMetadata t = ops.metadata
-                    .getAttributeMetadata(property);
+    private void projections(Iterable<T> results) {
+	for (String property : projections.keySet()) {
+	    final AttributeMetadata t = ops.metadata.getAttributeMetadata(property);
 
-            if (t == null) {
-                throw new UnsupportedOperationException(String.format(
-                        "property %s not found in %s", property,
-                        ops.metadata.getPersistentClass()));
-            }
+	    if (t == null) {
+		throw new UnsupportedOperationException(String.format("property %s not found in %s", property,
+			ops.metadata.getPersistentClass()));
+	    }
 
-            Class<?> c = (Class<?>) t.getObjectType(); // XXX Cast ??
+	    Class<?> c = (Class<?>) t.getObjectType(); // XXX Cast ??
 
-            ClassAssistant<T> assistant = new ClassAssistant<>(ops.metadata);
+	    ClassAssistant<T> assistant = new ClassAssistant<>(ops.metadata);
 
-            for (T item : results) {
-                final Object value = assistant.getValue(item, property);
+	    for (T item : results) {
+		final Object value = assistant.getValue(item, property);
 
-                if (value != null) {
-                    if (!c.isInstance(value)) {
-                        throw new UnsupportedOperationException(String.format(
-                                "property %s found wrong type %s", property, t));
-                    }
+		if (value != null) {
+		    if (!c.isInstance(value)) {
+			throw new UnsupportedOperationException(String.format("property %s found wrong type %s", property, t));
+		    }
 
-                    projections.get(property).add(value);
-                }
-            }
-        }
+		    projections.get(property).add(value);
+		}
+	    }
+	}
     }
 
     @Override
     public T unique() throws NonUniqueResultException {
-        List<T> results;
+	List<T> results;
 
-        long countLimit = controls.getCountLimit();
+	long countLimit = controls.getCountLimit();
 
-        controls.setCountLimit(1);
+	controls.setCountLimit(1);
 
-        try {
-            results = list();
-        } catch (javax.naming.SizeLimitExceededException e) {
-            throw new NonUniqueResultException(e.getMessage());
-        } finally {
-            controls.setCountLimit(countLimit);
-        }
+	try {
+	    results = list();
+	} catch (javax.naming.SizeLimitExceededException e) {
+	    throw new NonUniqueResultException(e.getMessage());
+	} finally {
+	    controls.setCountLimit(countLimit);
+	}
 
-        projections(results);
+	projections(results);
 
-        return Iterables.getOnlyElement(results, null);
+	return Iterables.getOnlyElement(results, null);
     }
 
     @Override
-    public <C> SearchCriteriaImpl<T> addProjection(final Collection<C> collection,
-            final String property) {
-        this.projections.put(checkNotNull(property), checkNotNull(collection));
+    public <C> SearchCriteriaImpl<T> addProjection(final Collection<C> collection, final String property) {
+	this.projections.put(checkNotNull(property), checkNotNull(collection));
 
-        return this;
+	return this;
     }
 
     @Override
     public SearchCriteriaImpl<T> example(T example) {
-        filterStack.add(ops.metadata.getByExampleFilter());
+	filterStack.add(ops.metadata.getByExampleFilter());
 
-        return this;
+	return this;
     }
+
 }

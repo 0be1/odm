@@ -31,7 +31,6 @@ import com.google.common.base.Strings;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -102,13 +101,19 @@ class SimpleFilterBuilder<T> implements CompareCriterion<T> {
 	final Filter startsWithFilter = sb -> sb.append(escapeSpecialChars(startsWith));
 
 	final Filter endsWithFilter = sb -> sb.append(escapeSpecialChars(endsWith));
-
-	final Stream<String> substreams = substrings.stream().map(SimpleFilterBuilder::escapeSpecialChars)
-		.filter(s -> !Strings.isNullOrEmpty(s));
-
-	Filter substringsFilter = sb -> substreams.collect(() -> sb,
-		(builder, value) -> builder.append(value).append(Any),
-		(builder1, builder2) -> builder1.append(builder2));
+	
+	final Filter substringsFilter = new Filter() {
+	    @Override
+	    public void encode(StringBuilder sb) {
+		for (String substring : substrings) {
+		    String s = escapeSpecialChars(substring);
+		    
+		    if (!Strings.isNullOrEmpty(s)) {
+			sb.append(s).append(Any);
+		    }
+		}
+	    }
+	}; 
 		
 	return compareFilter(
 		Comparison.equals,

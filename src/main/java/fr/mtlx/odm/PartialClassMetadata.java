@@ -139,7 +139,7 @@ public class PartialClassMetadata<T> implements ClassMetadata<T> {
             }
         });
 
-        attributes.stream().forEach((metadata) -> {
+        for(AttributeMetadata metadata : attributes) {
             final String name = metadata.getAttirbuteName();
             if (!(Strings.isNullOrEmpty(name))) {
                 if (attributeMetadataByAttributeName.containsKey(name)) {
@@ -170,7 +170,7 @@ public class PartialClassMetadata<T> implements ClassMetadata<T> {
                     }
                 }
             }
-        });
+        }
     }
 
     private boolean isTransient(final Field field) {

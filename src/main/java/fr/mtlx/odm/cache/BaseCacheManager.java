@@ -64,6 +64,7 @@ public class BaseCacheManager implements CacheManager {
 
 	@Override
 	public void clear() {
-            caches.values().stream().forEach(Cache::clear);
+	    for(final EntityCache<?> c : caches.values())
+		c.clear();
 	}
 }

@@ -23,9 +23,7 @@ public interface SearchCriteria<T> {
 
     SearchCriteriaImpl<T> add(Filter filter);
     
-    default SearchCriteriaImpl<T> add(FilterBuilder<T> builder) {
-        return add(builder.build());
-    }
+    SearchCriteriaImpl<T> add(FilterBuilder<T> builder);
 
     <C> SearchCriteriaImpl<T> addProjection(final Collection<C> collection, final String property);
 

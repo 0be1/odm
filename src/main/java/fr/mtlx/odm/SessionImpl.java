@@ -116,9 +116,7 @@ public abstract class SessionImpl implements Session, CacheManager {
 
     @Override
     public void clear() {
-        caches.values().stream().forEach((cache) -> {
-            cache.clear();
-        });
+	for(EntityCache<?> c : caches.values()) c.clear();
     }
 
     @Override

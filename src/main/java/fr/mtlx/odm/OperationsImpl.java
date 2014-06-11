@@ -29,7 +29,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import javax.naming.Name;
 import javax.naming.directory.SearchControls;
 import org.slf4j.Logger;
@@ -77,7 +76,7 @@ public abstract class OperationsImpl<T> implements Operations<T> {
         return new SearchCriteriaImpl<>(this, base);
     }
 
-    public abstract Stream<T> search(final Name base, final SearchControls controls, final String filter)
+    public abstract Iterable<T> search(final Name base, final SearchControls controls, final String filter)
             throws javax.naming.SizeLimitExceededException;
 
     public abstract long count(final Name base, final SearchControls controls, final String filter)

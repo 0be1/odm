@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 import javax.naming.directory.DirContext;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.ldap.core.ContextSource;
 
@@ -61,6 +62,7 @@ public class TestSessionFactory {
     }
 
     @Test
+    @Ignore
     public void isPersistentSuperClasses() {
         assertTrue(sessionFactory.isPersistentClass(Person.class));
     }

@@ -23,14 +23,32 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import java.util.stream.Stream;
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 
 public class AndFilter extends CompositeFilter {
 
-    AndFilter(final Stream<Filter> filters) {
-	super(filters.flatMap(f -> f instanceof AndFilter ? ((CompositeFilter) f).filters.stream() : Stream.of(f)));
+    AndFilter(final Iterable<Filter> filters) {
+	
+	super(flatMap(filters));
     }
 
+    private static List<Filter> flatMap(final Iterable<Filter> filters) {
+	ImmutableList.Builder<Filter> builder = new ImmutableList.Builder<>();
+	
+	for (Filter f : filters) {
+	    if (f instanceof AndFilter) {
+		builder.addAll(flatMap(((CompositeFilter) f).filters));
+	    }
+	    else {
+		builder.add(f);
+	    }
+	}
+	
+	return builder.build();
+    }
+    
     @Override
     public void encode(final StringBuilder sb) {
 	sb.append("(&");

@@ -24,23 +24,31 @@ package fr.mtlx.odm;
  * #L%
  */
 import fr.mtlx.odm.filters.FilterBuilderImpl;
+
 import com.google.common.base.Joiner;
+
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import fr.mtlx.odm.cache.CacheManager;
+import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.spring.SpringProxyFactory;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Set;
+
 import javax.naming.Context;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.Rdn;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,7 +176,12 @@ public abstract class SessionFactoryImpl implements SessionFactory, CacheManager
     public boolean isPersistentClass(Class<?> clazz) {
         checkNotNull(clazz);
 
-        return persistentMetadata.keySet().stream().anyMatch(t -> t.isAssignableFrom(clazz));
+        for(Class<?> t : persistentMetadata.keySet()) {
+            if (t.isAssignableFrom(clazz))
+        	return true;
+        }
+        
+        return false;
     }
 
     @Override
@@ -256,10 +269,8 @@ public abstract class SessionFactoryImpl implements SessionFactory, CacheManager
     }
 
     protected void initialize() {
-        persistentMetadata
-                .values().stream().forEach((metadata) -> {
+	for(PartialClassMetadata<?> metadata : persistentMetadata.values()) 
                     metadata.init(this);
-                });
     }
 
     private <T> void addProxyFactory(Class<T> clazz) {

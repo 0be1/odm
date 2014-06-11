@@ -1,24 +1,16 @@
 package fr.mtlx.odm.filters;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class CompositeFilter implements Filter {
 
-    protected final List<Filter> filters;
+    protected final Collection<Filter> filters;
 
-    CompositeFilter(Stream<Filter> filters) {
-        this.filters = filters.collect(Collectors.toList());
-    }
     
     CompositeFilter(Collection<Filter> filters) {
-	this(filters.stream());
+	this.filters  = filters; 
     }
     
     CompositeFilter(Filter... filters) {

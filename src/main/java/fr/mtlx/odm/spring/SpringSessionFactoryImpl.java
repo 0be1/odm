@@ -26,16 +26,21 @@ package fr.mtlx.odm.spring;
 import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.SessionFactoryImpl;
 import fr.mtlx.odm.cache.EntityCache;
+import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.converters.DefaultConverters;
+
+import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map.Entry;
+
 import javax.naming.directory.DirContext;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.LdapTemplate;
 
 @SuppressWarnings("serial")
-public class SpringSessionFactoryImpl extends SessionFactoryImpl implements
-        InitializingBean {
+public class SpringSessionFactoryImpl extends SessionFactoryImpl implements InitializingBean {
 
     private final ContextSource contextSource;
 
@@ -44,63 +49,79 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements
     private final LdapTemplate ldapTemplate;
 
     public SpringSessionFactoryImpl(final ContextSource contextSource) {
-        this.contextSource = checkNotNull(contextSource);
+	this.contextSource = checkNotNull(contextSource);
 
-        this.ldapTemplate = new LdapTemplate(contextSource);
+	this.ldapTemplate = new LdapTemplate(contextSource);
     }
 
     public ContextSource getContextSource() {
-        return contextSource;
+	return contextSource;
     }
 
     public DirContext getDirContext() {
-        return contextSource.getReadWriteContext();
+	return contextSource.getReadWriteContext();
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        DefaultConverters.defaultSyntaxConverters
-                .entrySet().stream().forEach((entry) -> {
-                    addConverter(entry.getKey(), entry.getValue());
-                });
-        DefaultConverters.defaultAttributeConverters
-                .entrySet().stream().forEach((entry) -> {
-                    addConverter(entry.getKey(), entry.getValue());
-                });
+	for (Entry<String, Converter> entry : DefaultConverters.defaultSyntaxConverters.entrySet()) {
+	    addConverter(entry.getKey(), entry.getValue());
+	}
 
-        for (String className : mappedClasses) {
-            addClass(className);
-        }
+	for (Entry<Type, Converter> entry : DefaultConverters.defaultAttributeConverters.entrySet()) {
+	    addConverter(entry.getKey(), entry.getValue());
+	}
 
-        initialize();
+	for (String className : mappedClasses) {
+	    addClass(className);
+	}
+
+	initialize();
     }
 
     public LdapTemplate getLdapTemplate() {
-        return this.ldapTemplate;
+	return this.ldapTemplate;
     }
 
     @Override
     public boolean isOperationalAttribute(String attributeId) {
-        return super.isOperationalAttribute(attributeId)
-                || operationalAttributes.contains(attributeId);
+	return super.isOperationalAttribute(attributeId) || operationalAttributes.contains(attributeId);
     }
 
     public void setMappedClasses(List<String> mappedClasses) {
-        this.mappedClasses = mappedClasses;
+	this.mappedClasses = mappedClasses;
     }
 
     @Override
     public SpringSessionImpl openSession() {
-        return new SpringSessionImpl(this);
+	return new SpringSessionImpl(this);
     }
 
     @Override
     public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	throw new UnsupportedOperationException("Not supported yet."); // To
+								       // change
+								       // body
+								       // of
+								       // generated
+								       // methods,
+								       // choose
+								       // Tools
+								       // |
+								       // Templates.
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	throw new UnsupportedOperationException("Not supported yet."); // To
+								       // change
+								       // body
+								       // of
+								       // generated
+								       // methods,
+								       // choose
+								       // Tools
+								       // |
+								       // Templates.
     }
 }

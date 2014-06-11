@@ -1,6 +1,9 @@
 package fr.mtlx.odm.filters;
 
-import java.util.stream.Stream;
+import java.util.Collection;
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 
 /*
  * #%L
@@ -27,9 +30,24 @@ import java.util.stream.Stream;
  */
 public class OrFilter extends CompositeFilter {
 
-    OrFilter(final Stream<Filter> filters) {
-	super(filters.flatMap(f -> f instanceof OrFilter ? ((CompositeFilter) f).filters.stream() : Stream.of(f)));
+    OrFilter(final Collection<Filter> filters) {
+	super(flatMap(filters));
     }
+    
+    private static List<Filter> flatMap(final Iterable<Filter> filters) {
+   	ImmutableList.Builder<Filter> builder = new ImmutableList.Builder<>();
+   	
+   	for (Filter f : filters) {
+   	    if (f instanceof OrFilter) {
+   		builder.addAll(flatMap(((CompositeFilter) f).filters));
+   	    }
+   	    else {
+   		builder.add(f);
+   	    }
+   	}
+   	
+   	return builder.build();
+       }
 
     @Override
     public void encode(StringBuilder sb) {

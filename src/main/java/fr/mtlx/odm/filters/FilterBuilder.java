@@ -1,10 +1,8 @@
 package fr.mtlx.odm.filters;
 
-import fr.mtlx.odm.MappingException;
-
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Stream;
+
+import fr.mtlx.odm.MappingException;
 
 /*
  * #%L
@@ -31,37 +29,19 @@ import java.util.stream.Stream;
  */
 public interface FilterBuilder<T> {
 
-    FilterBuilder<T> or(Stream<Filter> filters);
+    public FilterBuilder<T> or(Collection<Filter> filters);
+
+    public FilterBuilder<T> or(Filter... filters);
+
+    public FilterBuilder<T> and(Collection<Filter> filters);
+
+    public FilterBuilder<T> and(Filter... filters);
+
+    public Filter objectClass(String objectClass);
+
+    public Filter not(Filter filter);
     
-    default FilterBuilder<T> or(Collection<Filter> filters) {
-        return or(filters.stream());
-    }
-
-    default FilterBuilder<T> or(Filter... filters) {
-        return or(Arrays.asList(filters));
-    }
-
-    FilterBuilder<T> and(Stream<Filter> filters);
-
-    default FilterBuilder<T> and(Collection<Filter> filters) {
-        return and(filters.stream());
-    }
-
-    default FilterBuilder<T> and(Filter... filters) {
-        return and(Arrays.asList(filters));
-    }
-
-    default Filter objectClass(String objectClass) {
-        return SimpleFilterBuilder.objectClass(objectClass);
-    }
-
-    default Filter not(Filter filter) {
-        return new NotFilter(filter);
-    }
-    
-    default CompareCriterion<T> attribute(String attributeName) {
-        return new SimpleFilterBuilder<>(attributeName);
-    }
+    CompareCriterion<T> attribute(String attributeName);
 
     CompareCriterion<T> property(String propertyName) throws MappingException;
 
