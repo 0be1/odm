@@ -1,5 +1,7 @@
 package fr.mtlx.odm.cache;
 
+import java.util.Optional;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -26,11 +28,11 @@ package fr.mtlx.odm.cache;
 
 public interface Cache<T, K> {
 
-	T store(K key, T object);
+	Optional<T> store(K key, Optional<T> value);
 
-	T retrieve(K key);
+	Optional<T> retrieve(K key);
 
-	T remove(K key);
+	boolean remove(K key);
 
 	void clear();
 

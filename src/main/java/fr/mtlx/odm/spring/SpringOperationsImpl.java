@@ -104,7 +104,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
         operations.bind(context);
 
-        getSession().store(context);
+	getSession().store(dn, Optional.of(context));
     }
 
     @Override
@@ -117,19 +117,19 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
             throw new RuntimeException(e);
         }
 
-        DirContextOperations modifedContext = getSession().retrieve(dn);
+	Optional<DirContextOperations> modifedContext = getSession().retrieve(dn);
 
-        if (modifedContext == null) {
-            throw new IllegalArgumentException("not a persistent object");
-        }
+	if (!modifedContext.isPresent()) {
+	    throw new IllegalArgumentException("not a persistent object");
+	}
 
-        mapToContext(checkNotNull(persistentObject), modifedContext);
+	mapToContext(checkNotNull(persistentObject), modifedContext.get());
 
-        operations.modifyAttributes(modifedContext);
+	operations.modifyAttributes(modifedContext.get());
 
-        assert dn.equals(modifedContext.getDn());
+	assert dn.equals(modifedContext.get().getDn());
 
-        getSession().store(modifedContext);
+	getSession().store(dn, modifedContext);
     }
 
     @Override
@@ -177,15 +177,15 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     @Override
     protected T realLookup(Name dn) {
-        T entry;
-        DirContextOperations context;
-        final MappingContextMapper<T> mapper = new MappingContextMapper<>(persistentClass, assistant);
-        context = getSession().retrieve(dn);
-        if (context == null) {
-            context = doLookup(dn);
-        }
-        entry = mapper.doMapFromContext(context);
-        return entry;
+	T entry;
+	Optional<DirContextOperations> context = getSession().retrieve(dn);
+	final MappingContextMapper<T> mapper = new MappingContextMapper<>(persistentClass, assistant);
+	
+	if (!context.isPresent()) {
+	    context = Optional.of(doLookup(dn));
+	}
+	entry = mapper.doMapFromContext(context.get());
+	return entry;
     }
 
     @Override
@@ -194,25 +194,23 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         return search(base, controls, filter, Optional.empty());
     }
 
-    public Stream<T> search(final Name base, final SearchControls controls, final String filter, final Optional<DirContextProcessor> processor)
-            throws javax.naming.SizeLimitExceededException {
-        final CachingContextMapper<T> cm = new CachingContextMapper<>();
+    public List<T> search(final Name base, final SearchControls controls, final String filter,
+	    final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
+	final CachingContextMapper<T> cm = new CachingContextMapper<>();
 
-        try {
-            operations.search(
-                    base,
-                    filter,
-                    controls,
-                    cm,
-                    processor.orElse(nullDirContextProcessor)
-            );
-        } catch (SizeLimitExceededException ex) {
-            throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
-        }
+	try {
+	    operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
+	} catch (SizeLimitExceededException ex) {
+	    throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
+	}
 
-        return cm.getContextQueue().stream().map((ctx)
-                -> getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx))
-        );
+	List<T> results = new ArrayList<>();
+
+	for (DirContextOperations ctx : cm.getContextQueue()) {
+	    results.add(getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx)));
+	}
+
+	return results;
     }
 
     private static final String[] RETURN_NO_ATTRIBUTES = new String[]{};
@@ -312,7 +310,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
             log.debug("caching context {} ", _dn);
         }
 
-        getSession().store(ctx);
+	getSession().store(_dn, Optional.of(ctx));
 
         return ctx;
     }
@@ -393,10 +391,10 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
             return queue;
         }
 
-        @SuppressWarnings("unchecked")
-        @Override
-        protected T doMapFromContext(final DirContextOperations ctx) {
-            getSession().store(ctx);
+	@SuppressWarnings("unchecked")
+	@Override
+	protected T doMapFromContext(final DirContextOperations ctx) {
+	    getSession().store(ctx.getDn(), Optional.of(ctx));
 
             queue.offer(ctx);
 
@@ -406,29 +404,29 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     class MappingContextMapper<T> extends AbstractContextMapper<T> {
 
-        private final Class<T> persistentClass;
-        private final ClassAssistant<T> assistant;
+	private final Class<T> persistentClass;
+	private final ClassAssistant<T> assistant;
 
-        MappingContextMapper(final Class<T> persistentClass, final ClassAssistant<T> assistant) {
-            this.persistentClass = checkNotNull(persistentClass);
-            this.assistant = checkNotNull(assistant);
-        }
+	MappingContextMapper(final Class<T> persistentClass, final ClassAssistant<T> assistant) {
+	    this.persistentClass = checkNotNull(persistentClass);
+	    this.assistant = checkNotNull(assistant);
+	}
 
-        @SuppressWarnings(value = "unchecked")
-        @Override
-        protected T doMapFromContext(final DirContextOperations ctx) {
-            final T entry;
-            try {
-                entry = (T) dirContextObjectFactory(checkNotNull(ctx));
+	@SuppressWarnings(value = "unchecked")
+	@Override
+	protected T doMapFromContext(final DirContextOperations ctx) {
+	    final T entry;
+	    try {
+		entry = (T) dirContextObjectFactory(checkNotNull(ctx));
 
-                assistant.setIdentifier(entry, ctx.getDn());
-            } catch (ClassNotFoundException | InstantiationException | InvalidNameException | IllegalAccessException e ) {
-                throw new RuntimeException(e);
-            }
-            
-            getSession().getCacheFor(persistentClass).store(ctx.getDn(), entry);
-            return entry;
-        }
+		assistant.setIdentifier(entry, ctx.getDn());
+	    } catch (ClassNotFoundException | InstantiationException | InvalidNameException | IllegalAccessException e) {
+		throw new RuntimeException(e);
+	    }
+
+	    getSession().getCacheFor(persistentClass).store(ctx.getDn(), Optional.of(entry));
+	    return entry;
+	}
     }
     
      private Object dirContextObjectFactory(final DirContextOperations context)

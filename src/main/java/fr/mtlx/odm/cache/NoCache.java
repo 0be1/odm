@@ -24,22 +24,24 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
+import java.util.Optional;
+
 import javax.naming.Name;
 
 public class NoCache<T> implements EntityCache<T> {
 	@Override
-	public T store(Name key, T object) {
+	public Optional<T> store(Name key, Optional<T> object) {
 		return null;
 	}
 
 	@Override
-	public T retrieve(Name key) {
+	public Optional<T> retrieve(Name key) {
 		return null;
 	}
 
 	@Override
-	public T remove(Name key) {
-		return null;
+	public boolean remove(Name key) {
+		return false;
 	}
 
 	@Override

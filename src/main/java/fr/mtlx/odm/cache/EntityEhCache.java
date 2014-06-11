@@ -26,56 +26,51 @@ package fr.mtlx.odm.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
+
 import javax.naming.Name;
 
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 
 public class EntityEhCache<T> implements EntityCache<T> {
-	private final Ehcache cache;
+    private final Ehcache cache;
 
-	public EntityEhCache(final Ehcache cache) {
-		this.cache = checkNotNull(cache, "cache is null");
+    public EntityEhCache(final Ehcache cache) {
+	this.cache = checkNotNull(cache, "cache is null");
+    }
+
+    @Override
+    public Optional<T> store(Name key, Optional<T> value) {
+	cache.put(new Element(checkNotNull(key, "key is null"), checkNotNull(value, "context is null")));
+
+	return value;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Optional<T> retrieve(Name key) {
+	final Element element = cache.get(key);
+
+	if (element != null) {
+	    return (Optional<T>) element.getObjectValue();
 	}
 
-	@Override
-	public T store(Name key, T context) {
-		cache.put(new Element(checkNotNull(key, "key is null"), checkNotNull(
-				context, "context is null")));
+	return null;
+    }
 
-		return context;
-	}
+    @Override
+    public boolean remove(Name key) {
+	return cache.remove(key);
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public T retrieve(Name key) {
-		final Element element = cache.get(key);
+    @Override
+    public void clear() {
+	cache.flush();
+    }
 
-		if (element != null) {
-			return (T) element.getObjectValue();
-		}
-
-		return null;
-	}
-
-	@Override
-	public T remove(Name key) {
-		@SuppressWarnings("unchecked")
-		T retval = (T) cache.get(key);
-
-		if (cache.remove(key))
-			return retval;
-		else
-			return null;
-	}
-
-	@Override
-	public void clear() {
-		cache.flush();
-	}
-
-	@Override
-	public boolean contains(Name key) {
-		return cache.isKeyInCache(key);
-	}
+    @Override
+    public boolean contains(Name key) {
+	return cache.isKeyInCache(key);
+    }
 }

@@ -96,11 +96,10 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements
 
     @Override
     public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	return new NoCache<T>();
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
