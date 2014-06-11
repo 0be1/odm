@@ -107,7 +107,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
 	operations.bind(context);
 
-	getSession().store(context);
+	getSession().store(dn, Optional.of(context));
     }
 
     @Override
@@ -120,19 +120,19 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	    throw new RuntimeException(e);
 	}
 
-	DirContextOperations modifedContext = getSession().retrieve(dn);
+	Optional<DirContextOperations> modifedContext = getSession().retrieve(dn);
 
-	if (modifedContext == null) {
+	if (!modifedContext.isPresent()) {
 	    throw new IllegalArgumentException("not a persistent object");
 	}
 
-	mapToContext(checkNotNull(persistentObject), modifedContext);
+	mapToContext(checkNotNull(persistentObject), modifedContext.get());
 
-	operations.modifyAttributes(modifedContext);
+	operations.modifyAttributes(modifedContext.get());
 
-	assert dn.equals(modifedContext.getDn());
+	assert dn.equals(modifedContext.get().getDn());
 
-	getSession().store(modifedContext);
+	getSession().store(dn, modifedContext);
     }
 
     @Override
@@ -179,13 +179,13 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     @Override
     protected T realLookup(Name dn) {
 	T entry;
-	DirContextOperations context;
+	Optional<DirContextOperations> context = getSession().retrieve(dn);
 	final MappingContextMapper<T> mapper = new MappingContextMapper<>(persistentClass, assistant);
-	context = getSession().retrieve(dn);
-	if (context == null) {
-	    context = doLookup(dn);
+	
+	if (!context.isPresent()) {
+	    context = Optional.of(doLookup(dn));
 	}
-	entry = mapper.doMapFromContext(context);
+	entry = mapper.doMapFromContext(context.get());
 	return entry;
     }
 
@@ -206,11 +206,11 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	}
 
 	List<T> results = new ArrayList<>();
-	
-	for(DirContextOperations ctx : cm.getContextQueue()) {
+
+	for (DirContextOperations ctx : cm.getContextQueue()) {
 	    results.add(getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx)));
 	}
-	
+
 	return results;
     }
 
@@ -298,7 +298,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	    log.debug("caching context {} ", _dn);
 	}
 
-	getSession().store(ctx);
+	getSession().store(_dn, Optional.of(ctx));
 
 	return ctx;
     }
@@ -380,7 +380,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected T doMapFromContext(final DirContextOperations ctx) {
-	    getSession().store(ctx);
+	    getSession().store(ctx.getDn(), Optional.of(ctx));
 
 	    queue.offer(ctx);
 
@@ -410,7 +410,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 		throw new RuntimeException(e);
 	    }
 
-	    getSession().getCacheFor(persistentClass).store(ctx.getDn(), entry);
+	    getSession().getCacheFor(persistentClass).store(ctx.getDn(), Optional.of(entry));
 	    return entry;
 	}
     }

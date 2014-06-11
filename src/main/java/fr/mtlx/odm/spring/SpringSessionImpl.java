@@ -23,17 +23,19 @@ package fr.mtlx.odm.spring;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import fr.mtlx.odm.Operations;
-import fr.mtlx.odm.SessionImpl;
-import fr.mtlx.odm.cache.Cache;
-import fr.mtlx.odm.cache.ContextCache;
-import fr.mtlx.odm.cache.ContextMapCache;
+import java.util.Optional;
+
 import javax.naming.Name;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.DirContextOperations;
 
-public class SpringSessionImpl extends SessionImpl implements ContextCache {
+import fr.mtlx.odm.Operations;
+import fr.mtlx.odm.SessionImpl;
+import fr.mtlx.odm.cache.Cache;
+
+public class SpringSessionImpl extends SessionImpl implements Cache<DirContextOperations, Name> {
 
     private static final Logger log = LoggerFactory.getLogger(SpringSessionImpl.class);
 
@@ -53,28 +55,24 @@ public class SpringSessionImpl extends SessionImpl implements ContextCache {
 
     @Override
     public <T> Operations<T> getOperations(Class<T> persistentClass) {
-        return new SpringOperationsImpl(this, persistentClass);
+        return new SpringOperationsImpl<>(this, persistentClass);
     }
 
     @Override
-    public DirContextOperations store(final DirContextOperations context) {
-        contextCache.store(context.getDn(), context);
+    public Optional<DirContextOperations> store(Name dn, Optional<DirContextOperations> context) {
+	contextCache.store(dn, context);
 
         return context;
     }
 
     @Override
-    public DirContextOperations retrieve(Name key) {
+    public Optional<DirContextOperations> retrieve(Name key) {
         return contextCache.retrieve(key);
     }
 
     @Override
-    public DirContextOperations remove(final Name key) {
-        final DirContextOperations context = retrieve(key);
-
-        contextCache.remove(key);
-
-        return context;
+    public boolean remove(final Name key) {
+        return contextCache.remove(key);
     }
 
     @Override

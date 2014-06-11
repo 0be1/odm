@@ -36,6 +36,7 @@ public final class DefaultConverters {
             .put(String.class, new IdentityConverter<>(String.class))
             .put(byte[].class, new IdentityConverter<>(byte[].class))
             .put(Name.class, new IdentityConverter<>(Name.class))
+            .put(LdapName.class, new IdentityConverter<>(LdapName.class))
             .put(Date.class, new IdentityConverter<>(Date.class))
             .put(Long.TYPE, new IdentityConverter<>(Long.TYPE))
             .put(Long.class, new IdentityConverter<>(Long.class)).build();

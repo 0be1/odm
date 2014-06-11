@@ -23,7 +23,10 @@ package fr.mtlx.odm.cache;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Map;
+import java.util.Optional;
 
 import javax.naming.Name;
 
@@ -34,7 +37,7 @@ import com.google.common.collect.Maps;
 
 public abstract class NameKeyCache<T> implements Cache<T, Name> {
 
-    private final Map<String, T> cacheMap;
+    private final Map<String, Optional<T>> cacheMap;
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -43,18 +46,18 @@ public abstract class NameKeyCache<T> implements Cache<T, Name> {
     }
 
     @Override
-    public T store(final Name key, final T context) {
-        return cacheMap.put(getKey(key), context);
+    public Optional<T> store(final Name key, final Optional<T> value) {
+        return cacheMap.put(getKey(key), checkNotNull(value));
     }
 
     @Override
-    public T retrieve(final Name key) {
+    public Optional<T> retrieve(final Name key) {
         return cacheMap.get(getKey(key));
     }
 
     @Override
-    public T remove(Name key) {
-        return cacheMap.remove(getKey(key));
+    public boolean remove(Name key) {
+        return cacheMap.remove(getKey(key)) != null;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package fr.mtlx.odm.cache;
+package fr.mtlx.odm.spring;
 
 /*
  * #%L
@@ -24,16 +24,15 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
+import java.util.Optional;
+
 import org.springframework.ldap.core.DirContextOperations;
 
-public class ContextMapCache extends NameKeyCache<DirContextOperations>
-		implements ContextCache {
-	public ContextMapCache() {
-		super();
-	}
+import fr.mtlx.odm.cache.NameKeyCache;
 
-	@Override
-	public DirContextOperations store(DirContextOperations context) {
-		return this.store(context.getDn(), context);
-	}
+public class ContextMapCache extends NameKeyCache<DirContextOperations> {
+
+    public Optional<DirContextOperations> store(DirContextOperations ctx) {
+	return store(ctx.getDn(), Optional.of(ctx));
+    }
 }

@@ -57,7 +57,7 @@ public abstract class SessionFactoryImpl implements SessionFactory, CacheManager
 
     public static final ThreadLocal<Session> session = new ThreadLocal<>();
 
-    public final Set<String> operationalAttributes = Sets.newHashSet("objectClass");
+    public Set<String> operationalAttributes = Sets.newHashSet("objectClass");
 
     private final Map<Class<?>, PartialClassMetadata<?>> persistentMetadata = Maps.newLinkedHashMap();
 
@@ -275,5 +275,9 @@ public abstract class SessionFactoryImpl implements SessionFactory, CacheManager
 
     private <T> void addProxyFactory(Class<T> clazz) {
         proxyFactories.put(clazz, new SpringProxyFactory<>(clazz, new Class<?>[]{}));
+    }
+
+    public void setOperationalAttributes(Set<String> operationalAttributes) {
+        this.operationalAttributes = operationalAttributes;
     }
 }

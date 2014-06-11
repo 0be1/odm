@@ -26,6 +26,7 @@ package fr.mtlx.odm.spring;
 import static com.google.common.base.Preconditions.checkNotNull;
 import fr.mtlx.odm.SessionFactoryImpl;
 import fr.mtlx.odm.cache.EntityCache;
+import fr.mtlx.odm.cache.NoCache;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.converters.DefaultConverters;
 
@@ -99,29 +100,10 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 
     @Override
     public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-	throw new UnsupportedOperationException("Not supported yet."); // To
-								       // change
-								       // body
-								       // of
-								       // generated
-								       // methods,
-								       // choose
-								       // Tools
-								       // |
-								       // Templates.
+	return new NoCache<T>();
     }
 
     @Override
     public void clear() {
-	throw new UnsupportedOperationException("Not supported yet."); // To
-								       // change
-								       // body
-								       // of
-								       // generated
-								       // methods,
-								       // choose
-								       // Tools
-								       // |
-								       // Templates.
     }
 }

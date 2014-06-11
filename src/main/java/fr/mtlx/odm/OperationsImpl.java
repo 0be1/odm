@@ -45,97 +45,100 @@ public abstract class OperationsImpl<T> implements Operations<T> {
     private final SessionImpl session;
 
     public OperationsImpl(final SessionImpl session, final Class<T> persistentClass) {
-        this.persistentClass = checkNotNull(persistentClass);
+	this.persistentClass = checkNotNull(persistentClass);
 
-        this.session = checkNotNull(session);
+	this.session = checkNotNull(session);
 
-        this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
+	this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
     }
 
     @Override
     public T lookup(Name dn) throws javax.naming.NameNotFoundException {
-        if (log.isDebugEnabled()) {
-            log.debug("lookup for {}", dn);
-        }
+	if (log.isDebugEnabled()) {
+	    log.debug("lookup for {}", dn);
+	}
 
-        return getFromCache(persistentClass, dn).orElse(store2nd(dn, realLookup(dn)));
+	return getFromCache(persistentClass, dn).orElse(store2nd(dn, realLookup(dn)));
     }
 
     @Override
     public T lookupByExample(T example) {
-        throw new UnsupportedOperationException("Not supported yet.");
+	throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public SearchCriteriaImpl<T> search(Name base, SearchControls controls) {
-        return new SearchCriteriaImpl<>(this, base, controls);
+	return new SearchCriteriaImpl<>(this, base, controls);
     }
 
     @Override
     public SearchCriteriaImpl<T> search(Name base) {
-        return new SearchCriteriaImpl<>(this, base);
+	return new SearchCriteriaImpl<>(this, base);
     }
 
     public abstract Iterable<T> search(final Name base, final SearchControls controls, final String filter)
-            throws javax.naming.SizeLimitExceededException;
+	    throws javax.naming.SizeLimitExceededException;
 
     public abstract long count(final Name base, final SearchControls controls, final String filter)
-            throws javax.naming.SizeLimitExceededException;
+	    throws javax.naming.SizeLimitExceededException;
 
     public abstract Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls);
 
     public SessionImpl getSession() {
-        return session;
+	return session;
     }
 
     protected final ClassMetadata<T> getMetadata() {
-        return metadata;
+	return metadata;
     }
 
     // hook
     protected abstract T realLookup(Name dn);
 
     protected final T store2nd(final Name dn, final T entry) {
-        getSession().getSessionFactory().getCacheFor(persistentClass).store(dn, entry);
+	getSession().getSessionFactory().getCacheFor(persistentClass).store(dn, Optional.of(entry));
 
-        return entry;
+	return entry;
     }
 
     protected final Optional<T> getFromCache(final Name dn) {
-        return getFromCache(persistentClass, dn);
+	return getFromCache(persistentClass, dn);
     }
 
     protected final <P> Optional<P> getFromCache(final Class<P> persistentClass, final Name dn) {
-        final EntityCache<P> sessionCache = getSession().getCacheFor(persistentClass);
+	final EntityCache<P> sessionCache = getSession().getCacheFor(persistentClass);
 
-        if (sessionCache == null) {
-            throw new UnsupportedOperationException(String.format("%s is not a persistent class.", persistentClass));
-        }
+	if (sessionCache == null) {
+	    throw new UnsupportedOperationException(String.format("%s is not a persistent class.", persistentClass));
+	}
 
-        if (sessionCache.contains(dn)) {
-            return Optional.ofNullable(sessionCache.retrieve(dn));
-        }
+	if (sessionCache.contains(dn)) {
+	    return sessionCache.retrieve(dn);
+	}
 
-        final EntityCache<P> secondLevelcache = getSession().getSessionFactory().getCacheFor(persistentClass);
+	final EntityCache<P> secondLevelcache = getSession().getSessionFactory().getCacheFor(persistentClass);
 
-        if (secondLevelcache != null) {
+	if (secondLevelcache != null) {
 
-            final P entry = secondLevelcache.retrieve(dn); // may be null;
+	    final Optional<P> entry = secondLevelcache.retrieve(dn); // may be
+								     // null;
 
-            sessionCache.store(dn, entry);
+	    if (entry != null) {
+		sessionCache.store(dn, entry);
 
-            return Optional.ofNullable(entry);
-        }
+		return entry;
+	    }
+	}
 
-        return Optional.empty();
+	return Optional.empty();
     }
 
     protected final void prePersist(final T transientObject) {
-        for (final Method method : getMetadata().prepersistMethods()) {
-            try {
-                method.invoke(transientObject);
-            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-            }
-        }
+	for (final Method method : getMetadata().prepersistMethods()) {
+	    try {
+		method.invoke(transientObject);
+	    } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+	    }
+	}
     }
 }
