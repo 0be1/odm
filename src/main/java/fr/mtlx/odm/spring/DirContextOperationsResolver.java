@@ -1,20 +1,26 @@
 package fr.mtlx.odm.spring;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Sets;
+
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.ContextResolver;
 import fr.mtlx.odm.Session;
 import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.converters.EntryResolverConverter;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+
 import org.apache.commons.beanutils.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,20 +125,23 @@ class DirContextOperationsResolver implements ContextResolver {
             return null;
         } // XXX
 
-        Class objectClass = from.getClass();
+        Class<?> objectClass = from.getClass();
 
         if (metadata.getObjectType().equals(objectClass)) {
             return from;
         }
-
+        
         Converter converter = metadata.getAttributeConverter();
 
-        if (converter == null
-                && session.getSessionFactory().isPersistentClass(objectClass)) {
-            return new EntryResolverConverter<>(objectClass, session);
+        if (converter != null)
+            return converter.fromDirectory(from);
+        
+        if (session.getSessionFactory().isPersistentClass(metadata.getObjectType())) {
+            return new EntryResolverConverter<>(metadata.getObjectType(), session);
         }
 
-        return converter.fromDirectory(from);
+        throw new ConvertionException(String.format("%s is not a persistent type.", metadata.getObjectType() ));
+       
     }
 
     @Override

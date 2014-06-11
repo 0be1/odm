@@ -30,7 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 public interface SessionFactory extends Serializable {
 
     boolean isPersistentClass(final String className);
-
+    
     /**
      * clazz est persistente si c'est une super classe d'une classe mappée
      *

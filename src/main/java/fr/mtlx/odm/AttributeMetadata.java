@@ -100,7 +100,7 @@ public class AttributeMetadata implements Serializable {
         return propertyName;
     }
 
-    public Type getObjectType() {
+    public Class<?> getObjectType() {
         return objectType;
     }
 
