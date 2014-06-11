@@ -34,11 +34,11 @@ public class NotFilter implements Filter {
     }
 
     @Override
-    public String encode() {
-	String retval = new StringBuilder("(").append('!').append(filter.encode()).append(")").toString();
-
-	assert retval != null && retval.startsWith("(") && retval.endsWith(")");
-
-	return retval;
+    public void encode(final StringBuilder sb) {
+	sb.append("(!");
+        
+        filter.encode(sb);
+        
+        sb.append(")");
     }
 }

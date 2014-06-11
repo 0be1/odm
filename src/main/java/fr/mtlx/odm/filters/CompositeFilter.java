@@ -1,22 +1,22 @@
 package fr.mtlx.odm.filters;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.List;
-
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 
 public abstract class CompositeFilter implements Filter {
 
-    protected final List<Filter> filters;
+    protected final ImmutableList<Filter> filters;
 
-    public CompositeFilter(final Filter... filters) {
-	this.filters = Lists.newArrayList(filters);
+    public CompositeFilter(Iterable<Filter> filters) {
+        this.filters = ImmutableList.copyOf(checkNotNull(filters));
     }
 
-    public CompositeFilter add(Filter filter) {
-	filters.add(checkNotNull(filter));
-
-	return this;
+    @Override
+    public void encode(final StringBuilder sb) {
+        for(final Filter filter : filters) {
+            sb.append('(');
+            filter.encode(sb);
+            sb.append(')');
+        }
     }
 }

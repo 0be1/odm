@@ -1,5 +1,7 @@
 package fr.mtlx.odm.filters;
 
+import java.util.stream.Stream;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -23,38 +25,24 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 public class OrFilter extends CompositeFilter {
 
-    OrFilter(Filter... filters) {
-        super(filters);
+    OrFilter(final Stream<Filter> filters) {
+        super(filters.flatMap(f -> {
+            if (f instanceof OrFilter) {
+                return ((CompositeFilter) f).filters.stream();
+            } else {
+                return f;
+            }
+        }));
     }
 
     @Override
-    public OrFilter add(final Filter filter) {
-        if (filter instanceof OrFilter) {
-            filters.addAll(((CompositeFilter) filter).filters);
-        } else {
-            super.add(filter);
-        }
+    public void encode(StringBuilder sb) {
+        sb.append("(|");
 
-        return this;
-    }
-
-    @Override
-    public String encode() {
-        final StringBuilder sb = new StringBuilder("(").append('|');
-
-        for (Filter filter : filters) {
-            sb.append(filter.encode());
-        }
+        super.encode(sb);
 
         sb.append(")");
-
-        String retval = sb.toString();
-
-        assert retval != null && retval.startsWith("(") && retval.endsWith(")");
-
-        return retval;
     }
 }

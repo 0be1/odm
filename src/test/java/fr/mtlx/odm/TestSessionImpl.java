@@ -23,7 +23,6 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -63,266 +62,242 @@ import static org.mockito.Mockito.when;
 import org.springframework.ldap.core.support.SingleContextSource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith( SpringJUnit4ClassRunner.class )
+@RunWith(SpringJUnit4ClassRunner.class)
 // @ContextConfiguration( locations =
 // { "classpath:testContext.xml", "classpath:ldapContext.xml" } )
 @Ignore
-public class TestSessionImpl
-{
-	private SessionFactory sessionFactory;
+public class TestSessionImpl {
 
-	private Session session;
+    private SessionFactory sessionFactory;
 
-	private LdapContext dirContext;
+    private Session session;
 
-	@Before
-	public void openSession()
-	{
-		dirContext = mock( LdapContext.class );
+    private LdapContext dirContext;
 
-		SingleContextSource contextSource = new SingleContextSource( dirContext );
+    @Before
+    public void openSession() {
+        dirContext = mock(LdapContext.class);
 
-		sessionFactory = new SpringSessionFactoryImpl( contextSource );
+        SingleContextSource contextSource = new SingleContextSource(dirContext);
 
-		session = sessionFactory.openSession();
-	}
+        sessionFactory = new SpringSessionFactoryImpl(contextSource);
 
-	@After
-	public void closeSession() throws IOException
-	{
-		if ( session != null )
-			session.close();
-	}
+        session = sessionFactory.openSession();
+    }
 
-	@Test
-	public void testLookupPerson() throws NamingException
-	{
+    @After
+    public void closeSession() throws IOException {
+        if (session != null) {
+            session.close();
+        }
+    }
 
-		Name dn = new LdapName( "cn=dummy_person,ou=personnes" );
+    @Test
+    public void testLookupPerson() throws NamingException {
 
-		when( dirContext.lookup( dn ) ).thenReturn( dirContext );
+        Name dn = new LdapName("cn=dummy_person,ou=personnes");
 
-		Person p = session.getOperations( Person.class ).lookup( dn );
+        when(dirContext.lookup(dn)).thenReturn(dirContext);
 
-		assertNotNull( p );
+        Person p = session.getOperations(Person.class).lookup(dn);
 
-		assertTrue( p.getDn().equals( dn ) );
+        assertNotNull(p);
 
-		assertThat( p.getSn(), is( "dummy" ) );
-	}
+        assertTrue(p.getDn().equals(dn));
 
-	@Test
-	public void testLookupOrganizationalPerson() throws InvalidNameException, javax.naming.NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=dummy_op,ou=personnes" );
+        assertThat(p.getSn(), is("dummy"));
+    }
 
-		OrganizationalPerson entry = session.getOperations( OrganizationalPerson.class ).lookup( dn );
+    @Test
+    public void testLookupOrganizationalPerson() throws InvalidNameException, javax.naming.NameNotFoundException {
+        Name dn = new LdapName("cn=dummy_op,ou=personnes");
 
-		assertNotNull( entry );
+        OrganizationalPerson entry = session.getOperations(OrganizationalPerson.class).lookup(dn);
 
-		assertTrue( entry.getDn().equals( dn ) );
+        assertNotNull(entry);
 
-		assertThat( entry.getSn(), is( "op" ) );
+        assertTrue(entry.getDn().equals(dn));
 
-		assertThat( entry.getTelephoneNumber().size(), is( 2 ) );
+        assertThat(entry.getSn(), is("op"));
 
-		assertTrue( entry.getTelephoneNumber().containsAll( Lists.newArrayList( "0491141300", "0491141312" ) ) );
+        assertThat(entry.getTelephoneNumber().size(), is(2));
 
-		assertTrue( entry.getUserPassword().length > 0 );
-	}
+        assertTrue(entry.getTelephoneNumber().containsAll(Lists.newArrayList("0491141300", "0491141312")));
 
-	@Test( expected = NameNotFoundException.class )
-	public void testLookupUnknowDn() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=foo,ou=personnes" );
+        assertTrue(entry.getUserPassword().length > 0);
+    }
 
-		session.getOperations( Person.class ).lookup( dn );
-	}
+    @Test(expected = NameNotFoundException.class)
+    public void testLookupUnknowDn() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=foo,ou=personnes");
 
-	@Test
-	@Ignore
-	public void testLookupGroupOfNames() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=prod,ou=groupes" );
+        session.getOperations(Person.class).lookup(dn);
+    }
 
-		GroupOfNames entry = session.getOperations( GroupOfNames.class ).lookup( dn );
+    @Test
+    @Ignore
+    public void testLookupGroupOfNames() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=prod,ou=groupes");
 
-		assertNotNull( entry );
+        GroupOfNames entry = session.getOperations(GroupOfNames.class).lookup(dn);
 
-		assertTrue( entry.getDn().equals( dn ) );
+        assertNotNull(entry);
 
-		assertThat( entry.getCommonName(), is( "prod" ) );
+        assertTrue(entry.getDn().equals(dn));
 
-		assertThat( entry.getMembers().size(), is( 2 ) );
-	}
+        assertThat(entry.getCommonName(), is("prod"));
 
-	@Test
-	public void testIsPersistent() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=alex,ou=personnes" );
+        assertThat(entry.getMembers().size(), is(2));
+    }
 
-		Object entry = session.getOperations( Person.class ).lookup( dn );
+    @Test
+    public void testIsPersistent() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=alex,ou=personnes");
 
-		assertTrue( session.isPersistent( entry ) );
-	}
+        Object entry = session.getOperations(Person.class).lookup(dn);
 
-	@Test
-	public void testLookupGroupOfPersons() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=alex,ou=personnes" );
+        assertTrue(session.isPersistent(entry));
+    }
 
-		session.getOperations( Person.class ).lookup( dn );
+    @Test
+    public void testLookupGroupOfPersons() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=alex,ou=personnes");
 
-		dn = new LdapName( "cn=prod,ou=groupes" );
+        session.getOperations(Person.class).lookup(dn);
 
-		GroupOfPersons entry = session.getOperations( GroupOfPersons.class ).lookup( dn );
+        dn = new LdapName("cn=prod,ou=groupes");
 
-		assertNotNull( entry );
+        GroupOfPersons entry = session.getOperations(GroupOfPersons.class).lookup(dn);
 
-		assertTrue( entry.getDn().equals( dn ) );
+        assertNotNull(entry);
 
-		assertThat( entry.getCommonName(), is( "prod" ) );
+        assertTrue(entry.getDn().equals(dn));
 
-		assertFalse( entry.getMembers().isEmpty() );
+        assertThat(entry.getCommonName(), is("prod"));
 
-		assertTrue( Iterables.any( entry.getMembers(), new Predicate<Person>()
-		{
-			@Override
-			public boolean apply( Person entry )
-			{
-				return entry != null;
-			}
+        assertFalse(entry.getMembers().isEmpty());
 
-		} ) );
-	}
+        assertTrue(Iterables.any(entry.getMembers(), new Predicate<Person>() {
+            @Override
+            public boolean apply(Person entry) {
+                return entry != null;
+            }
 
-	private void validate( Person entry )
-	{
-		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        }));
+    }
 
-		Validator validator = factory.getValidator();
+    private void validate(Person entry) {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 
-		Set<ConstraintViolation<Person>> constraintViolations = validator.validate( entry );
+        Validator validator = factory.getValidator();
 
-		if ( constraintViolations.size() > 0 )
-		{
-			StringBuilder builder = new StringBuilder( "Impossible de valider les donnees du bean : " );
+        Set<ConstraintViolation<Person>> constraintViolations = validator.validate(entry);
 
-			for ( ConstraintViolation<Person> contraintes : constraintViolations )
-			{
-				builder.append( contraintes.getRootBeanClass().getSimpleName() + "." + contraintes.getPropertyPath()
-						+ " " + contraintes.getMessage() );
-			}
+        if (constraintViolations.size() > 0) {
+            StringBuilder builder = new StringBuilder("Impossible de valider les donnees du bean : ");
 
-			throw new IllegalStateException( builder.toString() );
-		}
-		else
-		{
-			System.out.println( "Les donnees du bean sont valides" );
-		}
-	}
+            for (ConstraintViolation<Person> contraintes : constraintViolations) {
+                builder.append(contraintes.getRootBeanClass().getSimpleName() + "." + contraintes.getPropertyPath()
+                        + " " + contraintes.getMessage());
+            }
 
-	@Test
-	public void testSearch() throws InvalidNameException, SizeLimitExceededException, MappingException
-	{
-		Name dn = new LdapName( "ou=personnes" );
+            throw new IllegalStateException(builder.toString());
+        } else {
+            System.out.println("Les donnees du bean sont valides");
+        }
+    }
 
-		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
-		List<Person> entries = session.getOperations( Person.class ).search( dn ).add( fb.not( fb.objectClass( "ENTPerson" ) ) ).list();
+    @Test
+    public void testSearch() throws InvalidNameException, SizeLimitExceededException, MappingException {
+        Name dn = new LdapName("ou=personnes");
 
-		assertNotNull( entries );
+        FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
+        List<Person> entries = session.getOperations(Person.class).search(dn).add(fb.not(fb.objectClass("ENTPerson"))).list();
 
-		assertTrue( entries.size() > 0 );
-		assertTrue( Iterables.any( entries, new Predicate<Person>()
-		{
-			@Override
-			public boolean apply( Person entry )
-			{
-				return entry != null && session.isPersistent( entry );
-			}
+        assertNotNull(entries);
 
-		} ) );
-	}
+        assertTrue(entries.size() > 0);
+        assertTrue(Iterables.any(entries, new Predicate<Person>() {
+            @Override
+            public boolean apply(Person entry) {
+                return entry != null && session.isPersistent(entry);
+            }
 
-	@Test
-	public void testPagedSearch() throws InvalidNameException, MappingException
-	{
-		Name dn = new LdapName( "ou=personnes" );
-		int n = 0;
+        }));
+    }
 
-		FilterBuilder<Person> fb = sessionFactory.filterBuilder( Person.class );
+    @Test
+    public void testPagedSearch() throws InvalidNameException, MappingException {
+        Name dn = new LdapName("ou=personnes");
+        int n = 0;
 
-		Iterable<List<Person>> results = session.getOperations( Person.class ).search( dn )
-				.add( fb.not( fb.objectClass( "ENTPerson" ) ) )
-				.pages( 5 );
+        FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-		assertNotNull( results );
+        Iterable<List<Person>> results = session.getOperations(Person.class).search(dn)
+                .add(fb.not(fb.objectClass("ENTPerson")))
+                .pages(5);
 
-		Iterator<List<Person>> iterator = results.iterator();
+        assertNotNull(results);
 
-		assertNotNull( iterator );
+        Iterator<List<Person>> iterator = results.iterator();
 
-		assertTrue( iterator.hasNext() );
+        assertNotNull(iterator);
 
-		for ( List<Person> page : results )
-		{
-			n += page.size();
+        assertTrue(iterator.hasNext());
 
-			assertTrue( Iterables.any( page, new Predicate<Person>()
-			{
-				@Override
-				public boolean apply( Person entry )
-				{
-					return entry != null && session.isPersistent( entry );
-				}
+        for (List<Person> page : results) {
+            n += page.size();
 
-			} ) );
-		}
+            assertTrue(Iterables.any(page, new Predicate<Person>() {
+                @Override
+                public boolean apply(Person entry) {
+                    return entry != null && session.isPersistent(entry);
+                }
 
-		assertTrue( n > 0 );
-	}
+            }));
+        }
 
-	@Test
-	public void testBind() throws InvalidNameException
-	{
-		String dn = "cn=fire,ou=personnes";
+        assertTrue(n > 0);
+    }
 
-		Person entry = new Person();
+    @Test
+    public void testBind() throws InvalidNameException {
+        String dn = "cn=fire,ou=personnes";
 
-		entry.setDn( new LdapName( dn ) );
+        Person entry = new Person();
 
-		entry.setCn( "fire" );
+        entry.setDn(new LdapName(dn));
 
-		entry.setSn( "fox" );
+        entry.setCn("fire");
 
-		validate( entry );
+        entry.setSn("fox");
 
-		session.getOperations( Person.class ).bind( entry );
-	}
+        validate(entry);
 
-	@Test
-	public void testModify() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=fire,ou=personnes" );
+        session.getOperations(Person.class).bind(entry);
+    }
 
-		Person entry = session.getOperations( Person.class ).lookup( dn );
+    @Test
+    public void testModify() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=fire,ou=personnes");
 
-		entry.setCn( "fire" );
+        Person entry = session.getOperations(Person.class).lookup(dn);
 
-		entry.setSn( "bird" );
+        entry.setCn("fire");
 
-		validate( entry );
+        entry.setSn("bird");
 
-		session.getOperations( Person.class ).modify( entry );
-	}
+        validate(entry);
 
-	@Test
-	public void testUnbind() throws InvalidNameException, NameNotFoundException
-	{
-		Name dn = new LdapName( "cn=fire,ou=personnes" );
+        session.getOperations(Person.class).modify(entry);
+    }
 
-		Person entry = session.getOperations( Person.class ).lookup( dn );
+    @Test
+    public void testUnbind() throws InvalidNameException, NameNotFoundException {
+        Name dn = new LdapName("cn=fire,ou=personnes");
 
-		session.getOperations( Person.class ).unbind( entry );
-	}
+        Person entry = session.getOperations(Person.class).lookup(dn);
+
+        session.getOperations(Person.class).unbind(entry);
+    }
 }

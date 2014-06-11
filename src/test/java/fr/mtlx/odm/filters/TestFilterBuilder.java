@@ -24,18 +24,18 @@ package fr.mtlx.odm.filters;
  * #L%
  */
 import com.google.common.base.CharMatcher;
-import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.SessionFactory;
 import fr.mtlx.odm.SessionFactory2;
-import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.model.Person;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,32 +44,8 @@ public class TestFilterBuilder {
     private SessionFactory sessionFactory;
 
     @Before
-    public void init() throws MappingException
-    {
-        sessionFactory = new SessionFactory2(new Class<?>[] { Person.class, });
-    }
-    
-    private <T> CompositeFilter buildFilterForClass(Class<T> persistentClass) throws MappingException {
-        
-        ClassMetadata<T> metadata = sessionFactory.getClassMetadata(persistentClass);
-
-        if (metadata == null) {
-            throw new MappingException(String.format("%s is not a persistent class", persistentClass));
-        }
-
-        FilterBuilder<T> fb = sessionFactory.filterBuilder(persistentClass);
-
-        CompositeFilter filter = fb.and();
-
-        for (String oc : metadata.getObjectClassHierarchy()) {
-            filter.add(fb.objectClass(oc));
-        }
-
-        for (String oc : metadata.getAuxiliaryClasses()) {
-            filter.add(fb.objectClass(oc));
-        }
-
-        return filter;
+    public void init() throws MappingException {
+        sessionFactory = new SessionFactory2(new Class<?>[]{Person.class,});
     }
 
     @Test
@@ -86,11 +62,11 @@ public class TestFilterBuilder {
     public void test() throws MappingException {
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-        CompositeFilter filter = fb.and();
+        fb.or(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu"));
 
-        filter.add(fb.or(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu")));
+        StringBuilder sb = new StringBuilder();
 
-        String encodedFilter = filter.encode();
+        String encodedFilter = fb.toString();
 
         assertNotNull(encodedFilter);
 
@@ -105,13 +81,11 @@ public class TestFilterBuilder {
 
     @Test
     public void testCombineAndFilters() throws MappingException {
-        CompositeFilter filter = buildFilterForClass(Person.class);
-
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-        filter.add(fb.and(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu")));
+        fb.and(fb.property("commonName").equalsTo("alex"), fb.property("surname").equalsTo("mathieu"));
 
-        String encodedFilter = filter.encode();
+        String encodedFilter = fb.toString();
 
         assertNotNull(encodedFilter);
 
@@ -124,13 +98,11 @@ public class TestFilterBuilder {
 
         p.setDn(new LdapName("uid=test,dc=foo,dc=bar"));
 
-        CompositeFilter filter = buildFilterForClass(Person.class);
-
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
+        
+        fb.and(fb.property("commonName").equalsTo(1), fb.property("surname").equalsTo("mathieu"));
 
-        filter.add(fb.property("commonName").equalsTo(1)).add(fb.property("surname").equalsTo("mathieu"));
-
-        String encodedFilter = filter.encode();
+        String encodedFilter = fb.toString();
 
         assertNotNull(encodedFilter);
 

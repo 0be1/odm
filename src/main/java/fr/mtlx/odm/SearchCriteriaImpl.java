@@ -29,7 +29,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import static fr.mtlx.odm.SessionImpl.getDefaultSearchControls;
-import fr.mtlx.odm.filters.AndFilter;
 import fr.mtlx.odm.filters.Filter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.filters.FilterBuilderImpl;
@@ -39,8 +38,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.naming.Name;
 import javax.naming.SizeLimitExceededException;
@@ -143,19 +140,11 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
             return null;
         }
         
-        final AndFilter rootfilter = fb.and();
-
-        ops.metadata.getObjectClassHierarchy().stream().forEach((oc) -> {
-            rootfilter.add(fb.objectClass(oc));
-        });
-        ops.metadata.getAuxiliaryClasses().stream().forEach((oc) -> {
-            rootfilter.add(fb.objectClass(oc));
-        });
         filterStack.stream().forEach((f) -> {
-            rootfilter.add(f);
+            fb.and(f);
         });
 
-        return rootfilter.encode();
+        return fb.toString();
 
     }
 

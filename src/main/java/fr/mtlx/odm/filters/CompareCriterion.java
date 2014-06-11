@@ -35,7 +35,7 @@ public interface CompareCriterion<T> {
 
     Filter present();
 
-    Filter substrings(Object... values);
+    Filter substrings(String... values);
 
     Filter startsWith(Object value);
 

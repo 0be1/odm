@@ -23,7 +23,7 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 public interface Filter {
-	String encode();
+
+    void encode(StringBuilder builder);
 }

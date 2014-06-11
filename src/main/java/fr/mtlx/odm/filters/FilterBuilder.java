@@ -1,6 +1,9 @@
 package fr.mtlx.odm.filters;
 
 import fr.mtlx.odm.MappingException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Stream;
 
 /*
  * #%L
@@ -25,17 +28,35 @@ import fr.mtlx.odm.MappingException;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-
 public interface FilterBuilder<T> {
-	OrFilter or(Filter... filters);
 
-	AndFilter and(Filter... filters);
+    FilterBuilder<T> or(Stream<Filter> filters);
+    
+    default FilterBuilder<T> or(Collection<Filter> filters) {
+        return or(filters.stream());
+    }
 
-	CompareCriterion<T> property(String propertyName) throws MappingException;
+    default FilterBuilder<T> or(Filter... filters) {
+        return or(Arrays.asList(filters));
+    }
 
-	Filter objectClass(final String objectClass);
+    FilterBuilder<T> and(Stream<Filter> filters);
 
-	Filter not(final Filter filter);
+    default FilterBuilder<T> and(Collection<Filter> filters) {
+        return and(filters.stream());
+    }
 
-	CompareCriterion<T> attribute(final String attributeName);
+    default FilterBuilder<T> and(Filter... filters) {
+        return and(Arrays.asList(filters));
+    }
+
+    Filter objectClass(String objectClass);
+
+    Filter not(Filter filter);
+    
+    CompareCriterion<T> attribute(String attributeName);
+
+    CompareCriterion<T> property(String propertyName) throws MappingException;
+
+    Filter build();
 }

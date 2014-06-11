@@ -23,40 +23,26 @@ package fr.mtlx.odm.filters;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+import java.util.stream.Stream;
 
 public class AndFilter extends CompositeFilter {
 
-    AndFilter(final Filter... filters) {
-	super(filters);
+    AndFilter(final Stream<Filter> filters) {
+        super(filters.flatMap(f -> {
+            if (f instanceof AndFilter) {
+                return ((CompositeFilter) f).filters.stream();
+            } else {
+                return f;
+            }
+        }));
     }
 
     @Override
-    public AndFilter add(final Filter filter) {
-	if (filter instanceof AndFilter) {
-	    filters.addAll(((CompositeFilter) filter).filters);
-	} else {
-	    super.add(filter);
-	}
+    public void encode(final StringBuilder sb) {
+        sb.append("(&");
 
-	return this;
-    }
+        super.encode(sb);
 
-    @Override
-    public String encode() {
-	String retval;
-
-	final StringBuilder sb = new StringBuilder("(").append('&');
-
-	for (Filter filter : filters) {
-	    sb.append(filter.encode());
-	}
-
-	sb.append(")");
-
-	retval = sb.toString();
-
-	assert retval != null && retval.startsWith("(") && retval.endsWith(")");
-
-	return retval;
+        sb.append(')');
     }
 }

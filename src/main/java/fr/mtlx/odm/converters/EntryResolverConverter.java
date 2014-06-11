@@ -50,9 +50,10 @@ public class EntryResolverConverter<T extends Object> extends
 		this.metadata = session.getSessionFactory().getClassMetadata(
 				this.objectType);
 
-		if (metadata == null)
-			throw new UnsupportedOperationException(String.format(
-					"%s is not a persistent class", this.objectType));
+		if (metadata == null) {
+                    throw new UnsupportedOperationException(String.format(
+                            "%s is not a persistent class", this.objectType));
+                }
 	}
 
 	@Override

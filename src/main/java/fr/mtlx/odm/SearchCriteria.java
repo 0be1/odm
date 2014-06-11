@@ -6,6 +6,7 @@
 package fr.mtlx.odm;
 
 import fr.mtlx.odm.filters.Filter;
+import fr.mtlx.odm.filters.FilterBuilder;
 import java.util.Collection;
 import java.util.List;
 import javax.naming.Name;
@@ -20,6 +21,10 @@ import javax.persistence.NonUniqueResultException;
 public interface SearchCriteria<T> {
 
     SearchCriteriaImpl<T> add(Filter filter);
+    
+    default SearchCriteriaImpl<T> add(FilterBuilder<T> builder) {
+        return add(builder.build());
+    }
 
     <C> SearchCriteriaImpl<T> addProjection(final Collection<C> collection, final String property);
 
