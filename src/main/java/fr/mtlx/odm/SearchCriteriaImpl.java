@@ -40,7 +40,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.naming.Name;
 import javax.naming.SizeLimitExceededException;
 import javax.naming.directory.SearchControls;
@@ -161,7 +160,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
 
     @Override
     public List<T> list() throws javax.naming.SizeLimitExceededException {
-        List<T> results = ops.search(base, controls, encodeFilter()).collect(Collectors.toCollection(ArrayList::new));
+        List<T> results = ops.search(base, controls, encodeFilter());
 
         projections(results);
 
@@ -170,10 +169,9 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
 
     @Override
     public void nop() throws javax.naming.SizeLimitExceededException {
-        projections(ops.search(base, controls, encodeFilter()).collect(Collectors.toCollection(ArrayList::new)));
+        projections(ops.search(base, controls, encodeFilter()));
     }
 
-    @SuppressWarnings("unchecked")
     private void projections(List<T> results) {
         for (String property : projections.keySet()) {
             final AttributeMetadata t = ops.metadata
@@ -185,7 +183,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
                         ops.metadata.getPersistentClass()));
             }
 
-            Class<?> c = (Class<?>) t.getObjectType(); // XXX Cast ??
+            Class<?> c = t.getObjectType();
 
             ClassAssistant<T> assistant = new ClassAssistant<>(ops.metadata);
 

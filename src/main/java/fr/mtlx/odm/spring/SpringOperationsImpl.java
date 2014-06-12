@@ -26,17 +26,12 @@ package fr.mtlx.odm.spring;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.NamingException;
@@ -54,17 +49,16 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
-import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.OperationsImpl;
+import fr.mtlx.odm.cache.TypeCheckCache;
 import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.utils.TypeCheckConverter;
+import org.springframework.ldap.core.ContextMapper;
 
 public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
@@ -76,20 +70,20 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     private final LdapOperations operations;
 
-    private final TypeCheckConverter<T> typeChecker = new TypeCheckConverter<T>(persistentClass);
+    private final TypeCheckConverter<T> typeChecker = new TypeCheckConverter<>(persistentClass);
 
-    private final TypeCheckConverter<ClassMetadata<? extends T>> metadataConverter;
+    private final TypeCheckConverter<ClassMetadata<? extends T>> metadataChecker;
 
     public SpringOperationsImpl(final SpringSessionImpl session, final Class<T> persistentClass) {
-	super(session, persistentClass);
-	
-	this.assistant = new ClassAssistant<>(metadata);
+        super(session, persistentClass);
 
-	this.contextMapper = new MappingContextMapper(assistant);
+        this.assistant = new ClassAssistant<>(metadata);
 
-	this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
+        this.contextMapper = new MappingContextMapper(assistant);
 
-	metadataConverter = new TypeCheckConverter<ClassMetadata<? extends T>>(metadata.getClass());
+        this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
+
+        metadataChecker = new TypeCheckConverter<>(metadata.getClass());
     }
 
     @Override
@@ -101,74 +95,79 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     public void bind(T transientObject) {
         Name dn;
 
-	prePersist(checkNotNull(transientObject));
+        prePersist(checkNotNull(transientObject));
 
-	dn = assistant.getIdentifier(transientObject);
+        dn = assistant.getIdentifier(transientObject);
 
         DirContextOperations context = new DirContextAdapter(dn);
 
-	mapToContext(transientObject, context);
+        mapToContext(transientObject, context);
 
         operations.bind(context);
 
-	getSession().getCache().store(dn, context);
+        getSession().getCache().store(dn, context);
     }
 
     @Override
     public void modify(T persistentObject) {
-	throw new UnsupportedOperationException("not implemented yet");
+        throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
     public void doUnbind(final Name dn) {
-	operations.unbind(dn);
+        operations.unbind(dn);
 
-	getSession().getContextCache().remove(dn);
+        getSession().getContextCache().remove(dn);
     }
 
     @Override
     protected T doLookup(Name dn) {
-	T entry;
+        T entry;
 
-	DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
+        DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
 
-	final MappingContextMapper mapper = new MappingContextMapper(assistant);
+        final MappingContextMapper mapper = new MappingContextMapper(assistant);
 
-	// XXX : il faut stocker le context dans le cache avant de faire le
-	// mapping !
-	getSession().getContextCache().store(dn, context);
+        // XXX : il faut stocker le context dans le cache avant de faire le
+        // mapping !
+        getSession().getContextCache().store(dn, context);
 
-	entry = mapper.doMapFromContext(context);
+        entry = mapper.doMapFromContext(context);
 
-	return entry;
+        return entry;
     }
 
     @Override
-    public Stream<T> search(final Name base, final SearchControls controls, final String filter)
+    public List<T> search(final Name base, final SearchControls controls, final String filter)
             throws javax.naming.SizeLimitExceededException {
         return search(base, controls, filter, Optional.empty());
     }
 
     public List<T> search(final Name base, final SearchControls controls, final String filter,
-	    final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
-	final CachingContextMapper<T> cm = new CachingContextMapper<>();
+            final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
 
-	try {
-	    operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
-	} catch (SizeLimitExceededException ex) {
-	    throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
-	}
+        final SpringSessionImpl session = getSession();
 
-	List<T> results = new ArrayList<>();
+        final TypeCheckCache<DirContextOperations> cache = session.getContextCache();
 
-	for (DirContextOperations ctx : cm.getContextQueue()) {
+        ContextMapper<T> cm = new AbstractContextMapper<T>() {
+            @Override
+            protected T doMapFromContext(final DirContextOperations ctx) {
+                final Name dn = ctx.getDn();
 
-	    Object object = getSession().getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx));
+                cache.store(dn, ctx);
 
-	    results.add(typeChecker.convert(object));
-	}
+                final Object object = session.getFromCache(dn).orElse(contextMapper.doMapFromContext(ctx));
 
-	return results;
+                return typeChecker.convert(object);
+            }
+        };
+
+        try {
+            return operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
+        } catch (SizeLimitExceededException ex) {
+            throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
+        }
     }
 
     @Override
@@ -182,94 +181,96 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         return cm.getCount();
     }
 
+    private void mergeObjectClasses(final DirContextOperations context) {
+        final Set<String> ctxObjectClasses = Sets.newHashSet(
+                Optional.ofNullable(context.getStringAttributes("objectClass")).orElse(RETURN_NO_ATTRIBUTES)
+        );
+
+        final Set<String> mdObjectClasses = Sets.newHashSet(metadata.getObjectClassHierarchy());
+
+        for (String objectClass : Sets.difference(mdObjectClasses, ctxObjectClasses)) {
+            context.addAttributeValue("objectClass", objectClass);
+        }
+    }
+
     private void mapToContext(final T transientObject,
             final DirContextOperations context) {
 
-        try {
-            final Set<String> objectClasses = Sets.newHashSet();
+        mergeObjectClasses(context);
 
-            final String[] objectClassesRaw = context
-                    .getStringAttributes("objectClass");
+        for (String propertyName : metadata.getProperties()) {
+            final AttributeMetadata ameta = metadata
+                    .getAttributeMetadata(propertyName);
 
-            if (objectClassesRaw != null) {
-                objectClasses.addAll(Arrays.asList(objectClassesRaw));
-            }
+            final Converter converter = getSession().getSyntaxConverter(ameta
+                    .getSyntax());
 
-            metadata.getObjectClassHierarchy().stream().filter((objectClass) -> (!objectClasses.contains(objectClass))).forEach((objectClass) -> {
-                context.addAttributeValue("objectClass", objectClass);
-            });
+            final String attributeId = ameta.getAttirbuteName();
 
-            for (String propertyName : metadata.getProperties()) {
-                final AttributeMetadata ameta = metadata
-                        .getAttributeMetadata(propertyName);
+            if (ameta.isMultivalued()) {
+                final Collection<?> values = (Collection<?>) assistant
+                        .getValue(transientObject, propertyName);
 
-                final Converter converter = getSession().getSyntaxConverter(ameta
-                        .getSyntax());
-
-                if (ameta.isMultivalued()) {
-                    final Collection<?> values = (Collection<?>) assistant
-                            .getValue(transientObject, propertyName);
-
-                    if (values != null) {
-                        for (Object value : values) {
-                            if (value != null) {
-                                context.addAttributeValue(
-                                        ameta.getAttirbuteName(),
-                                        converter.toDirectory(value));
-                            }
+                if (values != null) {
+                    for (Object value : values) {
+                        if (value != null) {
+                            context.addAttributeValue(
+                                    attributeId,
+                                    converter.toDirectory(value));
                         }
-                    } else {
-                        // remove the attribute from the entry
-                        context.setAttributeValues(ameta.getAttirbuteName(),
-                                null);
                     }
                 } else {
-                    final String attributeId = ameta.getAttirbuteName();
-
-                    final Object currentValue = converter.toDirectory(assistant
-                            .getValue(transientObject, propertyName));
-
-                    final Object persistedValue = converter
-                            .fromDirectory(context
-                                    .getObjectAttribute(attributeId));
-
-                    if (persistedValue != null && currentValue != null) {
-                        if (!persistedValue.equals(currentValue)) {
-                            context.removeAttributeValue(attributeId,
-                                    persistedValue);
-
-                            context.addAttributeValue(attributeId, currentValue);
-                        }
-                    } else if (persistedValue != null) {
-                        context.removeAttributeValue(attributeId,
-                                persistedValue);
-                    } else if (currentValue != null) {
-                        context.removeAttributeValue(attributeId,
-                                persistedValue); // null
-                        context.addAttributeValue(attributeId, currentValue);
-                    }
+                    // remove the attribute from the entry
+                    context.setAttributeValues(attributeId, null);
                 }
+            } else {
+
+                final Object currentValue = converter.toDirectory(assistant
+                        .getValue(transientObject, propertyName));
+
+                final Object persistedValue = converter
+                        .fromDirectory(context
+                                .getObjectAttribute(attributeId));
+                
+                mergeValue(context, attributeId, currentValue, persistedValue);
+
             }
-        } catch (MappingException | ConvertionException e) {
-            throw new RuntimeException(e);
+        }
+    }
+
+    private void mergeValue(DirContextOperations context, String attributeId, Object currentValue, Object persistedValue) {
+        if (persistedValue != null && currentValue != null) {
+            if (!persistedValue.equals(currentValue)) {
+                context.removeAttributeValue(attributeId,
+                        persistedValue);
+
+                context.addAttributeValue(attributeId, currentValue);
+            }
+        } else if (persistedValue != null) {
+            context.removeAttributeValue(attributeId,
+                    persistedValue);
+        } else if (currentValue != null) {
+            context.removeAttributeValue(attributeId,
+                    persistedValue); // null
+            context.addAttributeValue(attributeId, currentValue);
         }
     }
 
     private DirContextOperations doContextLookup(final Name dn) {
-	final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
+        final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
 
         final Name _dn = ctx.getDn();
 
         assert dn.equals(_dn) : "lookup DN does not match context DN";
 
-	if (log.isDebugEnabled()) {
-	    log.debug("lookup context {} done", _dn);
-	}
+        if (log.isDebugEnabled()) {
+            log.debug("lookup context {} done", _dn);
+        }
 
-	return ctx;
+        return ctx;
     }
 
-    static class CountContextMapper extends AbstractContextMapper<Long> {
+    private static class CountContextMapper extends AbstractContextMapper<Long> {
 
         private long cp;
 
@@ -321,9 +322,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
                 PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(pageSize, cookie);
 
                 try {
-                    Stream<T> s = search(base, controls, filter, Optional.of(processor));
-
-                    final List<T> results = s.collect(Collectors.toCollection(ArrayList<T>::new));
+                    List<T> results = search(base, controls, filter, Optional.of(processor));
 
                     cookie = processor.getCookie();
 
@@ -336,71 +335,51 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
         return () -> new PagedResultIterator();
     }
-    
-    class CachingContextMapper<T> extends AbstractContextMapper<T> {
 
-        private final Queue<DirContextOperations> queue = Lists.newLinkedList();
+    private class MappingContextMapper extends AbstractContextMapper<T> {
 
-        public Queue<DirContextOperations> getContextQueue() {
-            return queue;
+        private final ClassAssistant<T> assistant;
+
+        MappingContextMapper(final ClassAssistant<T> assistant) {
+            this.assistant = checkNotNull(assistant);
         }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected T doMapFromContext(final DirContextOperations ctx) {
-	    getSession().getContextCache().store(ctx.getDn(), ctx);
+        @Override
+        protected T doMapFromContext(final DirContextOperations ctx) {
+            final T entry;
+            final Name dn = ctx.getDn();
+            
+            try {
+                entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
 
-            queue.offer(ctx);
+                assistant.setIdentifier(entry, dn);
+            } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
 
-            return (T) ctx;
+            getSession().getCache().store(dn, Optional.of(entry));
+            
+            return entry;
         }
     }
 
-    class MappingContextMapper extends AbstractContextMapper<T> {
-
-	private final ClassAssistant<T> assistant;
-
-	MappingContextMapper(final ClassAssistant<T> assistant) {
-	    this.assistant = checkNotNull(assistant);
-	}
-
-	@Override
-	protected T doMapFromContext(final DirContextOperations ctx) {
-	    final T entry;
-	    try {
-		entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
-
-		assistant.setIdentifier(entry, ctx.getDn());
-	    } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException e) {
-		throw new RuntimeException(e);
-	    }
-
-	    getSession().getCache().store(ctx.getDn(), Optional.of(entry));
-	    return entry;
-	}
-    }
-    
-     private Object dirContextObjectFactory(final DirContextOperations context)
+    private T dirContextObjectFactory(final DirContextOperations context)
             throws ClassNotFoundException, InstantiationException,
-            InvalidNameException, IllegalAccessException {
-        final String[] objectClasses = context
-                .getStringAttributes("objectClass");
+            InvalidNameException, IllegalAccessException, InvocationTargetException {
+        final String[] objectClasses = context.getStringAttributes("objectClass");
 
-    private Object dirContextObjectFactory(final DirContextOperations context) throws InstantiationException,
-	    InvalidNameException, IllegalAccessException, InvocationTargetException {
-	final String[] objectClasses = context.getStringAttributes("objectClass");
+        assert objectClasses != null && objectClasses.length > 0;
 
-	assert objectClasses != null && objectClasses.length > 0;
+        SpringSessionFactoryImpl sessionFactory = getSession().getSessionFactory();
+                
+        Class<? extends T> realPersistentClass;
 
-	Class<? extends T> realPersistentClass; 
-	
-	try {
-	    realPersistentClass =  metadataConverter.convert( getSession().getSessionFactory().getClassMetadata( objectClasses) ).getPersistentClass();
-	} catch (ClassNotFoundException e) {
-	    realPersistentClass = metadata.getPersistentClass();
-	}
+        try {
+            realPersistentClass = metadataChecker.convert(sessionFactory.getClassMetadata(objectClasses)).getPersistentClass();
+        } catch (ClassNotFoundException e) {
+            realPersistentClass = metadata.getPersistentClass();
+        }
 
-	return getSession().getSessionFactory().getProxyFactory(realPersistentClass, new Class[] {})
-		.getProxy(getSession(), context);
+        return sessionFactory.getProxyFactory(realPersistentClass, new Class<?>[0]).getProxy(getSession(), context);
     }
 }

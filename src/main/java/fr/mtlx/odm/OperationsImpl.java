@@ -97,7 +97,7 @@ public abstract class OperationsImpl<T> implements Operations<T> {
 	return new SearchCriteriaImpl<>(this, base);
     }
 
-    public abstract Stream<T> search(final Name base, final SearchControls controls, final String filter)
+    public abstract List<T> search(final Name base, final SearchControls controls, final String filter)
             throws javax.naming.SizeLimitExceededException;
 
     public abstract long count(final Name base, final SearchControls controls, final String filter)
@@ -120,7 +120,7 @@ public abstract class OperationsImpl<T> implements Operations<T> {
     public void unbind(final T persistentObject) {
 	Name dn;
 
-	dn = new ClassAssistant<T>(metadata).getIdentifier(persistentObject);
+	dn = new ClassAssistant<>(metadata).getIdentifier(persistentObject);
 
 	if (!getSession().getCache().contains(dn)) {
 	    throw new IllegalArgumentException("not a persistent object");

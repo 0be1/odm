@@ -54,7 +54,7 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
     private final Class<?> proxyClass;
 
     private final Class<T> superClass;
-    
+
     private final TypeCheckConverter<T> typeChecker;
 
     public SpringProxyFactory(final Class<T> superClass, final Class<?>[] interfaces) {
@@ -72,14 +72,14 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
             factory.setInterfaces(interfaces);
         }
 
-	proxyClass = factory.createClass();
-	
-	typeChecker = new TypeCheckConverter<T>(superClass);
+        proxyClass = factory.createClass();
+
+        typeChecker = new TypeCheckConverter<>(superClass);
     }
 
     @Override
     public Class<?>[] getInterfaces() {
-	return interfaces.toArray(new Class[] {});
+        return interfaces.toArray(new Class<?>[]{});
     }
 
     @Override
@@ -131,7 +131,7 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                 if (attr.isMultivalued()) {
                     return proxiedClass.getMethod(getSetterName(property), attr.getCollectionType());
                 } else {
-                    return proxiedClass.getMethod(getSetterName(property), (Class<?>) attr.getObjectType());
+                    return proxiedClass.getMethod(getSetterName(property), attr.getObjectType());
                 }
             }
 
@@ -197,12 +197,25 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                             return false;
                         }
 
-	return typeChecker.convert(proxy);
+                        return metadata
+                                .getAttributeMetadata(property) != null;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        ProxyObject proxy = (ProxyObject) proxyClass.newInstance();
+
+        proxy.setHandler(new DirContextHandler<>(proxy, superClass));
+
+        return (T) proxy;
     }
 
     @Override
     public Class<?> getProxyClass() {
-	return proxyClass;
+        return proxyClass;
     }
 
     @Override
@@ -211,8 +224,8 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
     }
 
     @Override
-    public boolean isImplementing(final Class<?> clazz) {
+    public boolean isImplementing(final Class<?> clazz
+    ) {
         return interfaces.stream().anyMatch(iface -> clazz.isAssignableFrom(iface));
     }
-
 }
