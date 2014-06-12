@@ -33,8 +33,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import fr.mtlx.odm.cache.CacheManager;
-import fr.mtlx.odm.cache.EntityCache;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.spring.SpringProxyFactory;
@@ -53,7 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("serial")
-public abstract class SessionFactoryImpl implements SessionFactory, CacheManager {
+public abstract class SessionFactoryImpl implements SessionFactory {
 
     public static final ThreadLocal<Session> session = new ThreadLocal<>();
 

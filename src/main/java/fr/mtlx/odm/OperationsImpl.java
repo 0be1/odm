@@ -24,18 +24,22 @@ package fr.mtlx.odm;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
-import fr.mtlx.odm.cache.EntityCache;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Optional;
+
+import javax.annotation.Nonnull;
 import javax.naming.Name;
 import javax.naming.directory.SearchControls;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class OperationsImpl<T> implements Operations<T> {
 
+    public static final String[] RETURN_NO_ATTRIBUTES = new String[] {};
+    
     private static final Logger log = LoggerFactory.getLogger(OperationsImpl.class);
 
     protected final Class<T> persistentClass;
@@ -52,13 +56,30 @@ public abstract class OperationsImpl<T> implements Operations<T> {
 	this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T lookup(Name dn) throws javax.naming.NameNotFoundException {
+	checkNotNull(dn);
+
 	if (log.isDebugEnabled()) {
 	    log.debug("lookup for {}", dn);
 	}
 
-	return getFromCache(persistentClass, dn).orElse(store2nd(dn, realLookup(dn)));
+	Object retval = getSession().getFromCache(dn).orElseGet(() -> {
+	    Object obj = doLookup(dn);
+
+	    getSession().getSessionFactory().getCache().store(dn, obj);
+
+	    return obj;
+
+	});
+
+	if (persistentClass.isInstance(retval)) {
+	    return (T) retval;
+	}
+
+	throw new ClassCastException(String.format("Cannot cast %s to %s while looking up for %s", retval.getClass(),
+		persistentClass, dn));
     }
 
     @Override
@@ -93,45 +114,24 @@ public abstract class OperationsImpl<T> implements Operations<T> {
     }
 
     // hook
-    protected abstract T realLookup(Name dn);
+    protected abstract @Nonnull Object doLookup(@Nonnull final Name dn);
 
-    protected final T store2nd(final Name dn, final T entry) {
-	getSession().getSessionFactory().getCacheFor(persistentClass).store(dn, Optional.of(entry));
+    @Override
+    public void unbind(final T persistentObject) {
+	Name dn;
 
-	return entry;
-    }
+	dn = new ClassAssistant<T>(metadata).getIdentifier(persistentObject);
 
-    protected final Optional<T> getFromCache(final Name dn) {
-	return getFromCache(persistentClass, dn);
-    }
-
-    protected final <P> Optional<P> getFromCache(final Class<P> persistentClass, final Name dn) {
-	final EntityCache<P> sessionCache = getSession().getCacheFor(persistentClass);
-
-	if (sessionCache == null) {
-	    throw new UnsupportedOperationException(String.format("%s is not a persistent class.", persistentClass));
+	if (!getSession().getCache().contains(dn)) {
+	    throw new IllegalArgumentException("not a persistent object");
 	}
 
-	if (sessionCache.contains(dn)) {
-	    return sessionCache.retrieve(dn);
-	}
+	doUnbind(dn);
 
-	final EntityCache<P> secondLevelcache = getSession().getSessionFactory().getCacheFor(persistentClass);
-
-	if (secondLevelcache != null) {
-
-	    final Optional<P> entry = secondLevelcache.retrieve(dn); // may be
-								     // null;
-
-	    if (entry != null) {
-		sessionCache.store(dn, entry);
-
-		return entry;
-	    }
-	}
-
-	return Optional.empty();
+	getSession().getCache().remove(dn);
     }
+    
+    protected abstract void doUnbind(Name dn);
 
     protected final void prePersist(final T transientObject) {
 	for (final Method method : getMetadata().prepersistMethods()) {

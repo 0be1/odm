@@ -42,6 +42,4 @@ public interface Operations<T> {
     void modify(T persistentObject);
 
     void unbind(T persistentObject);
-
-    void purge(Name base);
 }

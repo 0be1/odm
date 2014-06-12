@@ -6,15 +6,12 @@
 
 package fr.mtlx.odm;
 
+import javax.annotation.Nullable;
 import javax.naming.NamingException;
 
-/**
- *
- * @author alex
- */
 public interface ContextResolver {
 
-    Object getProperty(final String name) throws NamingException, InstantiationException, IllegalAccessException;
+    @Nullable Object getProperty(final String name) throws NamingException, InstantiationException, IllegalAccessException;
     
-    void setProperty(final String name) throws NamingException, InstantiationException, IllegalAccessException;
+    void setProperty(final String name, @Nullable final Object value) throws NamingException, InstantiationException, IllegalAccessException;
 }

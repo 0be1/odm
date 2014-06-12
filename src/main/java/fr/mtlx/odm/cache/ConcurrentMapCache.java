@@ -28,49 +28,41 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
 import javax.naming.Name;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-public abstract class NameKeyCache<T> implements Cache<T, Name> {
+public class ConcurrentMapCache implements PersistentCache {
 
-    private final Map<String, Optional<T>> cacheMap;
+    private final Map<Name, Object> cacheMap;
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
-
-    public NameKeyCache() {
-        cacheMap = Maps.newConcurrentMap();
+    public ConcurrentMapCache() {
+	cacheMap = Maps.newConcurrentMap();
     }
 
     @Override
-    public Optional<T> store(final Name key, final Optional<T> value) {
-        return cacheMap.put(getKey(key), checkNotNull(value));
+    public Optional<Object> store(@Nonnull final Name key, @Nonnull final Object value) {
+	return Optional.ofNullable(cacheMap.put(checkNotNull(key), checkNotNull(value)));
     }
 
     @Override
-    public Optional<T> retrieve(final Name key) {
-        return cacheMap.get(getKey(key));
+    public Optional<Object> retrieve(@Nonnull final Name key) {
+	return Optional.ofNullable(cacheMap.get(key));
     }
 
     @Override
-    public boolean remove(Name key) {
-        return cacheMap.remove(getKey(key)) != null;
+    public boolean remove(final Name key) {
+	return cacheMap.remove(key) != null;
     }
 
     @Override
     public void clear() {
-        cacheMap.clear();
+	cacheMap.clear();
     }
 
     @Override
-    public boolean contains(Name key) {
-        return cacheMap.containsKey(getKey(key));
-    }
-
-    protected String getKey(final Name dn) {
-        return dn.toString().toLowerCase();
+    public boolean contains(final Name key) {
+	return cacheMap.containsKey(key);
     }
 }

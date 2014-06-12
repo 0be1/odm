@@ -14,14 +14,14 @@ import javax.naming.InvalidNameException;
  * @author alex
  */
 public interface ProxyFactory<T, CTX extends Context> {
-     Class[] getInterfaces();
+     Class<?>[] getInterfaces();
      
      T getProxy(final Session session,
             final CTX context)
             throws InstantiationException, IllegalAccessException,
             InvalidNameException;
      
-     Class getProxyClass();
+     Class<?> getProxyClass();
      
      Class<T> getSuperClass();
      

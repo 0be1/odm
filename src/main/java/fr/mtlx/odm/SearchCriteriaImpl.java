@@ -24,19 +24,23 @@ package fr.mtlx.odm;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import static fr.mtlx.odm.SessionImpl.getDefaultSearchControls;
 import fr.mtlx.odm.filters.Filter;
 import fr.mtlx.odm.filters.FilterBuilder;
 import fr.mtlx.odm.filters.FilterBuilderImpl;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.naming.Name;
 import javax.naming.SizeLimitExceededException;
 import javax.naming.directory.SearchControls;

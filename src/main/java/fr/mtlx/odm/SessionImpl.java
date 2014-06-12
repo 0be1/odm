@@ -23,103 +23,113 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import com.google.common.collect.Maps;
-import fr.mtlx.odm.cache.Cache;
-import fr.mtlx.odm.cache.CacheManager;
-import fr.mtlx.odm.cache.EntityCache;
-import fr.mtlx.odm.cache.EntityMapCache;
-import fr.mtlx.odm.converters.Converter;
-import java.util.Map;
-import javax.annotation.Nonnull;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Optional;
+
 import javax.naming.Name;
 import javax.naming.directory.SearchControls;
 
-public abstract class SessionImpl implements Session, CacheManager {
+import fr.mtlx.odm.cache.NoCache;
+import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.converters.Converter;
+
+public abstract class SessionImpl implements Session {
 
     public static SearchControls copySearchControls(final SearchControls controls) {
-        final SearchControls retval = new SearchControls();
+	final SearchControls retval = new SearchControls();
 
-        retval.setCountLimit(controls.getCountLimit());
-        retval.setDerefLinkFlag(controls.getDerefLinkFlag());
-        retval.setReturningObjFlag(false);
-        retval.setSearchScope(controls.getSearchScope());
-        retval.setTimeLimit(controls.getTimeLimit());
+	retval.setCountLimit(controls.getCountLimit());
+	retval.setDerefLinkFlag(controls.getDerefLinkFlag());
+	retval.setReturningObjFlag(false);
+	retval.setSearchScope(controls.getSearchScope());
+	retval.setTimeLimit(controls.getTimeLimit());
 
-        return retval;
+	return retval;
     }
 
     public static SearchControls getDefaultSearchControls() {
-        final SearchControls retval = new SearchControls();
+	final SearchControls retval = new SearchControls();
 
-        retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
+	retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-        retval.setReturningObjFlag(false);
+	retval.setReturningObjFlag(false);
 
-        return retval;
+	return retval;
     }
 
-    private final Map<Class<?>, EntityCache<?>> caches = Maps.newConcurrentMap();
+    private final PersistentCache cache;
+
+    public PersistentCache getCache() {
+	return cache;
+    }
+
+    public SessionImpl(final CacheFactory cacheFactory) {
+	cache = Optional.ofNullable(checkNotNull(cacheFactory).getCache()).orElse(new NoCache());
+    }
 
     @Override
-    public boolean isPersistent(final Object obj) {
-        final Name dn;
+    public <T> boolean isPersistent(final T obj) {
+	if (obj == null) {
+	    return false;
+	}
 
-        if (obj == null) {
-            return false;
-        }
+	Optional<Name> dn = extractDn(obj);
 
-        Cache cache = getCacheFor(obj.getClass());
-
-        if (cache == null) {
-            return false;
-        }
-
-        return cache.contains(obj);
+	if (dn.isPresent())
+	    return cache.contains(dn.get());
+	else
+	    return false;
     }
 
     @Override
     public void close() {
-        clear();
+	getCache().clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Optional<Name> extractDn(T obj) {
+	final ClassMetadata<T> metadata = (ClassMetadata<T>) getSessionFactory().getClassMetadata(obj.getClass());
+
+	if (metadata == null) {
+	    return Optional.empty();
+	}
+
+	return Optional.ofNullable(new ClassAssistant<T>(metadata).getIdentifier(obj));
+    }
+
+    public final Optional<Object> getFromCache(final Name dn) {
+	final PersistentCache sessionCache = getCache();
+
+	if (sessionCache.contains(dn)) {
+	    return sessionCache.retrieve(dn);
+	}
+
+	final PersistentCache secondLevelcache = getSessionFactory().getCache();
+
+	if (secondLevelcache != null) {
+	    Optional<Object> entry = secondLevelcache.retrieve(dn);
+
+	    if (entry.isPresent()) {
+		sessionCache.store(dn, entry.get());
+
+		return entry;
+	    }
+	}
+
+	return Optional.empty();
     }
 
     public Converter getSyntaxConverter(final String syntax) throws MappingException {
-        final Converter converter = getSessionFactory().getConverter(syntax);
-        if (converter == null) {
-            throw new MappingException(String.format("no converter found for syntax %s", syntax));
-        }
-        return converter;
-    }
+	final Converter converter = getSessionFactory().getConverter(syntax);
 
-    private <T> void removeFromCache(final Class<T> persistentClass, final Name dn) {
-        if (getSessionFactory() instanceof CacheManager) {
-            ((CacheManager) getSessionFactory()).getCacheFor(persistentClass)
-                    .remove(dn);
-        }
+	if (converter == null) {
+	    throw new MappingException(String.format("no converter found for syntax %s", syntax));
+	}
 
-        getCacheFor(persistentClass).remove(dn);
-    }
-
-    @Override
-    public <T> EntityCache<T> getCacheFor(@Nonnull Class<T> persistentClass) {
-        if (!getSessionFactory().isPersistentClass(persistentClass)) {
-            return null;
-        }
-
-        @SuppressWarnings("unchecked")
-        EntityCache<T> cache = (EntityCache<T>) caches.get(persistentClass);
-        if (cache == null) {
-            cache = new EntityMapCache<>("Session");
-            caches.put(persistentClass, cache);
-        }
-        return cache;
-    }
-
-    @Override
-    public void clear() {
-	for(EntityCache<?> c : caches.values()) c.clear();
+	return converter;
     }
 
     @Override
     public abstract SessionFactoryImpl getSessionFactory();
-
 }
