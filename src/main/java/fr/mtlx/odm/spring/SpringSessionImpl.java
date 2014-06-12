@@ -25,27 +25,26 @@ package fr.mtlx.odm.spring;
  */
 import java.util.Optional;
 
-import javax.naming.Name;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.DirContextOperations;
 
+import fr.mtlx.odm.CacheFactory;
 import fr.mtlx.odm.Operations;
 import fr.mtlx.odm.SessionImpl;
-import fr.mtlx.odm.cache.Cache;
+import fr.mtlx.odm.cache.NoCache;
+import fr.mtlx.odm.cache.TypeCheckCache;
 
-public class SpringSessionImpl extends SessionImpl implements Cache<DirContextOperations, Name> {
+public class SpringSessionImpl extends SessionImpl  {
 
-    private static final Logger log = LoggerFactory.getLogger(SpringSessionImpl.class);
-
-    private final Cache<DirContextOperations, Name> contextCache;
     private final SpringSessionFactoryImpl sessionFactory;
 
-    SpringSessionImpl(final SpringSessionFactoryImpl sessionFactory) {
+    private final TypeCheckCache<DirContextOperations> contextCache;
+
+    SpringSessionImpl(final SpringSessionFactoryImpl sessionFactory, final CacheFactory sessionCacheFactory, final CacheFactory contextCacheFactory) {
+	super(sessionCacheFactory);
+	
         this.sessionFactory = sessionFactory;
 
-        this.contextCache = new ContextMapCache();
+        this.contextCache = new TypeCheckCache<DirContextOperations>(DirContextOperations.class, Optional.ofNullable(contextCacheFactory.getCache()).orElse(new NoCache()));
     }
 
     @Override
@@ -57,27 +56,9 @@ public class SpringSessionImpl extends SessionImpl implements Cache<DirContextOp
     public <T> Operations<T> getOperations(Class<T> persistentClass) {
         return new SpringOperationsImpl<>(this, persistentClass);
     }
-
-    @Override
-    public Optional<DirContextOperations> store(Name dn, Optional<DirContextOperations> context) {
-	contextCache.store(dn, context);
-
-        return context;
-    }
-
-    @Override
-    public Optional<DirContextOperations> retrieve(Name key) {
-        return contextCache.retrieve(key);
-    }
-
-    @Override
-    public boolean remove(final Name key) {
-        return contextCache.remove(key);
-    }
-
-    @Override
-    public boolean contains(Name key) {
-        return contextCache.contains(key);
+    
+    public TypeCheckCache<DirContextOperations> getContextCache() {
+        return contextCache;
     }
 
     @Override

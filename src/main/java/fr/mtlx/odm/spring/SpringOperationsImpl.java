@@ -24,14 +24,7 @@ package fr.mtlx.odm.spring;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import fr.mtlx.odm.AttributeMetadata;
-import fr.mtlx.odm.ClassAssistant;
-import fr.mtlx.odm.MappingException;
-import fr.mtlx.odm.OperationsImpl;
-import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.converters.ConvertionException;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,24 +54,42 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import fr.mtlx.odm.AttributeMetadata;
+import fr.mtlx.odm.ClassAssistant;
+import fr.mtlx.odm.ClassMetadata;
+import fr.mtlx.odm.MappingException;
+import fr.mtlx.odm.OperationsImpl;
+import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.converters.ConvertionException;
+import fr.mtlx.odm.utils.TypeCheckConverter;
+
 public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     private static final Logger log = LoggerFactory.getLogger(SpringOperationsImpl.class);
 
-    private final MappingContextMapper<T> contextMapper;
+    private final MappingContextMapper contextMapper;
 
     private final ClassAssistant<T> assistant;
 
-    public final LdapOperations operations;
+    private final LdapOperations operations;
+
+    private final TypeCheckConverter<T> typeChecker = new TypeCheckConverter<T>(persistentClass);
+
+    private final TypeCheckConverter<ClassMetadata<? extends T>> metadataConverter;
 
     public SpringOperationsImpl(final SpringSessionImpl session, final Class<T> persistentClass) {
-        super(session, persistentClass);
+	super(session, persistentClass);
+	
+	this.assistant = new ClassAssistant<>(metadata);
 
-        this.assistant = new ClassAssistant<>(metadata);
+	this.contextMapper = new MappingContextMapper(assistant);
 
-        this.contextMapper = new MappingContextMapper<>(persistentClass, assistant);
+	this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
 
-        this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
+	metadataConverter = new TypeCheckConverter<ClassMetadata<? extends T>>(metadata.getClass());
     }
 
     @Override
@@ -90,101 +101,45 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     public void bind(T transientObject) {
         Name dn;
 
-        prePersist(transientObject);
+	prePersist(checkNotNull(transientObject));
 
-        try {
-            dn = assistant.getIdentifier(transientObject);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InvalidNameException e) {
-            throw new RuntimeException(e);
-        }
+	dn = assistant.getIdentifier(transientObject);
 
         DirContextOperations context = new DirContextAdapter(dn);
 
-        mapToContext(checkNotNull(transientObject), context);
+	mapToContext(transientObject, context);
 
         operations.bind(context);
 
-	getSession().store(dn, Optional.of(context));
+	getSession().getCache().store(dn, context);
     }
 
     @Override
     public void modify(T persistentObject) {
-        Name dn;
-
-        try {
-            dn = assistant.getIdentifier(persistentObject);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InvalidNameException e) {
-            throw new RuntimeException(e);
-        }
-
-	Optional<DirContextOperations> modifedContext = getSession().retrieve(dn);
-
-	if (!modifedContext.isPresent()) {
-	    throw new IllegalArgumentException("not a persistent object");
-	}
-
-	mapToContext(checkNotNull(persistentObject), modifedContext.get());
-
-	operations.modifyAttributes(modifedContext.get());
-
-	assert dn.equals(modifedContext.get().getDn());
-
-	getSession().store(dn, modifedContext);
+	throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
-    public void unbind(final T persistentObject) {
-        Name dn;
+    public void doUnbind(final Name dn) {
+	operations.unbind(dn);
 
-        try {
-            dn = assistant.getIdentifier(persistentObject);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InvalidNameException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (!getSession().contains(dn)) {
-            throw new IllegalArgumentException("not a persistent object");
-        }
-
-        operations.unbind(dn);
-
-        getSession().remove(dn);
-
-        getSession().getCacheFor(persistentClass).remove(dn);
+	getSession().getContextCache().remove(dn);
     }
 
     @Override
-    public void purge(final Name base) {
-        SearchControls controls = new SearchControls();
-        controls.setReturningAttributes(new String[]{});
-        controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-        for (Object dn : operations.search(base, "", controls,
-                new AbstractContextMapper<Name>() {
-                    @Override
-                    protected Name doMapFromContext(DirContextOperations ctx) {
-                        return ctx.getDn();
-                    }
-                }, nullDirContextProcessor)) {
-            operations.unbind((Name) dn);
-
-            getSession().remove((Name) dn);
-
-            getSession().getCacheFor(persistentClass)
-                    .remove((Name) dn);
-        }
-    }
-
-    @Override
-    protected T realLookup(Name dn) {
+    protected T doLookup(Name dn) {
 	T entry;
-	Optional<DirContextOperations> context = getSession().retrieve(dn);
-	final MappingContextMapper<T> mapper = new MappingContextMapper<>(persistentClass, assistant);
-	
-	if (!context.isPresent()) {
-	    context = Optional.of(doLookup(dn));
-	}
-	entry = mapper.doMapFromContext(context.get());
+
+	DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
+
+	final MappingContextMapper mapper = new MappingContextMapper(assistant);
+
+	// XXX : il faut stocker le context dans le cache avant de faire le
+	// mapping !
+	getSession().getContextCache().store(dn, context);
+
+	entry = mapper.doMapFromContext(context);
+
 	return entry;
     }
 
@@ -207,13 +162,14 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	List<T> results = new ArrayList<>();
 
 	for (DirContextOperations ctx : cm.getContextQueue()) {
-	    results.add(getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx)));
+
+	    Object object = getSession().getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx));
+
+	    results.add(typeChecker.convert(object));
 	}
 
 	return results;
     }
-
-    private static final String[] RETURN_NO_ATTRIBUTES = new String[]{};
 
     @Override
     public long count(final Name base, final SearchControls controls, final String filter) {
@@ -299,20 +255,18 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         }
     }
 
-    private DirContextOperations doLookup(final Name dn) {
-        final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
+    private DirContextOperations doContextLookup(final Name dn) {
+	final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
 
         final Name _dn = ctx.getDn();
 
         assert dn.equals(_dn) : "lookup DN does not match context DN";
 
-        if (log.isDebugEnabled()) {
-            log.debug("caching context {} ", _dn);
-        }
+	if (log.isDebugEnabled()) {
+	    log.debug("lookup context {} done", _dn);
+	}
 
-	getSession().store(_dn, Optional.of(ctx));
-
-        return ctx;
+	return ctx;
     }
 
     static class CountContextMapper extends AbstractContextMapper<Long> {
@@ -394,7 +348,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected T doMapFromContext(final DirContextOperations ctx) {
-	    getSession().store(ctx.getDn(), Optional.of(ctx));
+	    getSession().getContextCache().store(ctx.getDn(), ctx);
 
             queue.offer(ctx);
 
@@ -402,29 +356,26 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         }
     }
 
-    class MappingContextMapper<T> extends AbstractContextMapper<T> {
+    class MappingContextMapper extends AbstractContextMapper<T> {
 
-	private final Class<T> persistentClass;
 	private final ClassAssistant<T> assistant;
 
-	MappingContextMapper(final Class<T> persistentClass, final ClassAssistant<T> assistant) {
-	    this.persistentClass = checkNotNull(persistentClass);
+	MappingContextMapper(final ClassAssistant<T> assistant) {
 	    this.assistant = checkNotNull(assistant);
 	}
 
-	@SuppressWarnings(value = "unchecked")
 	@Override
 	protected T doMapFromContext(final DirContextOperations ctx) {
 	    final T entry;
 	    try {
-		entry = (T) dirContextObjectFactory(checkNotNull(ctx));
+		entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
 
 		assistant.setIdentifier(entry, ctx.getDn());
-	    } catch (ClassNotFoundException | InstantiationException | InvalidNameException | IllegalAccessException e) {
+	    } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException e) {
 		throw new RuntimeException(e);
 	    }
 
-	    getSession().getCacheFor(persistentClass).store(ctx.getDn(), Optional.of(entry));
+	    getSession().getCache().store(ctx.getDn(), Optional.of(entry));
 	    return entry;
 	}
     }
@@ -435,9 +386,21 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         final String[] objectClasses = context
                 .getStringAttributes("objectClass");
 
-        assert objectClasses != null && objectClasses.length > 0;
+    private Object dirContextObjectFactory(final DirContextOperations context) throws InstantiationException,
+	    InvalidNameException, IllegalAccessException, InvocationTargetException {
+	final String[] objectClasses = context.getStringAttributes("objectClass");
 
-        return getSession().getSessionFactory().getProxyFactory(metadata.getPersistentClass(),
-                new Class[]{}).getProxy(getSession(), context);
+	assert objectClasses != null && objectClasses.length > 0;
+
+	Class<? extends T> realPersistentClass; 
+	
+	try {
+	    realPersistentClass =  metadataConverter.convert( getSession().getSessionFactory().getClassMetadata( objectClasses) ).getPersistentClass();
+	} catch (ClassNotFoundException e) {
+	    realPersistentClass = metadata.getPersistentClass();
+	}
+
+	return getSession().getSessionFactory().getProxyFactory(realPersistentClass, new Class[] {})
+		.getProxy(getSession(), context);
     }
 }

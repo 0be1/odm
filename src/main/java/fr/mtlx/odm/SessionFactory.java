@@ -23,9 +23,11 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import fr.mtlx.odm.filters.FilterBuilder;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+
+import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.filters.FilterBuilder;
 
 public interface SessionFactory extends Serializable {
 
@@ -60,4 +62,6 @@ public interface SessionFactory extends Serializable {
     ClassMetadata<?> getClassMetadata(final String[] objectClasses)
             throws IllegalAccessException, InvocationTargetException,
             ClassNotFoundException;
+    
+    PersistentCache getCache();
 }

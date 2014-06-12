@@ -31,6 +31,7 @@ import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.ContextResolver;
 import fr.mtlx.odm.ProxyFactory;
 import fr.mtlx.odm.Session;
+import fr.mtlx.odm.utils.TypeCheckConverter;
 import static java.lang.System.identityHashCode;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,7 +44,6 @@ import javax.naming.InvalidNameException;
 import javax.naming.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
 
-@SuppressWarnings("rawtypes")
 public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperations> {
 
     private static final MethodFilter FINALIZE_FILTER = (Method m) -> !(m.getParameterTypes().length == 0 && m.getName().equals(
@@ -54,6 +54,8 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
     private final Class<?> proxyClass;
 
     private final Class<T> superClass;
+    
+    private final TypeCheckConverter<T> typeChecker;
 
     public SpringProxyFactory(final Class<T> superClass, final Class<?>[] interfaces) {
         this.superClass = checkNotNull(superClass);
@@ -70,12 +72,14 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
             factory.setInterfaces(interfaces);
         }
 
-        proxyClass = factory.createClass();
+	proxyClass = factory.createClass();
+	
+	typeChecker = new TypeCheckConverter<T>(superClass);
     }
 
     @Override
-    public Class[] getInterfaces() {
-        return interfaces.toArray(new Class[]{});
+    public Class<?>[] getInterfaces() {
+	return interfaces.toArray(new Class[] {});
     }
 
     @Override
@@ -193,25 +197,12 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                             return false;
                         }
 
-                        return metadata
-                                .getAttributeMetadata(property) != null;
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        ProxyObject proxy = (ProxyObject) proxyClass.newInstance();
-
-        proxy.setHandler(new DirContextHandler<>(proxy, superClass));
-
-        return (T) proxy;
+	return typeChecker.convert(proxy);
     }
 
     @Override
-    public Class getProxyClass() {
-        return proxyClass;
+    public Class<?> getProxyClass() {
+	return proxyClass;
     }
 
     @Override

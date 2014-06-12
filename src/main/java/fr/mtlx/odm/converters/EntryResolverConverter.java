@@ -32,47 +32,37 @@ import javax.naming.ldap.LdapName;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.Session;
-import java.lang.reflect.InvocationTargetException;
-import javax.naming.InvalidNameException;
 
-public class EntryResolverConverter<T extends Object> extends
-		AttributeConverter<LdapName, T> {
-	private final Session session;
+public class EntryResolverConverter<T extends Object> extends AttributeConverter<LdapName, T> {
+    private final Session session;
 
-	private final ClassMetadata<T> metadata;
+    private final ClassMetadata<T> metadata;
 
-	public EntryResolverConverter(final Class<T> objectClass,
-			final Session session) {
-		super(LdapName.class, objectClass);
+    public EntryResolverConverter(final Class<T> objectClass, final Session session) {
+	super(LdapName.class, objectClass);
 
-		this.session = checkNotNull(session, "session is null");
+	this.session = checkNotNull(session, "session is null");
 
-		this.metadata = session.getSessionFactory().getClassMetadata(
-				this.objectType);
+	this.metadata = session.getSessionFactory().getClassMetadata(this.objectType);
 
-		if (metadata == null) {
-                    throw new UnsupportedOperationException(String.format(
-                            "%s is not a persistent class", this.objectType));
-                }
+	if (metadata == null) {
+	    throw new UnsupportedOperationException(String.format("%s is not a persistent class", this.objectType));
 	}
+    }
 
-	@Override
-	public LdapName to(final T object) throws ConvertionException {
-		final ClassAssistant<T> assistant = new ClassAssistant<>(metadata);
+    @Override
+    public LdapName to(final T object) throws ConvertionException {
+	final ClassAssistant<T> assistant = new ClassAssistant<>(metadata);
 
-		try {
-			return assistant.getIdentifier(object);
-		} catch (InvalidNameException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-			throw new ConvertionException(e);
-		}
+	return assistant.getIdentifier(object);
+    }
+
+    @Override
+    public T from(LdapName dn) throws ConvertionException {
+	try {
+	    return session.getOperations(objectType).lookup(dn);
+	} catch (NameNotFoundException e) {
+	    throw new ConvertionException(e);
 	}
-
-	@Override
-	public T from(LdapName dn) throws ConvertionException {
-		try {
-			return session.getOperations(objectType).lookup(dn);
-		} catch (NameNotFoundException e) {
-			throw new ConvertionException(e);
-		}
-	}
+    }
 }

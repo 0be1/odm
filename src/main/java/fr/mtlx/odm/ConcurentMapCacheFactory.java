@@ -1,5 +1,8 @@
 package fr.mtlx.odm;
 
+import fr.mtlx.odm.cache.ConcurrentMapCache;
+import fr.mtlx.odm.cache.PersistentCache;
+
 /*
  * #%L
  * fr.mtlx.odm
@@ -23,14 +26,11 @@ package fr.mtlx.odm;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import fr.mtlx.odm.cache.BaseCacheManager;
-import fr.mtlx.odm.cache.CacheManager;
 
-public class ConcurentMapCacheFactory extends CacheFactory {
+public class ConcurentMapCacheFactory implements CacheFactory {
 
     @Override
-    public CacheManager getCache(final SessionFactoryImpl sessionFactory,
-            final String name) {
-        return new BaseCacheManager(sessionFactory);
+    public PersistentCache getCache() {
+	return new ConcurrentMapCache();
     }
 }

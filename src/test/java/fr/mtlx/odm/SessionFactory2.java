@@ -5,13 +5,14 @@
  */
 package fr.mtlx.odm;
 
-import fr.mtlx.odm.cache.EntityCache;
+import java.lang.reflect.Type;
+import java.util.Map.Entry;
+
+import fr.mtlx.odm.cache.NoCache;
+import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.converters.DefaultConverters;
 
-/**
- *
- * @author alex
- */
 @SuppressWarnings("serial")
 public class SessionFactory2 extends SessionFactoryImpl {
 
@@ -38,12 +39,7 @@ public class SessionFactory2 extends SessionFactoryImpl {
     }
 
     @Override
-    public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public void clear() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public PersistentCache getCache() {
+	return new NoCache();
     }
 }

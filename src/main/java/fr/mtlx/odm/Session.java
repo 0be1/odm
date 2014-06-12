@@ -30,7 +30,7 @@ public interface Session extends Closeable {
 
     SessionFactory getSessionFactory();
 
-    boolean isPersistent(@Nullable final Object obj);
+    <T> boolean isPersistent(@Nullable final T obj);
 
     <T> Operations<T> getOperations(Class<T> persistentClass);
 
