@@ -32,102 +32,102 @@ import javax.naming.directory.SearchControls;
 
 import fr.mtlx.odm.cache.NoCache;
 import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
 
 public abstract class SessionImpl implements Session {
 
     public static SearchControls copySearchControls(final SearchControls controls) {
-	final SearchControls retval = new SearchControls();
+        final SearchControls retval = new SearchControls();
 
-	retval.setCountLimit(controls.getCountLimit());
-	retval.setDerefLinkFlag(controls.getDerefLinkFlag());
-	retval.setReturningObjFlag(false);
-	retval.setSearchScope(controls.getSearchScope());
-	retval.setTimeLimit(controls.getTimeLimit());
+        retval.setCountLimit(controls.getCountLimit());
+        retval.setDerefLinkFlag(controls.getDerefLinkFlag());
+        retval.setReturningObjFlag(false);
+        retval.setSearchScope(controls.getSearchScope());
+        retval.setTimeLimit(controls.getTimeLimit());
 
-	return retval;
+        return retval;
     }
 
     public static SearchControls getDefaultSearchControls() {
-	final SearchControls retval = new SearchControls();
+        final SearchControls retval = new SearchControls();
 
-	retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-	retval.setReturningObjFlag(false);
+        retval.setReturningObjFlag(false);
 
-	return retval;
+        return retval;
     }
 
     private final PersistentCache cache;
 
     public PersistentCache getCache() {
-	return cache;
+        return cache;
     }
 
     public SessionImpl(final CacheFactory cacheFactory) {
-	cache = Optional.ofNullable(checkNotNull(cacheFactory).getCache()).orElse(new NoCache());
+        cache = Optional.ofNullable(checkNotNull(cacheFactory).getCache()).orElse(new NoCache());
     }
 
     @Override
     public <T> boolean isPersistent(final T obj) {
-	if (obj == null) {
-	    return false;
-	}
+        if (obj == null) {
+            return false;
+        }
 
-	Optional<Name> dn = extractDn(obj);
+        Optional<Name> dn = extractDn(obj);
 
-	if (dn.isPresent())
-	    return cache.contains(dn.get());
-	else
-	    return false;
+        if (dn.isPresent())
+            return cache.contains(dn.get());
+        else
+            return false;
     }
 
     @Override
     public void close() {
-	getCache().clear();
+        getCache().clear();
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> Optional<Name> extractDn(T obj) {
-	final ClassMetadata<T> metadata = (ClassMetadata<T>) getSessionFactory().getClassMetadata(obj.getClass());
+    private <T> Optional<Name> extractDn(final T obj) {
+        final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata((Class<T>) obj.getClass());
 
-	if (metadata == null) {
-	    return Optional.empty();
-	}
+        if (metadata == null) {
+            return Optional.empty();
+        }
 
-	return Optional.ofNullable(new ClassAssistant<T>(metadata).getIdentifier(obj));
+        return Optional.ofNullable(new ClassAssistant<>(metadata).getIdentifier(obj));
     }
 
-    public final Optional<Object> getFromCache(final Name dn) {
-	final PersistentCache sessionCache = getCache();
+    public final <T> Optional<T> getFromCacheStack(final Class<T> clazz, final Name dn) {
+        final TypeSafeCache<T> sessionCache = new TypeSafeCache<>(clazz, getCache());
 
-	if (sessionCache.contains(dn)) {
-	    return sessionCache.retrieve(dn);
-	}
+        if (sessionCache.contains(dn)) {
+            return sessionCache.retrieve(dn);
+        }
 
-	final PersistentCache secondLevelcache = getSessionFactory().getCache();
+        final TypeSafeCache<T> secondLevelcache = new TypeSafeCache<>(clazz, getSessionFactory().getCache());
 
-	if (secondLevelcache != null) {
-	    Optional<Object> entry = secondLevelcache.retrieve(dn);
+        if (secondLevelcache != null) {
+            final Optional<T> entry = secondLevelcache.retrieve(dn);
 
-	    if (entry.isPresent()) {
-		sessionCache.store(dn, entry.get());
+            if (entry.isPresent()) {
+                sessionCache.store(dn, entry.get());
 
-		return entry;
-	    }
-	}
+                return entry;
+            }
+        }
 
-	return Optional.empty();
+        return Optional.empty();
     }
 
     public Converter getSyntaxConverter(final String syntax) throws MappingException {
-	final Converter converter = getSessionFactory().getConverter(syntax);
+        final Converter converter = getSessionFactory().getConverter(syntax);
 
-	if (converter == null) {
-	    throw new MappingException(String.format("no converter found for syntax %s", syntax));
-	}
+        if (converter == null) {
+            throw new MappingException(String.format("no converter found for syntax %s", syntax));
+        }
 
-	return converter;
+        return converter;
     }
 
     @Override

@@ -27,7 +27,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map.Entry;
+
 import javax.naming.directory.DirContext;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.LdapTemplate;

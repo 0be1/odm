@@ -31,20 +31,20 @@ import fr.mtlx.odm.CacheFactory;
 import fr.mtlx.odm.Operations;
 import fr.mtlx.odm.SessionImpl;
 import fr.mtlx.odm.cache.NoCache;
-import fr.mtlx.odm.cache.TypeCheckCache;
+import fr.mtlx.odm.cache.TypeSafeCache;
 
 public class SpringSessionImpl extends SessionImpl  {
 
     private final SpringSessionFactoryImpl sessionFactory;
 
-    private final TypeCheckCache<DirContextOperations> contextCache;
+    private final TypeSafeCache<DirContextOperations> contextCache;
 
     SpringSessionImpl(final SpringSessionFactoryImpl sessionFactory, final CacheFactory sessionCacheFactory, final CacheFactory contextCacheFactory) {
 	super(sessionCacheFactory);
 	
         this.sessionFactory = sessionFactory;
 
-        this.contextCache = new TypeCheckCache<DirContextOperations>(DirContextOperations.class, Optional.ofNullable(contextCacheFactory.getCache()).orElse(new NoCache()));
+        this.contextCache = new TypeSafeCache<DirContextOperations>(DirContextOperations.class, Optional.ofNullable(contextCacheFactory.getCache()).orElse(new NoCache()));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class SpringSessionImpl extends SessionImpl  {
         return new SpringOperationsImpl<>(this, persistentClass);
     }
     
-    public TypeCheckCache<DirContextOperations> getContextCache() {
+    public TypeSafeCache<DirContextOperations> getContextCache() {
         return contextCache;
     }
 

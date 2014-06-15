@@ -36,10 +36,12 @@ import javax.naming.directory.SearchControls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import fr.mtlx.odm.cache.TypeSafeCache;
+
 public abstract class OperationsImpl<T> implements Operations<T> {
 
     public static final String[] RETURN_NO_ATTRIBUTES = new String[] {};
-    
+
     private static final Logger log = LoggerFactory.getLogger(OperationsImpl.class);
 
     protected final Class<T> persistentClass;
@@ -47,98 +49,103 @@ public abstract class OperationsImpl<T> implements Operations<T> {
     protected final ClassMetadata<T> metadata;
 
     private final SessionImpl session;
+    
+    protected final TypeSafeCache<T> entryCache;
 
     public OperationsImpl(final SessionImpl session, final Class<T> persistentClass) {
-	this.persistentClass = checkNotNull(persistentClass);
+        this.persistentClass = checkNotNull(persistentClass);
 
-	this.session = checkNotNull(session);
+        this.session = checkNotNull(session);
 
-	this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
+        this.metadata = session.getSessionFactory().getClassMetadata(persistentClass);
+        
+        entryCache = new TypeSafeCache<>(persistentClass, session.getCache());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T lookup(Name dn) throws javax.naming.NameNotFoundException {
-	checkNotNull(dn);
+        checkNotNull(dn);
 
-	if (log.isDebugEnabled()) {
-	    log.debug("lookup for {}", dn);
-	}
+        if (log.isDebugEnabled()) {
+            log.debug("lookuping for {}", dn);
+        }
+        
+        final Object retval = getSession().getFromCacheStack(persistentClass, dn).orElseGet(() -> {
+            T obj = doLookup(dn);
 
-	Object retval = getSession().getFromCache(dn).orElseGet(() -> {
-	    Object obj = doLookup(dn);
+            entryCache.store(dn, obj);
+            
+            getSession().getSessionFactory().getCache().store(dn, obj);
 
-	    getSession().getSessionFactory().getCache().store(dn, obj);
+            return obj;
+        });
 
-	    return obj;
+        if (persistentClass.isInstance(retval)) {
+            return (T) retval;
+        }
 
-	});
-
-	if (persistentClass.isInstance(retval)) {
-	    return (T) retval;
-	}
-
-	throw new ClassCastException(String.format("Cannot cast %s to %s while looking up for %s", retval.getClass(),
-		persistentClass, dn));
+        throw new ClassCastException(String.format("Cannot cast %s to %s while looking up for %s", retval.getClass(),
+                persistentClass, dn));
     }
 
     @Override
     public T lookupByExample(T example) {
-	throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public SearchCriteriaImpl<T> search(Name base, SearchControls controls) {
-	return new SearchCriteriaImpl<>(this, base, controls);
+        return new SearchCriteriaImpl<>(this, base, controls);
     }
 
     @Override
     public SearchCriteriaImpl<T> search(Name base) {
-	return new SearchCriteriaImpl<>(this, base);
+        return new SearchCriteriaImpl<>(this, base);
     }
 
     public abstract List<T> search(final Name base, final SearchControls controls, final String filter)
             throws javax.naming.SizeLimitExceededException;
 
     public abstract long count(final Name base, final SearchControls controls, final String filter)
-	    throws javax.naming.SizeLimitExceededException;
+            throws javax.naming.SizeLimitExceededException;
 
     public abstract Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls);
 
     public SessionImpl getSession() {
-	return session;
+        return session;
     }
 
     protected final ClassMetadata<T> getMetadata() {
-	return metadata;
+        return metadata;
     }
 
     // hook
-    protected abstract @Nonnull Object doLookup(@Nonnull final Name dn);
+    protected abstract @Nonnull T doLookup(@Nonnull final Name dn);
 
     @Override
     public void unbind(final T persistentObject) {
-	Name dn;
+        Name dn;
 
-	dn = new ClassAssistant<>(metadata).getIdentifier(persistentObject);
+        dn = new ClassAssistant<>(metadata).getIdentifier(persistentObject);
 
-	if (!getSession().getCache().contains(dn)) {
-	    throw new IllegalArgumentException("not a persistent object");
-	}
+        if (!getSession().getCache().contains(dn)) {
+            throw new IllegalArgumentException("not a persistent object");
+        }
 
-	doUnbind(dn);
+        doUnbind(dn);
 
-	getSession().getCache().remove(dn);
+        getSession().getCache().remove(dn);
     }
-    
+
     protected abstract void doUnbind(Name dn);
 
     protected final void prePersist(final T transientObject) {
-	for (final Method method : getMetadata().prepersistMethods()) {
-	    try {
-		method.invoke(transientObject);
-	    } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-	    }
-	}
+        for (final Method method : getMetadata().prepersistMethods()) {
+            try {
+                method.invoke(transientObject);
+            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+            }
+        }
     }
 }

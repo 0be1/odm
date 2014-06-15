@@ -32,11 +32,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ldap.SizeLimitExceededException;
@@ -54,10 +56,12 @@ import com.google.common.collect.Sets;
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
+import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.OperationsImpl;
-import fr.mtlx.odm.cache.TypeCheckCache;
+import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.utils.TypeCheckConverter;
+
 import org.springframework.ldap.core.ContextMapper;
 
 public class SpringOperationsImpl<T> extends OperationsImpl<T> {
@@ -73,7 +77,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     private final TypeCheckConverter<T> typeChecker = new TypeCheckConverter<>(persistentClass);
 
     private final TypeCheckConverter<ClassMetadata<? extends T>> metadataChecker;
-
+    
     public SpringOperationsImpl(final SpringSessionImpl session, final Class<T> persistentClass) {
         super(session, persistentClass);
 
@@ -105,7 +109,7 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
         operations.bind(context);
 
-        getSession().getCache().store(dn, context);
+        getSession().getContextCache().store(dn, context);
     }
 
     @Override
@@ -122,19 +126,14 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
     @Override
     protected T doLookup(Name dn) {
-        T entry;
-
-        DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
+        final DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
 
         final MappingContextMapper mapper = new MappingContextMapper(assistant);
 
-        // XXX : il faut stocker le context dans le cache avant de faire le
-        // mapping !
+        // XXX : il faut stocker le context dans le cache avant de faire le mapping !
         getSession().getContextCache().store(dn, context);
 
-        entry = mapper.doMapFromContext(context);
-
-        return entry;
+        return mapper.doMapFromContext(context);
     }
 
     @Override
@@ -148,16 +147,24 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
 
         final SpringSessionImpl session = getSession();
 
-        final TypeCheckCache<DirContextOperations> cache = session.getContextCache();
+        final TypeSafeCache<DirContextOperations> contextCache = session.getContextCache();
 
-        ContextMapper<T> cm = new AbstractContextMapper<T>() {
+        final ContextMapper<T> cm = new AbstractContextMapper<T>() {
             @Override
             protected T doMapFromContext(final DirContextOperations ctx) {
                 final Name dn = ctx.getDn();
 
-                cache.store(dn, ctx);
+                contextCache.store(dn, ctx);
 
-                final Object object = session.getFromCache(dn).orElse(contextMapper.doMapFromContext(ctx));
+                final Object object = session.getFromCacheStack(persistentClass, dn).orElseGet( () -> {
+                    
+                   T entry = contextMapper.doMapFromContext(ctx);
+                
+                   entryCache.store(dn, entry);
+                     
+                   return entry;
+                    
+                });
 
                 return typeChecker.convert(object);
             }
@@ -182,9 +189,8 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     }
 
     private void mergeObjectClasses(final DirContextOperations context) {
-        final Set<String> ctxObjectClasses = Sets.newHashSet(
-                Optional.ofNullable(context.getStringAttributes("objectClass")).orElse(RETURN_NO_ATTRIBUTES)
-        );
+        final Set<String> ctxObjectClasses = Sets.newHashSet(Optional.ofNullable(context.getStringAttributes("objectClass"))
+                .orElse(RETURN_NO_ATTRIBUTES));
 
         final Set<String> mdObjectClasses = Sets.newHashSet(metadata.getObjectClassHierarchy());
 
@@ -193,30 +199,32 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         }
     }
 
-    private void mapToContext(final T transientObject,
-            final DirContextOperations context) {
+    private void mapToContext(final T transientObject, final DirContextOperations context) {
 
         mergeObjectClasses(context);
 
         for (String propertyName : metadata.getProperties()) {
-            final AttributeMetadata ameta = metadata
-                    .getAttributeMetadata(propertyName);
+            final AttributeMetadata ameta = metadata.getAttributeMetadata(propertyName);
 
-            final Converter converter = getSession().getSyntaxConverter(ameta
-                    .getSyntax());
+            assert ameta != null;
+            
+            final Converter converter;
+            try {
+                converter = getSession().getSyntaxConverter(ameta.getSyntax());
+            } catch (MappingException e) {
+                assert false;
+                continue;
+            }
 
             final String attributeId = ameta.getAttirbuteName();
 
             if (ameta.isMultivalued()) {
-                final Collection<?> values = (Collection<?>) assistant
-                        .getValue(transientObject, propertyName);
+                final Collection<?> values = (Collection<?>) assistant.getValue(transientObject, propertyName);
 
                 if (values != null) {
                     for (Object value : values) {
                         if (value != null) {
-                            context.addAttributeValue(
-                                    attributeId,
-                                    converter.toDirectory(value));
+                            context.addAttributeValue(attributeId, converter.toDirectory(value));
                         }
                     }
                 } else {
@@ -225,13 +233,10 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
                 }
             } else {
 
-                final Object currentValue = converter.toDirectory(assistant
-                        .getValue(transientObject, propertyName));
+                final Object currentValue = converter.toDirectory(assistant.getValue(transientObject, propertyName));
 
-                final Object persistedValue = converter
-                        .fromDirectory(context
-                                .getObjectAttribute(attributeId));
-                
+                final Object persistedValue = converter.fromDirectory(context.getObjectAttribute(attributeId));
+
                 mergeValue(context, attributeId, currentValue, persistedValue);
 
             }
@@ -241,17 +246,14 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
     private void mergeValue(DirContextOperations context, String attributeId, Object currentValue, Object persistedValue) {
         if (persistedValue != null && currentValue != null) {
             if (!persistedValue.equals(currentValue)) {
-                context.removeAttributeValue(attributeId,
-                        persistedValue);
+                context.removeAttributeValue(attributeId, persistedValue);
 
                 context.addAttributeValue(attributeId, currentValue);
             }
         } else if (persistedValue != null) {
-            context.removeAttributeValue(attributeId,
-                    persistedValue);
+            context.removeAttributeValue(attributeId, persistedValue);
         } else if (currentValue != null) {
-            context.removeAttributeValue(attributeId,
-                    persistedValue); // null
+            context.removeAttributeValue(attributeId, persistedValue); // null
             context.addAttributeValue(attributeId, currentValue);
         }
     }
@@ -348,30 +350,28 @@ public class SpringOperationsImpl<T> extends OperationsImpl<T> {
         protected T doMapFromContext(final DirContextOperations ctx) {
             final T entry;
             final Name dn = ctx.getDn();
-            
+
             try {
                 entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
 
                 assistant.setIdentifier(entry, dn);
-            } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+            } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException
+                    | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
 
-            getSession().getCache().store(dn, Optional.of(entry));
-            
             return entry;
         }
     }
 
-    private T dirContextObjectFactory(final DirContextOperations context)
-            throws ClassNotFoundException, InstantiationException,
-            InvalidNameException, IllegalAccessException, InvocationTargetException {
+    private T dirContextObjectFactory(final DirContextOperations context) throws ClassNotFoundException,
+            InstantiationException, InvalidNameException, IllegalAccessException, InvocationTargetException {
         final String[] objectClasses = context.getStringAttributes("objectClass");
 
         assert objectClasses != null && objectClasses.length > 0;
 
         SpringSessionFactoryImpl sessionFactory = getSession().getSessionFactory();
-                
+
         Class<? extends T> realPersistentClass;
 
         try {
