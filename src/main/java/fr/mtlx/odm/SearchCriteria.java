@@ -45,9 +45,6 @@ public interface SearchCriteria<T> {
 
     T unique() throws NonUniqueResultException;
     
-    
-    
-
     SearchCriteriaImpl<T> setControls(SearchControls controls);
 
     T lookupByExample(T example);

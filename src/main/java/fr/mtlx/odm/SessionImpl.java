@@ -39,28 +39,6 @@ import fr.mtlx.odm.spring.SpringSessionImpl;
 
 public abstract class SessionImpl implements Session {
 
-    public static SearchControls copySearchControls(final SearchControls controls) {
-	final SearchControls retval = new SearchControls();
-
-	retval.setCountLimit(controls.getCountLimit());
-	retval.setDerefLinkFlag(controls.getDerefLinkFlag());
-	retval.setReturningObjFlag(false);
-	retval.setSearchScope(controls.getSearchScope());
-	retval.setTimeLimit(controls.getTimeLimit());
-
-	return retval;
-    }
-
-    public static SearchControls getDefaultSearchControls() {
-	final SearchControls retval = new SearchControls();
-
-	retval.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-	retval.setReturningObjFlag(false);
-
-	return retval;
-    }
-
     private final PersistentCache cache;
 
     public PersistentCache getCache() {

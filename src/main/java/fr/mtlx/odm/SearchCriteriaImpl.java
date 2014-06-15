@@ -58,7 +58,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
 
     private Name base;
 
-    private SearchControls controls;
+    private SearchControls controls = new SearchControls();
 
     private final Map<String, Collection> projections = Maps.newHashMap();
 
@@ -84,6 +84,8 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
         metadata = session.getSessionFactory().getClassMetadata(persistentClass);
         
         ops = session.getImplementor(persistentClass);
+        
+        controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
     }
 
     @Override
