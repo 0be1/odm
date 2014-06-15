@@ -24,11 +24,6 @@ package fr.mtlx.odm.spring;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
-import fr.mtlx.odm.SessionFactoryImpl;
-import fr.mtlx.odm.cache.EntityCache;
-import fr.mtlx.odm.cache.NoCache;
-import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.converters.DefaultConverters;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -40,6 +35,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.LdapTemplate;
 
+import fr.mtlx.odm.CacheFactory;
+import fr.mtlx.odm.ConcurentMapCacheFactory;
+import fr.mtlx.odm.NoCacheFactory;
+import fr.mtlx.odm.SessionFactoryImpl;
+import fr.mtlx.odm.cache.NoCache;
+import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.converters.DefaultConverters;
+
 @SuppressWarnings("serial")
 public class SpringSessionFactoryImpl extends SessionFactoryImpl implements InitializingBean {
 
@@ -48,12 +52,14 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
     private List<String> mappedClasses;
 
     private final LdapTemplate ldapTemplate;
-
-    public SpringSessionFactoryImpl(final ContextSource contextSource) {
-	this.contextSource = checkNotNull(contextSource);
-
-	this.ldapTemplate = new LdapTemplate(contextSource);
-    }
+    
+    private PersistentCache cache = new NoCache();
+    
+    private CacheFactory sessionCacheFactory = new ConcurentMapCacheFactory();
+    
+    private CacheFactory contextCacheFactory = new ConcurentMapCacheFactory();
+    
+    private CacheFactory secondLevelCacheFactory = new NoCacheFactory();
 
     public ContextSource getContextSource() {
 	return contextSource;
@@ -76,6 +82,10 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 	for (String className : mappedClasses) {
 	    addClass(className);
 	}
+	
+	if (secondLevelCacheFactory != null) {
+	    cache = checkNotNull(secondLevelCacheFactory.getCache());
+	}
 
 	initialize();
     }
@@ -95,15 +105,29 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 
     @Override
     public SpringSessionImpl openSession() {
-	return new SpringSessionImpl(this);
+	return new SpringSessionImpl(this, sessionCacheFactory, contextCacheFactory);
     }
 
     @Override
-    public <T> EntityCache<T> getCacheFor(Class<T> persistentClass) {
-	return new NoCache<T>();
+    public PersistentCache getCache() {
+	return cache;
+    }
+    
+    public void setSessionCacheFactory(CacheFactory sessionCacheFactory) {
+        this.sessionCacheFactory = sessionCacheFactory;
     }
 
-    @Override
-    public void clear() {
+    public void setContextCacheFactory(CacheFactory contextCacheFactory) {
+        this.contextCacheFactory = contextCacheFactory;
+    }
+
+    public void setSecondLevelCacheFactory(CacheFactory secondLevelCacheFactory) {
+        this.secondLevelCacheFactory = secondLevelCacheFactory;
+    }
+
+    public SpringSessionFactoryImpl(final ContextSource contextSource) {
+	this.contextSource = checkNotNull(contextSource);
+
+	this.ldapTemplate = new LdapTemplate(contextSource);
     }
 }

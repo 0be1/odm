@@ -24,19 +24,32 @@ package fr.mtlx.odm;
  * #L%
  */
 import static com.google.common.base.Preconditions.checkNotNull;
-import fr.mtlx.odm.cache.EhCacheManager;
 import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Ehcache;
+import fr.mtlx.odm.cache.EhCacheCache;
+import fr.mtlx.odm.cache.PersistentCache;
 
-public class EhCacheFactory extends CacheFactory {
+public class EhCacheFactory implements CacheFactory {
 
     private final CacheManager cacheManager;
+    
+    private final String cacheName;
 
-    public EhCacheFactory(final CacheManager cacheManager) {
+    public EhCacheFactory(final String name, final CacheManager cacheManager) {
         this.cacheManager = checkNotNull(cacheManager, "cacheManager is null");
+        
+        this.cacheName = name;
     }
 
     @Override
-    fr.mtlx.odm.cache.CacheManager getCache(final SessionFactoryImpl sessionFactory, final String region) {
-        return new EhCacheManager(sessionFactory, cacheManager, region);
+    public PersistentCache getCache() {
+	if (!cacheManager.cacheExists(cacheName) )
+	    cacheManager.addCache(cacheName); 
+
+	Ehcache cache = cacheManager.getEhcache(cacheName);
+	
+	assert cache != null;
+	
+	return new EhCacheCache(cache); 
     }
 }

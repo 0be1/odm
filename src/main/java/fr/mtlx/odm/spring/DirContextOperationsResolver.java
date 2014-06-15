@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 
+import javax.annotation.Nullable;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -36,116 +37,112 @@ class DirContextOperationsResolver implements ContextResolver {
 
     private final Session session;
 
-    DirContextOperationsResolver(final DirContextOperations context,
-            final ClassMetadata<?> metadata, final Session session) {
-        this.metadata = checkNotNull(metadata, "metadata is null");
+    DirContextOperationsResolver(final DirContextOperations context, final ClassMetadata<?> metadata, final Session session) {
+	this.metadata = checkNotNull(metadata, "metadata is null");
 
-        this.session = checkNotNull(session, "session is null");
+	this.session = checkNotNull(session, "session is null");
 
-        attributes = context.getAttributes();
+	attributes = context.getAttributes();
     }
 
     private Attribute getAttribute(final AttributeMetadata metadata) {
-        final Set<String> names = Sets.newLinkedHashSet();
+	final Set<String> names = Sets.newLinkedHashSet();
 
-        names.add(metadata.getAttirbuteName());
+	names.add(metadata.getAttirbuteName());
 
-        names.addAll(Arrays.asList(metadata.getAttributeAliases()));
+	names.addAll(Arrays.asList(metadata.getAttributeAliases()));
 
-        for (final String alias : names) {
-            final Attribute attr = attributes.get(alias);
+	for (final String alias : names) {
+	    final Attribute attr = attributes.get(alias);
 
-            if (attr != null) {
-                return attr;
-            }
-        }
+	    if (attr != null) {
+		return attr;
+	    }
+	}
 
-        return null;
+	return null;
     }
 
     @Override
-    public Object getProperty(final String name) throws NamingException,
-            InstantiationException, IllegalAccessException {
-        final Attribute attr;
-        final AttributeMetadata attributeMetadata = metadata
-                .getAttributeMetadata(name);
+    public Object getProperty(final String name) throws NamingException, InstantiationException, IllegalAccessException {
+	final Attribute attr;
+	final AttributeMetadata attributeMetadata = metadata.getAttributeMetadata(name);
 
-        if (attributeMetadata == null) {
-            throw new InstantiationException("the property " + name
-                    + " is not mapped to a directory attribute");
-        }
+	if (attributeMetadata == null) {
+	    throw new InstantiationException("the property " + name + " is not mapped to a directory attribute");
+	}
 
-        final Converter converter = attributeMetadata.getSyntaxConverter();
+	final Converter converter = attributeMetadata.getSyntaxConverter();
 
-        if (log.isDebugEnabled()) {
-            log.debug("attribute {} with syntax {} matching type {}",
-                    attributeMetadata.getAttirbuteName(),
-                    attributeMetadata.getSyntax(), converter.objectType());
-        }
+	if (log.isDebugEnabled()) {
+	    log.debug("attribute {} with syntax {} matching type {}", attributeMetadata.getAttirbuteName(),
+		    attributeMetadata.getSyntax(), converter.objectType());
+	}
 
-        attr = getAttribute(attributeMetadata);
+	attr = getAttribute(attributeMetadata);
 
-        if (attr == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("attribute {} not found", name);
-            }
+	if (attr == null) {
+	    if (log.isDebugEnabled()) {
+		log.debug("attribute {} not found", name);
+	    }
 
-            return null;
-        }
+	    return null;
+	}
 
-        if (attributeMetadata.isMultivalued()) {
-            final Collection internalValues = attributeMetadata
-                    .newCollectionInstance();
+	if (attributeMetadata.isMultivalued()) {
+	    final Collection internalValues = attributeMetadata.newCollectionInstance();
 
-            final NamingEnumeration<?> values = attr.getAll();
+	    final NamingEnumeration<?> values = attr.getAll();
 
-            while (values.hasMoreElements()) {
-                final Object internalValue = converter.fromDirectory(values
-                        .nextElement());
+	    while (values.hasMoreElements()) {
+		final Object internalValue = converter.fromDirectory(values.nextElement());
 
-                internalValues.add(convert(internalValue, attributeMetadata));
-            }
+		internalValues.add(convert(internalValue, attributeMetadata));
+	    }
 
-            return internalValues;
-        } else {
-            if (attr.size() > 1) {
-                throw new ConversionException(String.format(
-                        "multiple values found for single valued attribute %s",
-                        attributeMetadata.getAttirbuteName()));
-            }
+	    return internalValues;
+	} else {
+	    if (attr.size() > 1) {
+		throw new ConversionException(String.format("multiple values found for single valued attribute %s",
+			attributeMetadata.getAttirbuteName()));
+	    }
 
-            final Object internalValue = converter.fromDirectory(attr.get());
+	    final Object internalValue = converter.fromDirectory(attr.get());
 
-            return convert(internalValue, attributeMetadata);
-        }
+	    return convert(internalValue, attributeMetadata);
+	}
     }
 
-    private Object convert(Object from, AttributeMetadata metadata) {
-        if (from == null) {
-            return null;
-        } // XXX
+    private @Nullable Object convert(final Object from, final AttributeMetadata metadata) {
+	if (from == null) {
+	    return null;
+	} // XXX
 
-        Class<?> objectClass = from.getClass();
+	Class<?> objectClass = from.getClass();
 
-        if (metadata.getObjectType().equals(objectClass)) {
-            return from;
-        }
-        
-        Converter converter = metadata.getAttributeConverter();
+	if (metadata.getObjectType().equals(objectClass)) {
+	    return from;
+	}
 
-        if (converter != null)
-            return converter.fromDirectory(from);
-        
-        if (session.getSessionFactory().isPersistentClass(metadata.getObjectType())) {
-            return new EntryResolverConverter<>(metadata.getObjectType(), session);
-        }
+	Converter converter = metadata.getAttributeConverter();
 
-        throw new ConvertionException(String.format("%s is not a persistent type.", metadata.getObjectType() ));
-       
+	if (converter == null) {
+	    if (session.getSessionFactory().isPersistentClass(metadata.getObjectType())) {
+		converter = new EntryResolverConverter<>(metadata.getObjectType(), session);
+	    } else {
+		throw new ConvertionException(String.format("%s is not a persistent type.", metadata.getObjectType()));
+	    }
+	}
+	 
+	Object retval = converter.fromDirectory(from);
+	
+	assert retval == null || metadata.getObjectType().isInstance(retval);
+		
+	return retval;
     }
 
     @Override
-    public void setProperty(String name) throws NamingException, InstantiationException, IllegalAccessException {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void setProperty(String name, @Nullable final Object value) throws NamingException, InstantiationException, IllegalAccessException {
+	throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -1,18 +1,20 @@
 package fr.mtlx.odm;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static java.lang.reflect.Modifier.isAbstract;
+import static org.springframework.util.ReflectionUtils.doWithMethods;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
+import javax.persistence.PrePersist;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import static java.lang.String.format;
-import java.lang.reflect.Method;
-import static java.lang.reflect.Modifier.isAbstract;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import javax.persistence.PrePersist;
-import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public class ClassMetadataBuilder {
 

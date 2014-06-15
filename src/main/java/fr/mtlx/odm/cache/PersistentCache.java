@@ -1,5 +1,3 @@
-package fr.mtlx.odm.spring;
-
 /*
  * #%L
  * fr.mtlx.odm
@@ -24,15 +22,10 @@ package fr.mtlx.odm.spring;
  * #L%
  */
 
-import java.util.Optional;
+package fr.mtlx.odm.cache;
 
-import org.springframework.ldap.core.DirContextOperations;
+import javax.naming.Name;
 
-import fr.mtlx.odm.cache.NameKeyCache;
 
-public class ContextMapCache extends NameKeyCache<DirContextOperations> {
-
-    public Optional<DirContextOperations> store(DirContextOperations ctx) {
-	return store(ctx.getDn(), Optional.of(ctx));
-    }
+public interface PersistentCache extends Cache<Name, Object> {
 }

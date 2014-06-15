@@ -25,21 +25,30 @@ package fr.mtlx.odm;
  */
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+
 import static java.lang.reflect.Modifier.isStatic;
+
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+
 import static java.util.Arrays.asList;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
 import javax.naming.ldap.LdapName;
+
 import static org.apache.commons.beanutils.BeanUtils.getProperty;
+
 import org.apache.commons.beanutils.PropertyUtils;
+
 import static org.apache.commons.beanutils.PropertyUtils.getSimpleProperty;
 import static org.springframework.util.ReflectionUtils.doWithFields;
 
@@ -61,12 +70,14 @@ public class ClassAssistant<T> {
         }
     }
 
-    public LdapName getIdentifier(Object object) throws InvalidNameException,
-            IllegalAccessException, InvocationTargetException,
-            NoSuchMethodException {
+    public LdapName getIdentifier(Object object) {
         String identifier = metadata.getIdentifierPropertyName();
 
-        return new LdapName(getProperty(object, identifier));
+        try {
+	    return new LdapName(getProperty(object, identifier));
+	} catch (InvalidNameException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+	    throw new RuntimeException(e);
+	}
     }
 
     public boolean isCollection(Type type) {

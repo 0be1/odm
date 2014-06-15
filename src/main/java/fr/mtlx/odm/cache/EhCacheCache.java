@@ -33,30 +33,47 @@ import javax.naming.Name;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 
-public class EntityEhCache<T> implements EntityCache<T> {
+public class EhCacheCache implements PersistentCache {
     private final Ehcache cache;
 
-    public EntityEhCache(final Ehcache cache) {
+    public EhCacheCache(final Ehcache cache) {
 	this.cache = checkNotNull(cache, "cache is null");
     }
 
     @Override
-    public Optional<T> store(Name key, Optional<T> value) {
-	cache.put(new Element(checkNotNull(key, "key is null"), checkNotNull(value, "context is null")));
+    public Optional<Object> store(final Name key, final Object value) {
+	final Element element = new Element(checkNotNull(key, "key is null"), checkNotNull(value, "context is null"));
 
-	return value;
+	cache.acquireWriteLockOnKey(key);
+
+	try {
+	    final Element prevElement = cache.replace(element);
+
+	    if (prevElement != null) {
+		Object prevValue = (Object) prevElement.getObjectValue();
+
+		return Optional.of(prevValue);
+	    } else {
+		cache.put(element);
+
+		return Optional.empty();
+	    }
+	} finally {
+	    cache.releaseWriteLockOnKey(key);
+	}
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Optional<T> retrieve(Name key) {
+    public Optional<Object> retrieve(Name key) {
 	final Element element = cache.get(key);
 
 	if (element != null) {
-	    return (Optional<T>) element.getObjectValue();
+	    Object value = element.getObjectValue();
+	    
+	    return Optional.of(value);
 	}
 
-	return null;
+	return Optional.empty();
     }
 
     @Override

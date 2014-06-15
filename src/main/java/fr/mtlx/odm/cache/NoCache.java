@@ -24,32 +24,41 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
 import javax.naming.Name;
 
-public class NoCache<T> implements EntityCache<T> {
-	@Override
-	public Optional<T> store(Name key, Optional<T> object) {
-		return null;
-	}
 
-	@Override
-	public Optional<T> retrieve(Name key) {
-		return null;
-	}
+public class NoCache implements PersistentCache {
+    @Override
+    public Optional<Object> store(@Nonnull final Name key, @Nonnull final Object value) {
+	checkNotNull(key);
+	checkNotNull(value);
+	return Optional.empty();
+    }
 
-	@Override
-	public boolean remove(Name key) {
-		return false;
-	}
+    @Override
+    public Optional<Object> retrieve(@Nonnull final Name key) {
+	checkNotNull(key);
+	return Optional.empty();
+    }
 
-	@Override
-	public void clear() {
-	}
+    @Override
+    public boolean remove(@Nonnull final Name key) {
+	checkNotNull(key);
+	return false;
+    }
 
-	@Override
-	public boolean contains(Name key) {
-		return false;
-	}
+    @Override
+    public void clear() {
+    }
+
+    @Override
+    public boolean contains(@Nonnull final Name key) {
+	checkNotNull(key);
+	return false;
+    }
 }
