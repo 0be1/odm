@@ -27,6 +27,7 @@ package fr.mtlx.odm.it;
 import java.io.File;
 
 import javax.naming.InvalidNameException;
+import javax.naming.NameNotFoundException;
 import javax.naming.ldap.LdapName;
 
 import org.apache.directory.server.ldap.LdapServer;
@@ -42,6 +43,7 @@ import fr.mtlx.odm.Session;
 import fr.mtlx.odm.SessionFactory;
 import fr.mtlx.odm.spring.SpringSessionFactoryImpl;
 import fr.mtlx.odm.model.Person;
+
 import java.io.IOException;
 
 
@@ -86,7 +88,7 @@ public class TestIT
 	}
 	
 	@Test
-	public void test() throws InvalidNameException
+	public void test() throws InvalidNameException, NameNotFoundException
 	{
 		Person person = new Person();
 		

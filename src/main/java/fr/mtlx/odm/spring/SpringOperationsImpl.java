@@ -26,18 +26,16 @@ package fr.mtlx.odm.spring;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 
 import javax.naming.InvalidNameException;
 import javax.naming.Name;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
@@ -47,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ldap.SizeLimitExceededException;
 import org.springframework.ldap.control.PagedResultsCookie;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
+import org.springframework.ldap.core.ContextMapper;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.DirContextProcessor;
@@ -54,332 +53,323 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.AttributeMetadata;
 import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.MappingException;
-import fr.mtlx.odm.OperationsImpl;
+import fr.mtlx.odm.OperationsImplementation;
+import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.converters.ConvertionException;
 import fr.mtlx.odm.utils.TypeCheckConverter;
 
-public class SpringOperationsImpl<T> extends OperationsImpl<T> {
+public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
+
+    public static final String[] RETURN_NO_ATTRIBUTES = new String[] {};
 
     private static final Logger log = LoggerFactory.getLogger(SpringOperationsImpl.class);
+    
+    private static final DirContextProcessor nullDirContextProcessor = new DirContextProcessor() {
+        @Override
+        public void postProcess(DirContext ctx) throws NamingException {
+            // Do nothing
+        }
 
-    private final MappingContextMapper contextMapper;
+        @Override
+        public void preProcess(DirContext ctx) throws NamingException {
+            // Do nothing
+        }
+    };
+    
+    private final SpringSessionImpl session;
+    
+    private final ClassMetadata<T> metadata;
 
-    private final ClassAssistant<T> assistant;
+    private final transient MappingContextMapper contextMapper;
+    
+    private final transient Class<T> persistentClass;
 
-    private final LdapOperations operations;
+    private final transient ClassAssistant<T> assistant;
 
-    private final TypeCheckConverter<T> typeChecker = new TypeCheckConverter<T>(persistentClass);
+    private final transient LdapOperations operations;
 
-    private final TypeCheckConverter<ClassMetadata<? extends T>> metadataConverter;
+    private final transient TypeCheckConverter<T> typeChecker;
 
-    public SpringOperationsImpl(final SpringSessionImpl session, final Class<T> persistentClass) {
-	super(session, persistentClass);
-	
-	this.assistant = new ClassAssistant<>(metadata);
+    private final transient TypeCheckConverter<ClassMetadata<? extends T>> metadataChecker;
 
-	this.contextMapper = new MappingContextMapper(assistant);
+    public SpringOperationsImpl(final SpringSessionImpl session, final ClassMetadata<T> metadata) {
+        this.session = checkNotNull(session);
+       
+        this.metadata = checkNotNull(metadata);
+        
+        this.assistant = new ClassAssistant<>(metadata);
 
-	this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
+        this.contextMapper = new MappingContextMapper();
 
-	metadataConverter = new TypeCheckConverter<ClassMetadata<? extends T>>(metadata.getClass());
+        this.operations = new LdapTemplate(session.getSessionFactory().getContextSource());
+        
+        this.persistentClass = metadata.getPersistentClass();
+        
+        this.typeChecker = new TypeCheckConverter<>(persistentClass);
+
+        this.metadataChecker = new TypeCheckConverter<>(metadata.getClass());
     }
 
     @Override
-    public SpringSessionImpl getSession() {
-	return (SpringSessionImpl) super.getSession();
-    }
+    public Name doBind(T transientObject) throws NameNotFoundException {
+        Name dn;
 
-    @Override
-    public void bind(T transientObject) {
-	Name dn;
+        dn = assistant.getIdentifier(transientObject);
 
-	prePersist(checkNotNull(transientObject));
+        DirContextOperations context = new DirContextAdapter(dn);
 
-	dn = assistant.getIdentifier(transientObject);
+        mapToContext(transientObject, context);
 
-	DirContextOperations context = new DirContextAdapter(dn);
+        operations.bind(context);
 
-	mapToContext(transientObject, context);
-
-	operations.bind(context);
-
-	getSession().getCache().store(dn, context);
-    }
-
-    @Override
-    public void modify(T persistentObject) {
-	throw new UnsupportedOperationException("not implemented yet");
+        session.getContextCache().store(dn, context);
+        
+        return dn;
     }
 
     @Override
     public void doUnbind(final Name dn) {
-	operations.unbind(dn);
+        operations.unbind(dn);
 
-	getSession().getContextCache().remove(dn);
+        session.getContextCache().remove(dn);
     }
 
     @Override
-    protected T doLookup(Name dn) {
-	T entry;
+    public T doLookup(Name dn) {
+        final DirContextOperations context = session.getContextCache().retrieve(dn).orElse(doContextLookup(dn));
 
-	DirContextOperations context = getSession().getContextCache().retrieve(dn).orElse(doContextLookup(dn));
+        // XXX : il faut stocker le context dans le cache avant de faire le
+        // mapping !
+        session.getContextCache().store(dn, context);
 
-	final MappingContextMapper mapper = new MappingContextMapper(assistant);
-
-	// XXX : il faut stocker le context dans le cache avant de faire le
-	// mapping !
-	getSession().getContextCache().store(dn, context);
-
-	entry = mapper.doMapFromContext(context);
-
-	return entry;
+        return contextMapper.doMapFromContext(context);
     }
-
+    
     @Override
-    public List<T> search(final Name base, final SearchControls controls, final String filter)
-	    throws javax.naming.SizeLimitExceededException {
-	return search(base, controls, filter, Optional.empty());
-    }
-
-    public List<T> search(final Name base, final SearchControls controls, final String filter,
-	    final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
-	final CachingContextMapper<T> cm = new CachingContextMapper<>();
-
-	try {
-	    operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
-	} catch (SizeLimitExceededException ex) {
-	    throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
-	}
-
-	List<T> results = new ArrayList<>();
-
-	for (DirContextOperations ctx : cm.getContextQueue()) {
-
-	    Object object = getSession().getFromCache(ctx.getDn()).orElse(contextMapper.doMapFromContext(ctx));
-
-	    results.add(typeChecker.convert(object));
-	}
-
-	return results;
+    public Iterable<T> doSearch(Name base, SearchControls controls, String encodeFilter) throws javax.naming.SizeLimitExceededException {
+        return doSearch(base, controls, encodeFilter, Optional.of(nullDirContextProcessor));
     }
 
     @Override
     public long count(final Name base, final SearchControls controls, final String filter) {
-	controls.setReturningAttributes(RETURN_NO_ATTRIBUTES);
+        controls.setReturningAttributes(RETURN_NO_ATTRIBUTES);
 
-	CountContextMapper cm = new CountContextMapper();
+        CountContextMapper cm = new CountContextMapper();
 
-	operations.search(base, filter, controls, cm, nullDirContextProcessor);
+        operations.search(base, filter, controls, cm, nullDirContextProcessor);
 
-	return cm.getCount();
+        return cm.getCount();
+    }
+    
+    @Override
+    public Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls) {
+
+        class PagedResultIterator implements Iterator<List<T>> {
+
+            private PagedResultsCookie cookie = null;
+
+            @Override
+            public boolean hasNext() {
+                return cookie == null || cookie.getCookie() != null;
+            }
+
+            @Override
+            public List<T> next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+
+                PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(pageSize, cookie);
+
+                try {
+                    List<T> results = doSearch(base, controls, filter, Optional.of(processor));
+
+                    cookie = processor.getCookie();
+
+                    return results;
+                } catch (javax.naming.SizeLimitExceededException ex) {
+                    throw new NoSuchElementException(ex.getExplanation());
+                }
+            }
+        }
+
+        return () -> new PagedResultIterator();
+    }
+    
+    private List<T> doSearch(final Name base, final SearchControls controls, final String filter,
+            final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
+
+        final TypeSafeCache<DirContextOperations> contextCache = session.getContextCache();
+
+        final ContextMapper<T> cm = new AbstractContextMapper<T>() {
+            @Override
+            protected T doMapFromContext(final DirContextOperations ctx) {
+                final Name dn = ctx.getDn();
+
+                contextCache.store(dn, ctx);
+
+                final Object object = session.getFromCacheStack(persistentClass, dn).orElseGet(() -> {
+
+                    T entry = contextMapper.doMapFromContext(ctx);
+
+                    return entry;
+                });
+
+                return typeChecker.convert(object);
+            }
+        };
+
+        try {
+            return operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
+        } catch (SizeLimitExceededException ex) {
+            throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
+        }
+    }
+
+    private void mergeObjectClasses(final DirContextOperations context) {
+        final Set<String> ctxObjectClasses = Sets.newHashSet(Optional.ofNullable(context.getStringAttributes("objectClass"))
+                .orElse(RETURN_NO_ATTRIBUTES));
+
+        final Set<String> mdObjectClasses = Sets.newHashSet(metadata.getObjectClassHierarchy());
+
+        for (String objectClass : Sets.difference(mdObjectClasses, ctxObjectClasses)) {
+            context.addAttributeValue("objectClass", objectClass);
+        }
     }
 
     private void mapToContext(final T transientObject, final DirContextOperations context) {
 
-	try {
-	    final Set<String> objectClasses = Sets.newHashSet();
+        mergeObjectClasses(context);
 
-	    final String[] objectClassesRaw = context.getStringAttributes("objectClass");
+        for (String propertyName : metadata.getProperties()) {
+            final AttributeMetadata ameta = metadata.getAttributeMetadata(propertyName);
 
-	    if (objectClassesRaw != null) {
-		objectClasses.addAll(Arrays.asList(objectClassesRaw));
-	    }
+            assert ameta != null;
 
-	    for (String objectClass : metadata.getObjectClassHierarchy()) {
-		if (!objectClasses.contains(objectClass))
-		    context.addAttributeValue("objectClass", objectClass);
-	    }
+            final Converter converter;
+            try {
+                converter = session.getSyntaxConverter(ameta.getSyntax());
+            } catch (MappingException e) {
+                assert false;
+                continue;
+            }
 
-	    for (String propertyName : metadata.getProperties()) {
-		final AttributeMetadata ameta = metadata.getAttributeMetadata(propertyName);
+            final String attributeId = ameta.getAttirbuteName();
 
-		final Converter converter = getSession().getSyntaxConverter(ameta.getSyntax());
+            if (ameta.isMultivalued()) {
+                final Collection<?> values = (Collection<?>) assistant.getValue(transientObject, propertyName);
 
-		if (ameta.isMultivalued()) {
-		    final Collection<?> values = (Collection<?>) assistant.getValue(transientObject, propertyName);
+                if (values != null) {
+                    for (Object value : values) {
+                        if (value != null) {
+                            context.addAttributeValue(attributeId, converter.toDirectory(value));
+                        }
+                    }
+                } else {
+                    // remove the attribute from the entry
+                    context.setAttributeValues(attributeId, null);
+                }
+            } else {
 
-		    if (values != null) {
-			for (Object value : values) {
-			    if (value != null) {
-				context.addAttributeValue(ameta.getAttirbuteName(), converter.toDirectory(value));
-			    }
-			}
-		    } else {
-			// remove the attribute from the entry
-			context.setAttributeValues(ameta.getAttirbuteName(), null);
-		    }
-		} else {
-		    final String attributeId = ameta.getAttirbuteName();
+                final Object currentValue = converter.toDirectory(assistant.getValue(transientObject, propertyName));
 
-		    final Object currentValue = converter.toDirectory(assistant.getValue(transientObject, propertyName));
+                final Object persistedValue = converter.fromDirectory(context.getObjectAttribute(attributeId));
 
-		    final Object persistedValue = converter.fromDirectory(context.getObjectAttribute(attributeId));
+                mergeValue(context, attributeId, currentValue, persistedValue);
+            }
+        }
+    }
 
-		    if (persistedValue != null && currentValue != null) {
-			if (!persistedValue.equals(currentValue)) {
-			    context.removeAttributeValue(attributeId, persistedValue);
+    private void mergeValue(DirContextOperations context, String attributeId, Object currentValue, Object persistedValue) {
+        if (persistedValue != null && currentValue != null) {
+            if (!persistedValue.equals(currentValue)) {
+                context.removeAttributeValue(attributeId, persistedValue);
 
-			    context.addAttributeValue(attributeId, currentValue);
-			}
-		    } else if (persistedValue != null) {
-			context.removeAttributeValue(attributeId, persistedValue);
-		    } else if (currentValue != null) {
-			context.removeAttributeValue(attributeId, persistedValue); // null
-			context.addAttributeValue(attributeId, currentValue);
-		    }
-		}
-	    }
-	} catch (MappingException | ConvertionException e) {
-	    throw new RuntimeException(e);
-	}
+                context.addAttributeValue(attributeId, currentValue);
+            }
+        } else if (persistedValue != null) {
+            context.removeAttributeValue(attributeId, persistedValue);
+        } else if (currentValue != null) {
+            context.removeAttributeValue(attributeId, persistedValue); // null
+            context.addAttributeValue(attributeId, currentValue);
+        }
     }
 
     private DirContextOperations doContextLookup(final Name dn) {
-	final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
+        final DirContextOperations ctx = operations.lookupContext(checkNotNull(dn, "dn is null"));
 
-	final Name _dn = ctx.getDn();
+        final Name _dn = ctx.getDn();
 
-	assert dn.equals(_dn) : "lookup DN does not match context DN";
+        assert dn.equals(_dn) : "lookup DN does not match context DN";
 
-	if (log.isDebugEnabled()) {
-	    log.debug("lookup context {} done", _dn);
-	}
+        if (log.isDebugEnabled()) {
+            log.debug("lookup context {} done", _dn);
+        }
 
-	return ctx;
+        return ctx;
     }
 
-    static class CountContextMapper extends AbstractContextMapper<Long> {
+    private static class CountContextMapper extends AbstractContextMapper<Long> {
 
-	private long cp;
+        private long cp;
 
-	CountContextMapper() {
-	    cp = 0;
-	}
+        CountContextMapper() {
+            cp = 0;
+        }
 
-	@Override
-	public Long doMapFromContext(DirContextOperations context) {
-	    cp++;
-	    return cp;
-	}
+        @Override
+        public Long doMapFromContext(DirContextOperations context) {
+            cp++;
+            return cp;
+        }
 
-	public long getCount() {
-	    return cp;
-	}
+        public long getCount() {
+            return cp;
+        }
     }
 
-    static final DirContextProcessor nullDirContextProcessor = new DirContextProcessor() {
-	@Override
-	public void postProcess(DirContext ctx) throws NamingException {
-	    // Do nothing
-	}
+    private class MappingContextMapper extends AbstractContextMapper<T> {
 
-	@Override
-	public void preProcess(DirContext ctx) throws NamingException {
-	    // Do nothing
-	}
-    };
+        @Override
+        protected T doMapFromContext(final DirContextOperations ctx) {
+            final T entry;
+            final Name dn = ctx.getDn();
 
-    @Override
-    public Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls) {
+            try {
+                entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
 
-	class PagedResultIterator implements Iterator<List<T>> {
+                metadata.getIdentifier().set(entry, dn);
+            } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException
+                    | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
 
-	    private PagedResultsCookie cookie = null;
-
-	    @Override
-	    public boolean hasNext() {
-		return cookie == null || cookie.getCookie() != null;
-	    }
-
-	    @Override
-	    public List<T> next() {
-		if (!hasNext()) {
-		    throw new NoSuchElementException();
-		}
-
-		PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(pageSize, cookie);
-
-		try {
-		    List<T> results = search(base, controls, filter, Optional.of(processor));
-
-		    cookie = processor.getCookie();
-
-		    return results;
-		} catch (javax.naming.SizeLimitExceededException ex) {
-		    throw new NoSuchElementException(ex.getExplanation());
-		}
-	    }
-	}
-
-	return () -> new PagedResultIterator();
+            return entry;
+        }
     }
 
-    class CachingContextMapper<T> extends AbstractContextMapper<T> {
+    private T dirContextObjectFactory(final DirContextOperations context) throws ClassNotFoundException,
+            InstantiationException, InvalidNameException, IllegalAccessException, InvocationTargetException {
+        final String[] objectClasses = context.getStringAttributes("objectClass");
 
-	private final Queue<DirContextOperations> queue = Lists.newLinkedList();
+        assert objectClasses != null && objectClasses.length > 0;
 
-	public Queue<DirContextOperations> getContextQueue() {
-	    return queue;
-	}
+        SpringSessionFactoryImpl sessionFactory = session.getSessionFactory();
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected T doMapFromContext(final DirContextOperations ctx) {
-	    getSession().getContextCache().store(ctx.getDn(), ctx);
+        Class<? extends T> realPersistentClass;
 
-	    queue.offer(ctx);
+        try {
+            realPersistentClass = metadataChecker.convert(sessionFactory.getClassMetadata(objectClasses)).getPersistentClass();
+        } catch (ClassNotFoundException e) {
+            realPersistentClass = metadata.getPersistentClass();
+        }
 
-	    return (T) ctx;
-	}
-    }
-
-    class MappingContextMapper extends AbstractContextMapper<T> {
-
-	private final ClassAssistant<T> assistant;
-
-	MappingContextMapper(final ClassAssistant<T> assistant) {
-	    this.assistant = checkNotNull(assistant);
-	}
-
-	@Override
-	protected T doMapFromContext(final DirContextOperations ctx) {
-	    final T entry;
-	    try {
-		entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
-
-		assistant.setIdentifier(entry, ctx.getDn());
-	    } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException e) {
-		throw new RuntimeException(e);
-	    }
-
-	    getSession().getCache().store(ctx.getDn(), Optional.of(entry));
-	    return entry;
-	}
-    }
-
-    private Object dirContextObjectFactory(final DirContextOperations context) throws InstantiationException,
-	    InvalidNameException, IllegalAccessException, InvocationTargetException {
-	final String[] objectClasses = context.getStringAttributes("objectClass");
-
-	assert objectClasses != null && objectClasses.length > 0;
-
-	Class<? extends T> realPersistentClass; 
-	
-	try {
-	    realPersistentClass =  metadataConverter.convert( getSession().getSessionFactory().getClassMetadata( objectClasses) ).getPersistentClass();
-	} catch (ClassNotFoundException e) {
-	    realPersistentClass = metadata.getPersistentClass();
-	}
-
-	return getSession().getSessionFactory().getProxyFactory(realPersistentClass, new Class[] {})
-		.getProxy(getSession(), context);
+        return sessionFactory.getProxyFactory(realPersistentClass, new Class<?>[0]).getProxy(session, context);
     }
 }

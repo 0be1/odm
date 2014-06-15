@@ -32,7 +32,10 @@ import javax.naming.directory.SearchControls;
 
 import fr.mtlx.odm.cache.NoCache;
 import fr.mtlx.odm.cache.PersistentCache;
+import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
+import fr.mtlx.odm.spring.SpringOperationsImpl;
+import fr.mtlx.odm.spring.SpringSessionImpl;
 
 public abstract class SessionImpl implements Session {
 
@@ -87,9 +90,8 @@ public abstract class SessionImpl implements Session {
 	getCache().clear();
     }
 
-    @SuppressWarnings("unchecked")
     private <T> Optional<Name> extractDn(T obj) {
-	final ClassMetadata<T> metadata = (ClassMetadata<T>) getSessionFactory().getClassMetadata(obj.getClass());
+	final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata((Class<T>) obj.getClass());
 
 	if (metadata == null) {
 	    return Optional.empty();
@@ -97,27 +99,27 @@ public abstract class SessionImpl implements Session {
 
 	return Optional.ofNullable(new ClassAssistant<T>(metadata).getIdentifier(obj));
     }
+    
+    public final <T> Optional<T> getFromCacheStack(final Class<T> clazz, final Name dn) {
+        final TypeSafeCache<T> sessionCache = new TypeSafeCache<>(clazz, getCache());
 
-    public final Optional<Object> getFromCache(final Name dn) {
-	final PersistentCache sessionCache = getCache();
+        if (sessionCache.contains(dn)) {
+            return sessionCache.retrieve(dn);
+        }
 
-	if (sessionCache.contains(dn)) {
-	    return sessionCache.retrieve(dn);
-	}
+        final TypeSafeCache<T> secondLevelcache = new TypeSafeCache<>(clazz, getSessionFactory().getCache());
 
-	final PersistentCache secondLevelcache = getSessionFactory().getCache();
+        if (secondLevelcache != null) {
+            final Optional<T> entry = secondLevelcache.retrieve(dn);
 
-	if (secondLevelcache != null) {
-	    Optional<Object> entry = secondLevelcache.retrieve(dn);
+            if (entry.isPresent()) {
+                sessionCache.store(dn, entry.get());
 
-	    if (entry.isPresent()) {
-		sessionCache.store(dn, entry.get());
+                return entry;
+            }
+        }
 
-		return entry;
-	    }
-	}
-
-	return Optional.empty();
+        return Optional.empty();
     }
 
     public Converter getSyntaxConverter(final String syntax) throws MappingException {
@@ -129,7 +131,9 @@ public abstract class SessionImpl implements Session {
 
 	return converter;
     }
-
+    
+    public abstract <T> OperationsImplementation<T> getImplementor(Class<T> persistentClass);
+    
     @Override
     public abstract SessionFactoryImpl getSessionFactory();
 }

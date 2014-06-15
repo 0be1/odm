@@ -32,6 +32,6 @@ public interface Session extends Closeable {
 
     <T> boolean isPersistent(@Nullable final T obj);
 
-    <T> Operations<T> getOperations(Class<T> persistentClass);
+    <T> SearchCriteria<T> getOperations(Class<T> persistentClass);
 
 }

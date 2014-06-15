@@ -212,7 +212,7 @@ public class TestSessionImpl {
         Name dn = new LdapName("ou=personnes");
 
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
-        List<Person> entries = session.getOperations(Person.class).search(dn).add(fb.not(fb.objectClass("ENTPerson"))).list();
+        List<Person> entries = session.getOperations(Person.class).setBase(dn).add(fb.not(fb.objectClass("ENTPerson"))).list();
 
         assertNotNull(entries);
 
@@ -227,13 +227,13 @@ public class TestSessionImpl {
     }
 
     @Test
-    public void testPagedSearch() throws InvalidNameException, MappingException {
+    public void testPagedSearch() throws InvalidNameException, MappingException, SizeLimitExceededException {
         Name dn = new LdapName("ou=personnes");
         int n = 0;
 
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-        Iterable<List<Person>> results = session.getOperations(Person.class).search(dn)
+        Iterable<List<Person>> results = session.getOperations(Person.class).setBase(dn)
                 .add(fb.not(fb.objectClass("ENTPerson")))
                 .pages(5);
 
@@ -261,7 +261,7 @@ public class TestSessionImpl {
     }
 
     @Test
-    public void testBind() throws InvalidNameException {
+    public void testBind() throws InvalidNameException, NameNotFoundException {
         String dn = "cn=fire,ou=personnes";
 
         Person entry = new Person();

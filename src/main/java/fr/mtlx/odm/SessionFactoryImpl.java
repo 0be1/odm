@@ -35,6 +35,7 @@ import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.filters.FilterBuilder;
+import fr.mtlx.odm.spring.SpringOperationsImpl;
 import fr.mtlx.odm.spring.SpringProxyFactory;
 
 import java.io.IOException;

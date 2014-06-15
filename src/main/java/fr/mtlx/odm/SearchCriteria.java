@@ -8,17 +8,15 @@ package fr.mtlx.odm;
 import java.util.Collection;
 import java.util.List;
 
+import javax.naming.Name;
+import javax.naming.NameNotFoundException;
 import javax.naming.SizeLimitExceededException;
+import javax.naming.directory.SearchControls;
 import javax.persistence.NonUniqueResultException;
 
 import fr.mtlx.odm.filters.Filter;
 import fr.mtlx.odm.filters.FilterBuilder;
 
-/**
- *
- * @author alex
- * @param <T>
- */
 public interface SearchCriteria<T> {
 
     SearchCriteriaImpl<T> add(Filter filter);
@@ -37,7 +35,7 @@ public interface SearchCriteria<T> {
 
     void nop() throws SizeLimitExceededException;
 
-    Iterable<List<T>> pages(final int pageSize);
+    Iterable<List<T>> pages(final int pageSize) throws SizeLimitExceededException;
 
     SearchCriteriaImpl<T> properties(String... properties);
 
@@ -46,5 +44,22 @@ public interface SearchCriteria<T> {
     SearchCriteriaImpl<T> timeLimit(int ms);
 
     T unique() throws NonUniqueResultException;
+    
+    
+    
+
+    SearchCriteriaImpl<T> setControls(SearchControls controls);
+
+    T lookupByExample(T example);
+
+    void modify(T persistentObject);
+
+    void unbind(T persistentObject) throws NameNotFoundException;
+
+    SearchCriteriaImpl<T> setBase(Name base);
+
+    T lookup(Name dn) throws NameNotFoundException;
+
+    void bind(T transientObject) throws NameNotFoundException;
 
 }
