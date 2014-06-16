@@ -56,7 +56,7 @@ public class PartialClassMetadata<T> implements ClassMetadata<T> {
 
     @Override
     public String getIdentifierPropertyName() {
-        return getIdentifier().getName();
+        return getIdentifier() != null ? getIdentifier().getName() : null;
     }
 
     @Override

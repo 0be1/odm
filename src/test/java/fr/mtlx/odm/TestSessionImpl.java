@@ -233,19 +233,17 @@ public class TestSessionImpl {
 
         FilterBuilder<Person> fb = sessionFactory.filterBuilder(Person.class);
 
-        Iterable<List<Person>> results = session.getOperations(Person.class).setBase(dn)
+        Iterator<List<Person>> iterator = session.getOperations(Person.class).setBase(dn)
                 .add(fb.not(fb.objectClass("ENTPerson")))
                 .pages(5);
-
-        assertNotNull(results);
-
-        Iterator<List<Person>> iterator = results.iterator();
 
         assertNotNull(iterator);
 
         assertTrue(iterator.hasNext());
 
-        for (List<Person> page : results) {
+        List<Person> page;
+        
+        while((page = iterator.next())!= null) {
             n += page.size();
 
             assertTrue(Iterables.any(page, new Predicate<Person>() {

@@ -9,10 +9,6 @@ package fr.mtlx.odm;
 import javax.naming.Context;
 import javax.naming.InvalidNameException;
 
-/**
- *
- * @author alex
- */
 public interface ProxyFactory<T, CTX extends Context> {
      Class<?>[] getInterfaces();
      

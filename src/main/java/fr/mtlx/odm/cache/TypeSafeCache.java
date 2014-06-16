@@ -6,18 +6,18 @@ import java.util.Optional;
 
 import javax.naming.Name;
 
-import fr.mtlx.odm.utils.TypeCheckConverter;
+import fr.mtlx.odm.utils.TypeSafeConverter;
 
 public class TypeSafeCache<T> implements Cache<Name, T> {
 
     private final PersistentCache innerCache;
     
-    private final TypeCheckConverter<T> typeChecker;
+    private final TypeSafeConverter<T> typeChecker;
 
     public TypeSafeCache(final Class<T> clazz, final PersistentCache cache) {
 	this.innerCache = checkNotNull(cache);
 	
-	this.typeChecker = new TypeCheckConverter<>(checkNotNull(clazz));
+	this.typeChecker = new TypeSafeConverter<>(checkNotNull(clazz));
     }
 
     @Override

@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,9 +83,9 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
         entryCache = new TypeSafeCache<>(persistentClass, session.getCache());
 
         metadata = session.getSessionFactory().getClassMetadata(persistentClass);
-        
+
         ops = session.getImplementor(persistentClass);
-        
+
         controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
     }
 
@@ -149,7 +150,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
     }
 
     @Override
-    public Iterable<List<T>> pages(final int pageSize) throws SizeLimitExceededException {
+    public Iterator<List<T>> pages(final int pageSize) throws SizeLimitExceededException {
         return ops.pages(pageSize, encodeFilter(), base, controls);
     }
 
@@ -157,12 +158,12 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
     public List<T> list() throws javax.naming.SizeLimitExceededException {
         List<T> results = Lists.newArrayList(ops.doSearch(base, controls, encodeFilter()));
 
+        ClassAssistant<T> assistant = new ClassAssistant<>(metadata);
+        
         for (T entry : results) {
-            try {
-                metadata.getIdentifier().get(entry);
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            final Name dn = assistant.getIdentifier(entry);
+            
+            entryCache.store(dn, entry);
         }
 
         projections(results);
@@ -236,7 +237,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
         entryCache.store(dn, retval);
 
         session.getSessionFactory().getCache().store(dn, retval);
-        
+
         return retval;
     }
 

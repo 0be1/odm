@@ -53,6 +53,7 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.AttributeMetadata;
@@ -62,7 +63,7 @@ import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.OperationsImplementation;
 import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.utils.TypeCheckConverter;
+import fr.mtlx.odm.utils.TypeSafeConverter;
 
 public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
 
@@ -94,9 +95,9 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
 
     private final transient LdapOperations operations;
 
-    private final transient TypeCheckConverter<T> typeChecker;
+    private final transient TypeSafeConverter<T> typeChecker;
 
-    private final transient TypeCheckConverter<ClassMetadata<? extends T>> metadataChecker;
+    private final transient TypeSafeConverter<ClassMetadata<? extends T>> metadataChecker;
 
     public SpringOperationsImpl(final SpringSessionImpl session, final ClassMetadata<T> metadata) {
         this.session = checkNotNull(session);
@@ -111,9 +112,9 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
         
         this.persistentClass = metadata.getPersistentClass();
         
-        this.typeChecker = new TypeCheckConverter<>(persistentClass);
+        this.typeChecker = new TypeSafeConverter<>(persistentClass);
 
-        this.metadataChecker = new TypeCheckConverter<>(metadata.getClass());
+        this.metadataChecker = new TypeSafeConverter<>(metadata.getClass());
     }
 
     @Override
@@ -168,7 +169,7 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
     }
     
     @Override
-    public Iterable<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls) {
+    public Iterator<List<T>> pages(final int pageSize, String filter, Name base, final SearchControls controls) {
 
         class PagedResultIterator implements Iterator<List<T>> {
 
@@ -199,7 +200,7 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
             }
         }
 
-        return () -> new PagedResultIterator();
+        return new PagedResultIterator();
     }
     
     private List<T> doSearch(final Name base, final SearchControls controls, final String filter,
@@ -339,12 +340,9 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
         @Override
         protected T doMapFromContext(final DirContextOperations ctx) {
             final T entry;
-            final Name dn = ctx.getDn();
 
             try {
                 entry = typeChecker.convert(dirContextObjectFactory(checkNotNull(ctx)));
-
-                metadata.getIdentifier().set(entry, dn);
             } catch (InstantiationException | InvalidNameException | IllegalAccessException | InvocationTargetException
                     | ClassNotFoundException e) {
                 throw new RuntimeException(e);

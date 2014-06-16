@@ -1,5 +1,6 @@
 package fr.mtlx.odm;
 
+import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -18,7 +19,7 @@ public interface OperationsImplementation<T> {
 
     long count(Name base, SearchControls controls, String filter) throws SizeLimitExceededException;
 
-    Iterable<List<T>> pages(int pageSize, String filter, Name base, SearchControls controls) throws SizeLimitExceededException;
+    Iterator<List<T>> pages(int pageSize, String filter, Name base, SearchControls controls) throws SizeLimitExceededException;
 
     Iterable<T> doSearch(Name base, SearchControls controls, String encodeFilter) throws SizeLimitExceededException;
 }

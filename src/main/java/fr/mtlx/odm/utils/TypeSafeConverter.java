@@ -2,11 +2,11 @@ package fr.mtlx.odm.utils;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class TypeCheckConverter<T> implements Converter<Object, T> {
+public class TypeSafeConverter<T> implements Converter<Object, T> {
 
     private final Class<?> clazz;
 
-    public TypeCheckConverter(final Class<?> clazz) {
+    public TypeSafeConverter(final Class<?> clazz) {
 	this.clazz = checkNotNull(clazz);
     }
 

@@ -6,6 +6,7 @@
 package fr.mtlx.odm;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.naming.Name;
@@ -35,7 +36,7 @@ public interface SearchCriteria<T> {
 
     void nop() throws SizeLimitExceededException;
 
-    Iterable<List<T>> pages(final int pageSize) throws SizeLimitExceededException;
+    Iterator<List<T>> pages(final int pageSize) throws SizeLimitExceededException;
 
     SearchCriteriaImpl<T> properties(String... properties);
 
