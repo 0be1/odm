@@ -28,14 +28,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 
 import javax.naming.Name;
-import javax.naming.directory.SearchControls;
 
 import fr.mtlx.odm.cache.NoCache;
 import fr.mtlx.odm.cache.PersistentCache;
 import fr.mtlx.odm.cache.TypeSafeCache;
 import fr.mtlx.odm.converters.Converter;
-import fr.mtlx.odm.spring.SpringOperationsImpl;
-import fr.mtlx.odm.spring.SpringSessionImpl;
 
 public abstract class SessionImpl implements Session {
 

@@ -53,7 +53,6 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.AttributeMetadata;
@@ -61,7 +60,7 @@ import fr.mtlx.odm.ClassAssistant;
 import fr.mtlx.odm.ClassMetadata;
 import fr.mtlx.odm.MappingException;
 import fr.mtlx.odm.OperationsImplementation;
-import fr.mtlx.odm.cache.TypeSafeCache;
+import fr.mtlx.odm.ProxyObject;
 import fr.mtlx.odm.converters.Converter;
 import fr.mtlx.odm.utils.TypeSafeConverter;
 
@@ -129,25 +128,19 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
 
         operations.bind(context);
 
-        session.getContextCache().store(dn, context);
-        
         return dn;
     }
 
     @Override
     public void doUnbind(final Name dn) {
         operations.unbind(dn);
-
-        session.getContextCache().remove(dn);
     }
 
     @Override
     public T doLookup(Name dn) {
-        final DirContextOperations context = session.getContextCache().retrieve(dn).orElse(doContextLookup(dn));
-
-        // XXX : il faut stocker le context dans le cache avant de faire le
-        // mapping !
-        session.getContextCache().store(dn, context);
+	final DirContextOperations context = session.getCache().retrieve(dn)
+		.map(t -> ((ProxyObject<T>)t).getProxyContext())
+		.orElse(doContextLookup(dn));
 
         return contextMapper.doMapFromContext(context);
     }
@@ -206,14 +199,10 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
     private List<T> doSearch(final Name base, final SearchControls controls, final String filter,
             final Optional<DirContextProcessor> processor) throws javax.naming.SizeLimitExceededException {
 
-        final TypeSafeCache<DirContextOperations> contextCache = session.getContextCache();
-
         final ContextMapper<T> cm = new AbstractContextMapper<T>() {
             @Override
             protected T doMapFromContext(final DirContextOperations ctx) {
                 final Name dn = ctx.getDn();
-
-                contextCache.store(dn, ctx);
 
                 final Object object = session.getFromCacheStack(persistentClass, dn).orElseGet(() -> {
 
