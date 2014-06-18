@@ -2,9 +2,9 @@ package fr.mtlx.odm.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
-
 import javax.naming.Name;
+
+import com.google.common.base.Optional;
 
 import fr.mtlx.odm.utils.TypeSafeConverter;
 
@@ -46,6 +46,6 @@ public class TypeSafeCache<T> implements Cache<Name, T> {
     }
     
     private Optional<T> cast(Optional<Object> obj) {
-	return obj.map(o -> typeChecker.convert(o));
+	return Optional.fromNullable(typeChecker.convert(obj.orNull()));
     }
 }

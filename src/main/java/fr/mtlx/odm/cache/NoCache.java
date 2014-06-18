@@ -26,10 +26,10 @@ package fr.mtlx.odm.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
-
 import javax.annotation.Nonnull;
 import javax.naming.Name;
+
+import com.google.common.base.Optional;
 
 
 public class NoCache implements PersistentCache {
@@ -37,13 +37,13 @@ public class NoCache implements PersistentCache {
     public Optional<Object> store(@Nonnull final Name key, @Nonnull final Object value) {
 	checkNotNull(key);
 	checkNotNull(value);
-	return Optional.empty();
+	return Optional.absent();
     }
 
     @Override
     public Optional<Object> retrieve(@Nonnull final Name key) {
 	checkNotNull(key);
-	return Optional.empty();
+	return Optional.absent();
     }
 
     @Override

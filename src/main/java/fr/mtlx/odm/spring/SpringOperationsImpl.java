@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.naming.InvalidNameException;
@@ -53,6 +52,7 @@ import org.springframework.ldap.core.LdapOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 
 import fr.mtlx.odm.AttributeMetadata;
@@ -138,10 +138,17 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
 
     @Override
     public T doLookup(Name dn) {
-	final DirContextOperations context = session.getCache().retrieve(dn)
-		.map(t -> ((ProxyObject<T>)t).getProxyContext())
-		.orElse(doContextLookup(dn));
-
+	
+	@SuppressWarnings("unchecked")
+	ProxyObject<T> t = (ProxyObject<T>)session.getCache().retrieve(dn).orNull();
+	
+	final DirContextOperations context;
+	
+	if (t == null)
+	    context =  doContextLookup(dn);
+	else
+	    context = t.getProxyContext();
+	
         return contextMapper.doMapFromContext(context);
     }
     
@@ -204,7 +211,7 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
             protected T doMapFromContext(final DirContextOperations ctx) {
                 final Name dn = ctx.getDn();
 
-                final Object object = session.getFromCacheStack(persistentClass, dn).orElseGet(() -> {
+                final Object object = session.getFromCacheStack(persistentClass, dn).or(() -> {
 
                     T entry = contextMapper.doMapFromContext(ctx);
 
@@ -216,15 +223,15 @@ public class SpringOperationsImpl<T> implements OperationsImplementation<T> {
         };
 
         try {
-            return operations.search(base, filter, controls, cm, processor.orElse(nullDirContextProcessor));
+            return operations.search(base, filter, controls, cm, processor.or(nullDirContextProcessor));
         } catch (SizeLimitExceededException ex) {
             throw new javax.naming.SizeLimitExceededException(ex.getExplanation());
         }
     }
 
     private void mergeObjectClasses(final DirContextOperations context) {
-        final Set<String> ctxObjectClasses = Sets.newHashSet(Optional.ofNullable(context.getStringAttributes("objectClass"))
-                .orElse(RETURN_NO_ATTRIBUTES));
+        final Set<String> ctxObjectClasses = Sets.newHashSet(Optional.fromNullable(context.getStringAttributes("objectClass"))
+                .or(RETURN_NO_ATTRIBUTES));
 
         final Set<String> mdObjectClasses = Sets.newHashSet(metadata.getObjectClassHierarchy());
 

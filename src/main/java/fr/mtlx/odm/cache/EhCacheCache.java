@@ -26,9 +26,9 @@ package fr.mtlx.odm.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
-
 import javax.naming.Name;
+
+import com.google.common.base.Optional;
 
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
@@ -56,7 +56,7 @@ public class EhCacheCache implements PersistentCache {
 	    } else {
 		cache.put(element);
 
-		return Optional.empty();
+		return Optional.absent();
 	    }
 	} finally {
 	    cache.releaseWriteLockOnKey(key);
@@ -73,7 +73,7 @@ public class EhCacheCache implements PersistentCache {
 	    return Optional.of(value);
 	}
 
-	return Optional.empty();
+	return Optional.absent();
     }
 
     @Override

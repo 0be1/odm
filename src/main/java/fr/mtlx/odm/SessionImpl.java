@@ -25,9 +25,9 @@ package fr.mtlx.odm;
  */
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
-
 import javax.naming.Name;
+
+import com.google.common.base.Optional;
 
 import fr.mtlx.odm.cache.NoCache;
 import fr.mtlx.odm.cache.PersistentCache;
@@ -43,7 +43,7 @@ public abstract class SessionImpl implements Session {
     }
 
     public SessionImpl(final CacheFactory cacheFactory) {
-	cache = Optional.ofNullable(checkNotNull(cacheFactory).getCache()).orElse(new NoCache());
+	cache = Optional.fromNullable(checkNotNull(cacheFactory).getCache()).or(new NoCache());
     }
 
     @Override
@@ -69,10 +69,10 @@ public abstract class SessionImpl implements Session {
 	final ClassMetadata<T> metadata = getSessionFactory().getClassMetadata((Class<T>) obj.getClass());
 
 	if (metadata == null) {
-	    return Optional.empty();
+	    return Optional.absent();
 	}
 
-	return Optional.ofNullable(new ClassAssistant<T>(metadata).getIdentifier(obj));
+	return Optional.fromNullable(new ClassAssistant<T>(metadata).getIdentifier(obj));
     }
     
     public final <T> Optional<T> getFromCacheStack(final Class<T> clazz, final Name dn) {
@@ -94,7 +94,7 @@ public abstract class SessionImpl implements Session {
             }
         }
 
-        return Optional.empty();
+        return Optional.absent();
     }
 
     public Converter getSyntaxConverter(final String syntax) throws MappingException {

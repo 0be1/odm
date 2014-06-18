@@ -26,11 +26,11 @@ package fr.mtlx.odm.cache;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
-import java.util.Optional;
 
 import javax.annotation.Nonnull;
 import javax.naming.Name;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 
 public class ConcurrentMapCache implements PersistentCache {
@@ -43,12 +43,12 @@ public class ConcurrentMapCache implements PersistentCache {
 
     @Override
     public Optional<Object> store(@Nonnull final Name key, @Nonnull final Object value) {
-	return Optional.ofNullable(cacheMap.put(checkNotNull(key), checkNotNull(value)));
+	return Optional.fromNullable(cacheMap.put(checkNotNull(key), checkNotNull(value)));
     }
 
     @Override
     public Optional<Object> retrieve(@Nonnull final Name key) {
-	return Optional.ofNullable(cacheMap.get(key));
+	return Optional.fromNullable(cacheMap.get(key));
     }
 
     @Override

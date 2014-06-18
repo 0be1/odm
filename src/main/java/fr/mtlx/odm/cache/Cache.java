@@ -24,9 +24,10 @@ package fr.mtlx.odm.cache;
  * #L%
  */
 
-import java.util.Optional;
 
 import javax.annotation.Nonnull;
+
+import com.google.common.base.Optional;
 
 public interface Cache<K, T> {
 

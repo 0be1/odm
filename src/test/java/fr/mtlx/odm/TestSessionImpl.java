@@ -64,7 +64,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 // @ContextConfiguration( locations =
-// { "classpath:testContext.xml", "classpath:ldapContext.xml" } )
+// { "classpath:test-config.xml", "classpath:ldap-config.xml" } )
 @Ignore
 public class TestSessionImpl {
 

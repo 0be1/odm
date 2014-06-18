@@ -232,7 +232,7 @@ public class SearchCriteriaImpl<T> implements SearchCriteria<T> {
             log.debug("looking up for {}", dn);
         }
 
-        final T retval = session.getFromCacheStack(persistentClass, dn).orElse(ops.doLookup(dn));
+        final T retval = session.getFromCacheStack(persistentClass, dn).or(ops.doLookup(dn));
 
         entryCache.store(dn, retval);
 
