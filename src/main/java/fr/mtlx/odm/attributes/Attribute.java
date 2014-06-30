@@ -1,6 +1,8 @@
 package fr.mtlx.odm.attributes;
 
-public interface Attribute {
+import java.io.Serializable;
+
+public interface Attribute extends Serializable {
 	String getOID();
 
 	String getSyntax();

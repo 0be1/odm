@@ -50,7 +50,7 @@ public class LabeledURIConverter extends AttributeConverter<String, LabeledURI> 
 
 	@Override
 	public LabeledURI from(final String value) throws ConvertionException {
-		final Iterator<String> iterator = Splitter.on(' ').limit(1)
+		final Iterator<String> iterator = Splitter.on(' ').limit(2)
 				.trimResults().split(value).iterator();
 
 		URI uri;

@@ -41,6 +41,8 @@ import javax.naming.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -90,6 +92,25 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
     public Class<?>[] getInterfaces() {
         return interfaces.toArray(new Class[] {});
     }
+    
+    public static String capitalizeFirstLetter(final String original)
+    {
+       if(checkNotNull(original) == "")
+	   return original;
+       
+       // XXX code source encoding ???
+       return Character.toUpperCase(original.charAt(0)) + original.substring(1);
+    }
+    
+    private static String uncapitalizeFirstLetter(String original) { 
+        if (checkNotNull(original) == "") {
+            return original;
+        }
+
+        // XXX code source encoding ???
+        return Character.toLowerCase(original.charAt(0)) + original.substring(1);
+    }
+    
 
     @Override
     public T getProxy(final Session session, final DirContextOperations context) throws InstantiationException,
@@ -113,30 +134,33 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                 this.resolver = new DirContextOperationsResolver(context, metadata, session);
             }
 
-            private String capitalizeFirstLetter(String original) {
-                if (original.length() == 0) {
-                    return original;
-                }
-
-                return original.substring(0, 1).toUpperCase() + original.substring(1);
-            }
-
-            private String getPropertyName(final Method method) {
+            private Optional<String> getPropertyName(final Method method) {
                 final String name = method.getName();
 
                 return getPropertyName(name);
             }
             
-            private String getPropertyName(String name) {
-                if (name.startsWith("get") || name.startsWith("set")) {
-                    return name.substring(3);
+            private Optional<String> strictAccessorPrefix(final String name) {
+        	if (name.startsWith("get") || name.startsWith("set")) {
+                    return Optional.of(name.substring(3));
                 } else if (name.startsWith("is")) {
-                    return name.substring(2);
+                    return Optional.of(name.substring(2));
                 }
-
-                return null;
+        	
+        	return Optional.absent();
+            }
+            
+            private Optional<String> getPropertyName(String name) {
+                Optional<String> retval = strictAccessorPrefix(name);
+                
+        	if (retval.isPresent()) { //XXX flatMap
+        	    return Optional.of(uncapitalizeFirstLetter(retval.get()));
+        	} else {
+        	    return Optional.absent();
+        	}
             }
 
+           
             private Method getSetter(final String property) throws SecurityException, NoSuchMethodException {
                 final AttributeMetadata attr = metadata.getAttributeMetadata(property);
 
@@ -173,16 +197,14 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                     return identityHashCode(object);
                 } else if ("getProxyContext".equals(name)) { // TODO choose a method name on runtime in case of collision...
                     return context;
-                } else if (Objects.equal(getPropertyName(name),metadata.getIdentifierPropertyName())) {
+                } else if (Objects.equal(getPropertyName(name).orNull(),metadata.getIdentifierPropertyName())) {
                     return context.getDn(); //TODO convert...
                 } 
                 else if (!isHandled(method)) {
                     return method1.invoke(object, args);
                 }
                 
-                final String property = getPropertyName(method);
-
-                assert property != null;
+                final String property = getPropertyName(method).get();
 
                 if (!invoked.containsKey(property)) {
                     setProperty(object, property);
@@ -204,7 +226,7 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
 
             private boolean isHandled(Method method) {
                 if (hasGetterSignature(method)) {
-                    final String property = getPropertyName(method);
+                    final String property = getPropertyName(method).orNull();
 
                     return property != null & metadata.getAttributeMetadata(property) != null;
                 }

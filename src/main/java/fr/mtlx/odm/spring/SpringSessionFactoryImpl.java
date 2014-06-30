@@ -27,6 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.naming.directory.DirContext;
@@ -34,6 +35,9 @@ import javax.naming.directory.DirContext;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.LdapTemplate;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import fr.mtlx.odm.CacheFactory;
 import fr.mtlx.odm.ConcurentMapCacheFactory;
@@ -61,6 +65,9 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
     
     private CacheFactory secondLevelCacheFactory = new NoCacheFactory();
 
+    private Map<Class<?>, Converter> converters = Maps.newHashMap();
+    
+    
     public ContextSource getContextSource() {
 	return contextSource;
     }
@@ -76,6 +83,10 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 	}
 
 	for (Entry<Type, Converter> entry : DefaultConverters.defaultAttributeConverters.entrySet()) {
+	    addConverter(entry.getKey(), entry.getValue());
+	}
+	
+	for (Entry<Class<?>, Converter> entry : converters.entrySet()) {
 	    addConverter(entry.getKey(), entry.getValue());
 	}
 
@@ -129,5 +140,13 @@ public class SpringSessionFactoryImpl extends SessionFactoryImpl implements Init
 	this.contextSource = checkNotNull(contextSource);
 
 	this.ldapTemplate = new LdapTemplate(contextSource);
+    }
+
+    public Map<Class<?>, Converter> getConverters() {
+	return converters;
+    }
+
+    public void setConverters(Map<Class<?>, Converter> converters) {
+	this.converters = converters;
     }
 }
