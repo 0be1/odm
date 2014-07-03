@@ -1,7 +1,6 @@
 package fr.mtlx.odm.converters;
 
 import com.google.common.base.Charsets;
-import java.nio.charset.Charset;
 
 /*
  * #%L

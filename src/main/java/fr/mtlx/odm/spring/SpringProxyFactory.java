@@ -228,7 +228,7 @@ public class SpringProxyFactory<T> implements ProxyFactory<T, DirContextOperatio
                 if (hasGetterSignature(method)) {
                     final String property = getPropertyName(method).orNull();
 
-                    return property != null & metadata.getAttributeMetadata(property) != null;
+                    return property != null && metadata.getAttributeMetadata(property) != null;
                 }
 
                 return false;
