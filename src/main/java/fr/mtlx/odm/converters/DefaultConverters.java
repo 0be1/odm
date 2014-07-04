@@ -1,6 +1,8 @@
 package fr.mtlx.odm.converters;
 
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URL;
 import java.util.Date;
 
 import javax.naming.Name;
@@ -39,7 +41,9 @@ public final class DefaultConverters {
             .put(LdapName.class, new IdentityConverter<>(LdapName.class))
             .put(Date.class, new IdentityConverter<>(Date.class))
             .put(Long.TYPE, new IdentityConverter<>(Long.TYPE))
-            .put(Long.class, new IdentityConverter<>(Long.class)).build();
+            .put(Long.class, new IdentityConverter<>(Long.class))
+            .put(URL.class, new URLConverter())
+            .put(URI.class, new URIConverter()).build();
 
     public static final ImmutableMap<Type, String> defaultSyntaxes = new ImmutableMap.Builder<Type, String>()
             .put(Integer.TYPE, "1.3.6.1.4.1.1466.115.121.1.27")
